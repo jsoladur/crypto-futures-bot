@@ -13,9 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractService(ABC):
-    def __init__(self) -> None:
-        pass
-
     async def _notify_alert_by_type(self, notification_type: PushNotificationTypeEnum, message: str) -> None:
         raise NotImplementedError("To be implemented!")
 

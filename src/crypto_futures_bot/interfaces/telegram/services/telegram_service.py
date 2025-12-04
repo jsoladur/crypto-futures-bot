@@ -1,13 +1,13 @@
 from aiogram import Bot
 from aiogram.types import ReplyMarkupUnion
 
-from crypto_futures_bot.interfaces.telegram.services.session_storage_service import SessionStorageService
+from crypto_futures_bot.interfaces.telegram.utils.keyboards_builder import KeyboardsBuilder
 
 
 class TelegramService:
-    def __init__(self, telegram_bot: Bot, session_storage_service: SessionStorageService) -> None:
+    def __init__(self, telegram_bot: Bot, keyboards_builder: KeyboardsBuilder) -> None:
         self._telegram_bot = telegram_bot
-        self._session_storage_service = session_storage_service
+        self._keyboards_builder = keyboards_builder
 
     async def send_message(
         self,

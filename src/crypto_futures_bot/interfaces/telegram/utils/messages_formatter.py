@@ -1,0 +1,2 @@
+class MessagesFormatter:
+    pass

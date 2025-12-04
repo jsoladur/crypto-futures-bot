@@ -17,13 +17,14 @@ dependencies = [
     "httpx>=0.28.1",
     "pandas>=2.3.3",
     "pydantic-settings>=2.12.0",
+    "pydash>=8.0.5",
     "pyee>=13.0.0",
     "ta>=0.11.0",
     "tomli>=2.3.0",
 ]
 
 [tool.taskipy.tasks]
-start = "fastapi dev src/crypto_trailing_stop/main.py --app app --reload --host 0.0.0.0"
+start = "python -m crypto_futures_bot.main"
 test = "pytest -x --log-cli-level=INFO"
 "test:coverage" = "pytest --cov=./src --cov-report=term --cov-report=xml --log-cli-level=INFO"
 "test:coverage:html" = "pytest --cov=./src --cov-report=term --cov-report=html --log-cli-level=INFO"

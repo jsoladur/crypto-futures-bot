@@ -1,5 +1,6 @@
-from crypto_trailing_stop.interfaces.telegram.config.telegram_container import TelegramContainer
 from dependency_injector import containers, providers
+
+from crypto_futures_bot.interfaces.telegram.config.container import TelegramContainer
 
 
 class InterfacesContainer(containers.DeclarativeContainer):

@@ -13,4 +13,6 @@ class ConfigurationProperties(BaseSettings):
 
     telegram_bot_token: str
 
+    database_url: str
+
     background_tasks_enabled: bool = True

@@ -10,6 +10,7 @@ from dependency_injector.providers import Singleton
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 from crypto_futures_bot.config.dependencies import get_application_container
+from crypto_futures_bot.infrastructure.database import init_database
 from crypto_futures_bot.infrastructure.services.base import AbstractEventHandlerService
 from crypto_futures_bot.introspection import load_modules_by_folder
 
@@ -37,7 +38,7 @@ async def main() -> None:
     _load_telegram_commands()
     # Run application
     # Initialize database
-    # FIXME: await init_database()
+    await init_database(configuration_properties)
     # Background task manager initialization
     task_manager = await application_container.infrastructure_container().tasks_container().task_manager().load_tasks()
     logger.info(f"{len(task_manager.get_tasks())} jobs have been loaded!")

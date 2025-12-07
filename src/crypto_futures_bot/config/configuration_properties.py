@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from crypto_futures_bot.constants import DEFAULT_JOB_INTERVAL_SECONDS
+from crypto_futures_bot.infrastructure.adapters.futures_exchange.enums import FuturesExchangeEnum
+
 
 class ConfigurationProperties(BaseSettings):
     model_config = SettingsConfigDict(
@@ -15,4 +18,9 @@ class ConfigurationProperties(BaseSettings):
 
     database_url: str
 
+    futures_exchange: FuturesExchangeEnum = FuturesExchangeEnum.MEXC
+    mexc_api_key: str | None = None
+    mexc_api_secret: str | None = None
+
     background_tasks_enabled: bool = True
+    job_interval_seconds: int = DEFAULT_JOB_INTERVAL_SECONDS

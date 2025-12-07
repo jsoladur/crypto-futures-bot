@@ -5,6 +5,7 @@ from apscheduler.job import Job
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.base import BaseTrigger
 
+from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 from crypto_futures_bot.domain.enums import TaskTypeEnum
 from crypto_futures_bot.infrastructure.services.base import AbstractService
 
@@ -12,8 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractTaskService(AbstractService, metaclass=ABCMeta):
-    def __init__(self, scheduler: AsyncIOScheduler) -> None:
+    def __init__(self, configuration_properties: ConfigurationProperties, scheduler: AsyncIOScheduler) -> None:
         super().__init__()
+        self._configuration_properties = configuration_properties
         self._scheduler = scheduler
         self._job: Job | None = None
 

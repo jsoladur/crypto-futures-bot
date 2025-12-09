@@ -21,12 +21,10 @@ class SessionStorageService:
         )
 
     async def is_user_logged(self, state: FSMContext) -> bool:
-        if not self._configuration_properties.login_enabled:  # pragma: no cover
-            ret = True
-        else:
-            data = await state.get_data()
-            ret = SessionKeysEnum.USER_CONTEXT.value in data
-        return ret
+        if not self._configuration_properties.login_enabled:
+            return True
+        data = await state.get_data()
+        return SessionKeysEnum.USER_CONTEXT.value in data
 
     async def set_user_logged(self, state: FSMContext, userinfo: dict[str, Any]) -> None:
         data = await state.get_data()

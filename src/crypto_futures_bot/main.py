@@ -10,11 +10,12 @@ from dependency_injector.providers import Singleton
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 from crypto_futures_bot.config.dependencies import get_application_container
-from crypto_futures_bot.infrastructure.database import init_database
 from crypto_futures_bot.infrastructure.services.base import AbstractEventHandlerService
 from crypto_futures_bot.introspection import load_modules_by_folder
 
 logger = logging.getLogger(__name__)
+
+logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 def _load_telegram_commands() -> None:
@@ -36,14 +37,9 @@ async def main() -> None:
     logger.info(f"Initializing Crypto Futures Bot :: v{version}")
     # Load Telegram commands dynamically
     _load_telegram_commands()
-    # Run application
-    # Initialize database
-    await init_database(configuration_properties)
     # Background task manager initialization
     task_manager = await application_container.infrastructure_container().tasks_container().task_manager().load_tasks()
     logger.info(f"{len(task_manager.get_tasks())} jobs have been loaded!")
-    # Initialize Bot instance with default bot properties which will be passed to all API calls
-    # Telegram bot initialization
     # And the run events dispatching
     telegram_bot: Bot = application_container.interfaces_container().telegram_container().telegram_bot()
     if configuration_properties.background_tasks_enabled:
@@ -58,5 +54,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(asctime)s - %(levelname)s - %(message)s")
     asyncio.run(main())

@@ -6,6 +6,7 @@ from aiogram_dialog import setup_dialogs
 from dependency_injector import containers, providers
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
+from crypto_futures_bot.interfaces.telegram.internal.home_handler import HomeHandler
 from crypto_futures_bot.interfaces.telegram.services.session_storage_service import SessionStorageService
 from crypto_futures_bot.interfaces.telegram.services.telegram_service import TelegramService
 from crypto_futures_bot.interfaces.telegram.utils.keyboards_builder import KeyboardsBuilder
@@ -37,7 +38,13 @@ class TelegramContainer(containers.DeclarativeContainer):
     session_storage_service = providers.Singleton(
         SessionStorageService, configuration_properties=configuration_properties, dispatcher=dispatcher
     )
-
+    home_handler = providers.Singleton(
+        HomeHandler, session_storage_service=session_storage_service, keyboards_builder=keyboards_builder
+    )
     telegram_service = providers.Singleton(
-        TelegramService, telegram_bot=telegram_bot, keyboards_builder=keyboards_builder
+        TelegramService,
+        configuration_properties=configuration_properties,
+        session_storage_service=session_storage_service,
+        telegram_bot=telegram_bot,
+        keyboards_builder=keyboards_builder,
     )

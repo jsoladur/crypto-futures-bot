@@ -22,5 +22,6 @@ class ConfigurationProperties(BaseSettings):
     mexc_api_key: str | None = None
     mexc_api_secret: str | None = None
 
+    login_enabled: bool = True
     background_tasks_enabled: bool = True
     job_interval_seconds: int = DEFAULT_JOB_INTERVAL_SECONDS

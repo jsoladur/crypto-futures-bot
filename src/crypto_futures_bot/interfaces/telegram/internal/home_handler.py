@@ -17,5 +17,5 @@ class HomeHandler:
             keyboard = self._keyboards_builder.get_home_keyboard()
         else:
             reply_message += "\n⚠️ Please log in to continue."
-            keyboard = self._keyboards_builder.get_login_keyboard(state)
+            keyboard = self._keyboards_builder.get_login_keyboard()
         await message.answer(reply_message, reply_markup=keyboard)

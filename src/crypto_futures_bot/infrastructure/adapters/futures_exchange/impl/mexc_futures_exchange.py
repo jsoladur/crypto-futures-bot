@@ -37,7 +37,7 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
 
     @cachebox.cachedmethod(
         cachebox.TTLCache(0, ttl=DEFAULT_IN_MEMORY_CACHE_TTL_IN_SECONDS),
-        key_maker=lambda _, kwds: kwds["fiat_currency"],
+        key_maker=lambda _, __: "mexc_trading_crypto_currencies",
     )
     @backoff.on_exception(
         backoff.constant,

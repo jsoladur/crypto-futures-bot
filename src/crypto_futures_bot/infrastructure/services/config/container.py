@@ -8,7 +8,10 @@ class ServicesContainer(containers.DeclarativeContainer):
     event_emitter = providers.Dependency()
     telegram_service = providers.Dependency()
     database_sessionmaker = providers.Dependency()
+    futures_exchange_service = providers.Dependency()
 
     tracked_crypto_currency_service = providers.Singleton(
-        TrackedCryptoCurrencyService, sessionmaker=database_sessionmaker
+        TrackedCryptoCurrencyService,
+        sessionmaker=database_sessionmaker,
+        futures_exchange_service=futures_exchange_service,
     )

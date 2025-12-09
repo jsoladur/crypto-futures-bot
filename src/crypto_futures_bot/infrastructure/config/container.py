@@ -1,6 +1,7 @@
 from dependency_injector import containers, providers
 from pyee.asyncio import AsyncIOEventEmitter
 
+from crypto_futures_bot.infrastructure.adapters.config.container import AdaptersContainer
 from crypto_futures_bot.infrastructure.database.config.container import DatabaseContainer
 from crypto_futures_bot.infrastructure.services.config.container import ServicesContainer
 from crypto_futures_bot.infrastructure.tasks.config.container import TasksContainer
@@ -14,9 +15,12 @@ class InfrastructureContainer(containers.DeclarativeContainer):
 
     database_container = providers.Container(DatabaseContainer, configuration_properties=configuration_properties)
 
+    adapters_container = providers.Container(AdaptersContainer, configuration_properties=configuration_properties)
+
     services_container = providers.Container(
         ServicesContainer,
         configuration_properties=configuration_properties,
+        futures_exchange_service=adapters_container.futures_exchange_service,
         database_sessionmaker=database_container.sessionmaker,
         event_emitter=event_emitter,
         telegram_service=telegram_service,

@@ -10,6 +10,7 @@ from dependency_injector.providers import Singleton
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 from crypto_futures_bot.config.dependencies import get_application_container
+from crypto_futures_bot.infrastructure.database.alembic import run_migrations_async
 from crypto_futures_bot.infrastructure.services.base import AbstractEventHandlerService
 from crypto_futures_bot.introspection import load_modules_by_folder
 
@@ -33,8 +34,8 @@ async def main() -> None:
     version = application_container.application_version()
     dp: Dispatcher = application_container.interfaces_container().telegram_container().dispatcher()
     scheduler: BaseScheduler = application_container.infrastructure_container().tasks_container().scheduler()
-
     logger.info(f"Initializing Crypto Futures Bot :: v{version}")
+    await run_migrations_async(configuration_properties)
     # Load Telegram commands dynamically
     _load_telegram_commands()
     # Background task manager initialization

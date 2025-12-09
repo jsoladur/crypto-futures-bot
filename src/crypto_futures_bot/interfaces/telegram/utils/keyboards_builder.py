@@ -30,4 +30,6 @@ class KeyboardsBuilder:
                     callback_data=f"tracked_crypto_currency_{tracked_crypto_currency.currency}",
                 )
             )
+        builder.row(InlineKeyboardButton(text="➕ Add", callback_data="add_tracker_crypto_currency"))
+        builder.row(InlineKeyboardButton(text="🔙 Back", callback_data="go_back_home"))
         return builder.as_markup()

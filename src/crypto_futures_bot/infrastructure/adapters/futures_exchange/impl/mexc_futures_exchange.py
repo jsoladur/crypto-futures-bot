@@ -55,8 +55,9 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
         return list(futures_markets.keys())
 
     @override
-    async def fetch_ohlcv(self, symbol: str, timeframe: Timeframe, limit: int = 251) -> list[list[Any]]:
-        raise NotImplementedError()
+    async def fetch_ohlcv(self, symbol: str, *, timeframe: Timeframe = "15m", limit: int = 251) -> list[list[Any]]:
+        ohlcv = await self._client.fetch_ohlcv(symbol=symbol, timeframe=timeframe, limit=limit)
+        return ohlcv
 
     @cachebox.cachedmethod(
         cachebox.TTLCache(0, ttl=DEFAULT_IN_MEMORY_CACHE_TTL_IN_SECONDS), key_maker=lambda _, __: "futures_markets"

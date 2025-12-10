@@ -27,3 +27,4 @@ class ConfigurationProperties(BaseSettings):
     login_enabled: bool = True
     background_tasks_enabled: bool = True
     job_interval_seconds: int = DEFAULT_JOB_INTERVAL_SECONDS
+    signals_run_via_cron_pattern: bool = True

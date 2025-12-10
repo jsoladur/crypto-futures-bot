@@ -46,7 +46,7 @@ class TaskManager:
         for provider in self._tasks_container.traverse(types=[Singleton]):
             if isclass(provider.provides) and issubclass(provider.provides, AbstractTaskService):
                 dependency_object = provider()
-                dependency_global_flag_type = dependency_object.get_global_flag_type()
-                if dependency_global_flag_type:
-                    ret[dependency_global_flag_type] = dependency_object
+                dependency_task_type = dependency_object.get_task_type()
+                if dependency_task_type:
+                    ret[dependency_task_type] = dependency_object
         return ret

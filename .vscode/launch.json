@@ -9,6 +9,7 @@
       "type": "debugpy",
       "request": "launch",
       "module": "crypto_futures_bot.main",
+      "console": "integratedTerminal",
       "args": [],
       "justMyCode": false
     },

@@ -51,15 +51,15 @@ _dialog = Dialog(
         Format("ℹ️ Select a crypto currency to add as tracked:"),
         ScrollingGroup(
             Select(
-                Format("🛰️ {item}"),
+                Format("{item}"),
                 id="select_item",
-                item_id_getter=lambda x: x,  # here x is the string "Item N"
+                item_id_getter=lambda x: x,
                 items="items",
                 on_click=_on_crypto_currency_selected,
             ),
             id="scroll",
-            width=3,  # 1 button per row
-            height=9,  # show 8 items per “page”
+            width=3,
+            height=9,
         ),
         getter=_get_items,
         state=TrackedCryptoCurrencyStates.main,

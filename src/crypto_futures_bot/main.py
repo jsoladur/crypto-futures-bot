@@ -14,9 +14,9 @@ from crypto_futures_bot.infrastructure.database.alembic import run_migrations_as
 from crypto_futures_bot.infrastructure.services.base import AbstractEventHandlerService
 from crypto_futures_bot.introspection import load_modules_by_folder
 
-logger = logging.getLogger(__name__)
-
 logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(asctime)s - %(levelname)s - %(message)s")
+
+logger = logging.getLogger(__name__)
 
 
 def _load_telegram_commands() -> None:

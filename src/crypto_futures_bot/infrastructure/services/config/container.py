@@ -11,7 +11,5 @@ class ServicesContainer(containers.DeclarativeContainer):
     futures_exchange_service = providers.Dependency()
 
     tracked_crypto_currency_service = providers.Singleton(
-        TrackedCryptoCurrencyService,
-        sessionmaker=database_sessionmaker,
-        futures_exchange_service=futures_exchange_service,
+        TrackedCryptoCurrencyService, futures_exchange_service=futures_exchange_service
     )

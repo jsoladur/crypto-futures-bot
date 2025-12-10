@@ -24,12 +24,20 @@ class KeyboardsBuilder:
     ) -> InlineKeyboardMarkup:
         builder = InlineKeyboardBuilder()
         for tracked_crypto_currency in tracked_crypto_currencies:
-            builder.add(
+            builder.row(
                 InlineKeyboardButton(
                     text=f"🛰️ {tracked_crypto_currency.currency}",
-                    callback_data=f"tracked_crypto_currency_{tracked_crypto_currency.currency}",
+                    callback_data=f"remove_tracked_crypto_currency_$_{tracked_crypto_currency.currency}",
                 )
             )
         builder.row(InlineKeyboardButton(text="➕ Add", callback_data="add_tracker_crypto_currency"))
         builder.row(InlineKeyboardButton(text="🔙 Back", callback_data="go_back_home"))
+        return builder.as_markup()
+
+    def get_yes_no_keyboard(self, *, yes_button_callback_data: str) -> InlineKeyboardMarkup:
+        builder = InlineKeyboardBuilder()
+        builder.row(
+            InlineKeyboardButton(text="☑️ Yes", callback_data=yes_button_callback_data),
+            InlineKeyboardButton(text="🔙 No", callback_data="go_back_home"),
+        )
         return builder.as_markup()

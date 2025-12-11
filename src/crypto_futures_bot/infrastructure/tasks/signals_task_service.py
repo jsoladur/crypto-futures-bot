@@ -204,36 +204,41 @@ class SignalsTaskService(AbstractTaskService):
         symbol_ticker = await self._futures_exchange_service.get_symbol_ticker(
             symbol=signals_evaluation_result.crypto_currency.to_symbol(account_info=account_info)
         )
-        stop_loss_percent_value = self._orders_analytics_service.calculate_stop_loss_percent_value(
-            avg_entry_price=symbol_ticker.last_price,
-            last_candlestick_indicators=last_candle,
-            trading_market_config=self._trading_market_config,
-        )
-        take_profit_percent_value = self._orders_analytics_service.calculate_take_profit_percent_value(
-            avg_entry_price=symbol_ticker.last_price,
-            last_candlestick_indicators=last_candle,
-            trading_market_config=self._trading_market_config,
+        symbol_market_config = await self._futures_exchange_service.get_symbol_market_config(
+            crypto_currency=signals_evaluation_result.crypto_currency.currency
         )
         entry_price = symbol_ticker.ask_or_close if is_long else symbol_ticker.bid_or_close
-        stop_loss_price = (
+        stop_loss_percent_value = self._orders_analytics_service.calculate_stop_loss_percent_value(
+            avg_entry_price=entry_price,
+            last_candlestick_indicators=last_candle,
+            symbol_market_config=symbol_market_config,
+        )
+        take_profit_percent_value = self._orders_analytics_service.calculate_take_profit_percent_value(
+            avg_entry_price=entry_price,
+            last_candlestick_indicators=last_candle,
+            symbol_market_config=symbol_market_config,
+        )
+        stop_loss_price = round(
             entry_price * (1 - stop_loss_percent_value / 100)
             if is_long
-            else entry_price * (1 + stop_loss_percent_value / 100)
+            else entry_price * (1 + stop_loss_percent_value / 100),
+            ndigits=symbol_market_config.price_precision,
         )
-        take_profit_price = (
+        take_profit_price = round(
             entry_price * (1 + take_profit_percent_value / 100)
             if is_long
-            else entry_price * (1 - take_profit_percent_value / 100)
+            else entry_price * (1 - take_profit_percent_value / 100),
+            ndigits=symbol_market_config.price_precision,
         )
         icon = "🟢" if is_long else "🔴"
         signal_type = "LONG" if is_long else "SHORT"
         message_lines = [
-            f"{icon} {html.bold(signal_type + ' ENTRY SIGNAL')} {icon}",
-            "\n",
-            f"{html.bold('Symbol:')} {html.code(signals_evaluation_result.crypto_currency.to_symbol(account_info=account_info))}",  # noqa: E501
-            f"{html.bold('Entry Price:')} {html.code(f'{entry_price} {account_info.currency_code}')}",
-            f"{html.bold('Stop Loss:')} {html.code(f'{stop_loss_price} {account_info.currency_code}')}",
-            f"{html.bold('Take Profit:')} {html.code(f'{take_profit_price} {account_info.currency_code}')}",
+            f"{icon} {html.bold(signal_type + ' ENTRY SIGNAL')} for {html.code(signals_evaluation_result.crypto_currency.currency)} {icon}",  # noqa: E501
+            "================",
+            f"🏷️ {html.bold('Symbol:')} {html.code(signals_evaluation_result.crypto_currency.to_symbol(account_info=account_info))}",  # noqa: E501
+            f"🎯 {html.bold('Entry Price:')} {html.code(f'{entry_price} {account_info.currency_code}')}",
+            f"🛑 {html.bold('Stop Loss:')} {html.code(f'{stop_loss_price} {account_info.currency_code}')}",
+            f"💰 {html.bold('Take Profit:')} {html.code(f'{take_profit_price} {account_info.currency_code}')}",
         ]
         message = "\n".join(message_lines)
         await self._notify_alert(telegram_chat_ids=chat_ids, body_message=message)

@@ -9,7 +9,12 @@ from crypto_futures_bot.config.configuration_properties import ConfigurationProp
 from crypto_futures_bot.constants import DEFAULT_IN_MEMORY_CACHE_TTL_IN_SECONDS
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.types import Timeframe
-from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import AccountInfo, PortfolioBalance, SymbolTicker
+from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
+    AccountInfo,
+    PortfolioBalance,
+    SymbolMarketConfig,
+    SymbolTicker,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +121,18 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
     async def fetch_ohlcv(self, symbol: str, *, timeframe: Timeframe = "15m", limit: int = 251) -> list[list[Any]]:
         ohlcv = await self._futures_client.fetch_ohlcv(symbol=symbol, timeframe=timeframe, limit=limit)
         return ohlcv
+
+    @override
+    async def get_symbol_market_config(self, crypto_currency: str) -> SymbolMarketConfig:
+        futures_markets = await self._load_futures_markets()
+        raw_future_market = futures_markets.get(crypto_currency)
+        if not raw_future_market:
+            raise ValueError(f"Future market not found for {crypto_currency}")
+        return SymbolMarketConfig(
+            symbol=raw_future_market["symbol"],
+            price_precision=int(raw_future_market["info"]["priceScale"]),
+            amount_precision=int(raw_future_market["info"]["amountScale"]),
+        )
 
     @cachebox.cachedmethod(
         cachebox.TTLCache(0, ttl=DEFAULT_IN_MEMORY_CACHE_TTL_IN_SECONDS), key_maker=lambda _, __: "futures_markets"

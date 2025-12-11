@@ -23,13 +23,13 @@ class OrdersAnalyticsService(AbstractService):
         avg_entry_price: float,
         *,
         last_candlestick_indicators: CandleStickIndicators,
-        trading_market_config: SymbolMarketConfig,
+        symbol_market_config: SymbolMarketConfig,
     ) -> float:
         stop_price = round(
             avg_entry_price - (last_candlestick_indicators.atr * self._configuration_properties.atr_sl_mult),
-            ndigits=trading_market_config.price_precision,
+            ndigits=symbol_market_config.price_precision,
         )
-        stop_loss_percent_value = self._ceil_round((1 - (stop_price / avg_entry_price)) * 100, ndigits=2)
+        stop_loss_percent_value = abs(self._ceil_round((1 - (stop_price / avg_entry_price)) * 100, ndigits=2))
         return stop_loss_percent_value
 
     def calculate_take_profit_percent_value(
@@ -37,13 +37,13 @@ class OrdersAnalyticsService(AbstractService):
         avg_entry_price: float,
         *,
         last_candlestick_indicators: CandleStickIndicators,
-        trading_market_config: SymbolMarketConfig,
+        symbol_market_config: SymbolMarketConfig,
     ) -> float:
         take_profit_price = round(
             avg_entry_price + (last_candlestick_indicators.atr * self._configuration_properties.atr_tp_mult),
-            ndigits=trading_market_config.price_precision,
+            ndigits=symbol_market_config.price_precision,
         )
-        take_profit_percent_value = self._floor_round((1 - (take_profit_price / avg_entry_price)) * 100, ndigits=2)
+        take_profit_percent_value = abs(self._floor_round((1 - (take_profit_price / avg_entry_price)) * 100, ndigits=2))
         return take_profit_percent_value
 
     def _ceil_round(self, value: float, *, ndigits: int) -> float:

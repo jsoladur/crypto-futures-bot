@@ -2,7 +2,12 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.types import Timeframe
-from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import AccountInfo, PortfolioBalance, SymbolTicker
+from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
+    AccountInfo,
+    PortfolioBalance,
+    SymbolMarketConfig,
+    SymbolTicker,
+)
 
 
 class AbstractFuturesExchangeService(ABC):
@@ -67,4 +72,15 @@ class AbstractFuturesExchangeService(ABC):
 
         Returns:
             list[list[Any]]: A list of OHLCV data points.
+        """
+
+    @abstractmethod
+    async def get_symbol_market_config(self, crypto_currency: str) -> SymbolMarketConfig:
+        """Get the symbol market config from the futures exchange.
+
+        Args:
+            crypto_currency (str): The trading pair symbol (e.g., 'BTC').
+
+        Returns:
+            SymbolMarketConfig: The symbol market config.
         """

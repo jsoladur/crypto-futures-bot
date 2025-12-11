@@ -1,0 +1,52 @@
+import logging
+
+from aiogram import Dispatcher, html
+from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery
+
+from crypto_futures_bot.config.dependencies import get_application_container
+from crypto_futures_bot.infrastructure.services.push_notification_service import PushNotificationService
+from crypto_futures_bot.interfaces.telegram.services.session_storage_service import SessionStorageService
+from crypto_futures_bot.interfaces.telegram.utils.exceptions_utils import format_exception
+from crypto_futures_bot.interfaces.telegram.utils.keyboards_builder import KeyboardsBuilder
+
+logger = logging.getLogger(__name__)
+
+application_container = get_application_container()
+dp: Dispatcher = application_container.interfaces_container().telegram_container().dispatcher()
+session_storage_service: SessionStorageService = (
+    application_container.interfaces_container().telegram_container().session_storage_service()
+)
+keyboards_builder: KeyboardsBuilder = (
+    application_container.interfaces_container().telegram_container().keyboards_builder()
+)
+push_notification_service: PushNotificationService = (
+    application_container.infrastructure_container().services_container().push_notification_service()
+)
+
+
+@dp.callback_query(lambda c: c.data == "push_notifications_home")
+async def push_notifications_home_callback(callback_query: CallbackQuery, state: FSMContext) -> None:
+    is_user_logged = await session_storage_service.is_user_logged(state)
+    if is_user_logged:
+        try:
+            push_notification_items = await push_notification_service.find_push_notification_by_chat_id(
+                state.key.chat_id
+            )
+            await callback_query.message.answer(
+                "ℹ️ Click into a notification type for toggling (enabled/disabled) them",
+                reply_markup=keyboards_builder.get_push_notifications_home_keyboard(push_notification_items),
+            )
+        except Exception as e:
+            logger.error(
+                f"Error trying to retrieve push notifications configured for this chat: {str(e)}", exc_info=True
+            )
+            await callback_query.message.answer(
+                "⚠️ An error occurred while retrieving push notifications items. "
+                + f"Please try again later:\n\n{html.code(format_exception(e))}"
+            )
+    else:
+        await callback_query.message.answer(
+            "⚠️ Please log in to operate along with Push notifications.",
+            reply_markup=keyboards_builder.get_login_keyboard(state),
+        )

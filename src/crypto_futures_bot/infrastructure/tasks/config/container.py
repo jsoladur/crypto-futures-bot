@@ -10,10 +10,12 @@ class TasksContainer(containers.DeclarativeContainer):
 
     configuration_properties = providers.Dependency()
     event_emitter = providers.Dependency()
+    telegram_service = providers.Dependency()
 
     tracked_crypto_currency_service = providers.Dependency()
     futures_exchange_service = providers.Dependency()
     crypto_technical_analysis_service = providers.Dependency()
+    push_notification_service = providers.Dependency()
 
     scheduler = providers.Singleton(AsyncIOScheduler)
 
@@ -22,7 +24,10 @@ class TasksContainer(containers.DeclarativeContainer):
     signals_task_service = providers.Singleton(
         SignalsTaskService,
         configuration_properties=configuration_properties,
+        event_emitter=event_emitter,
         scheduler=scheduler,
+        telegram_service=telegram_service,
+        push_notification_service=push_notification_service,
         tracked_crypto_currency_service=tracked_crypto_currency_service,
         futures_exchange_service=futures_exchange_service,
         crypto_technical_analysis_service=crypto_technical_analysis_service,

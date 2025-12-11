@@ -7,10 +7,14 @@ from crypto_futures_bot.infrastructure.adapters.futures_exchange.types import Ti
 class SignalsEvaluationResult:
     timestamp: float | int
     symbol: str
-    timeframe: Timeframe
+    timeframe: Timeframe = "15m"
 
     long_entry: bool
     long_exit: bool
 
     short_entry: bool
     short_exit: bool
+
+    @property
+    def cache_key(self) -> str:
+        return f"{self.symbol}_$_{self.timeframe}"

@@ -26,6 +26,7 @@ class ConfigurationProperties(BaseSettings):
     database_url: str
 
     futures_exchange: FuturesExchangeEnum = FuturesExchangeEnum.MEXC
+    futures_exchange_debug_mode: bool = False
     mexc_api_key: str | None = None
     mexc_api_secret: str | None = None
 

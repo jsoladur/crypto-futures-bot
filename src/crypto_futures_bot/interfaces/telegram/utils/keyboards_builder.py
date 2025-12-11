@@ -12,6 +12,7 @@ class KeyboardsBuilder:
 
     def get_home_keyboard(self) -> InlineKeyboardMarkup:
         builder = InlineKeyboardBuilder()
+        builder.row(InlineKeyboardButton(text="💰 Portfolio Balance", callback_data="portfolio_balance"))
         builder.row(InlineKeyboardButton(text="🛰️ Tracker", callback_data="tracked_crypto_currencies_home"))
         builder.row(InlineKeyboardButton(text="🔔 Push Notifications", callback_data="push_notifications_home"))
         return builder.as_markup()

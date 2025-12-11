@@ -17,7 +17,7 @@ class AbstractFuturesExchangeService(ABC):
             AccountInfo: The account info."""
 
     @abstractmethod
-    def get_portfolio_balance(self) -> PortfolioBalance:
+    async def get_portfolio_balance(self) -> PortfolioBalance:
         """Get the portfolio balance from the futures exchange.
 
         Returns:

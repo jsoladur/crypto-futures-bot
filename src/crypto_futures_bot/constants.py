@@ -1,3 +1,5 @@
+import numpy as np
+
 TELEGRAM_REPLY_EXCEPTION_MESSAGE_MAX_LENGTH = 3_000
 DEFAULT_CURRENCY_CODE = "USDT"
 STABLE_COINS = [DEFAULT_CURRENCY_CODE, "USDC"]
@@ -11,3 +13,7 @@ DEFAULT_ATR_TP_MULT = 3.5
 # Event Emitter - Event names
 SIGNALS_EVALUATION_RESULT_EVENT_NAME = "signals_evaluation_result"
 TRIGGER_BUY_ACTION_EVENT_NAME = "trigger_buy_action"
+
+RISK_MANAGEMENT_ALLOWED_VALUES_LIST = STOP_LOSS_STEPS_VALUE_LIST = np.concatenate(
+    (np.arange(0.25, 5.25, 0.25), np.arange(5.50, 10.50, 0.50), np.arange(11, 21, 1))
+).tolist()

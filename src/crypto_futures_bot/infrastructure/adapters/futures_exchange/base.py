@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.types import Timeframe
-from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import AccountInfo, PortfolioBalance
+from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import AccountInfo, PortfolioBalance, SymbolTicker
 
 
 class AbstractFuturesExchangeService(ABC):
@@ -22,6 +22,30 @@ class AbstractFuturesExchangeService(ABC):
 
         Returns:
             PortfolioBalance: The portfolio balance.
+        """
+
+    @abstractmethod
+    async def get_symbol_ticker(self, symbol: str) -> SymbolTicker:
+        """Get the symbol ticker from the futures exchange.
+
+        Args:
+            symbol (str): The trading pair symbol (e.g., 'BTC/USDT:USDT').
+
+        Returns:
+            SymbolTicker: The symbol ticker.
+        """
+
+    @abstractmethod
+    async def get_symbol_tickers(self, *, symbols: list[str] | None = None) -> list[SymbolTicker]:
+        """Get the list of symbol tickers from the futures exchange.
+
+        Args:
+            symbols (list[str] | None, optional):
+                The list of trading pair symbols (e.g., 'BTC/USDT:USDT').
+                Defaults to None.
+
+        Returns:
+            list[SymbolTicker]: The list of symbol tickers.
         """
 
     @abstractmethod

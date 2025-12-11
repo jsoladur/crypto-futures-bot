@@ -2,8 +2,8 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
+from crypto_futures_bot.domain.vo import TrackedCryptoCurrencyItem
 from crypto_futures_bot.domain.vo.push_notification_item import PushNotificationItem
-from crypto_futures_bot.interfaces.telegram.services.vo.tracked_crypto_currency_item import TrackedCryptoCurrencyItem
 
 
 class KeyboardsBuilder:

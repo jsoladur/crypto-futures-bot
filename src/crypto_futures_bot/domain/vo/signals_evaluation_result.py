@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 
+from crypto_futures_bot.domain.vo.tracked_crypto_currency_item import TrackedCryptoCurrencyItem
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.types import Timeframe
 
 
 @dataclass(frozen=True, kw_only=True)
 class SignalsEvaluationResult:
     timestamp: float | int
-    symbol: str
+    crypto_currency: TrackedCryptoCurrencyItem
     timeframe: Timeframe = "15m"
 
     long_entry: bool
@@ -17,4 +18,4 @@ class SignalsEvaluationResult:
 
     @property
     def cache_key(self) -> str:
-        return f"{self.symbol}_$_{self.timeframe}"
+        return f"{self.crypto_currency.currency}_$_{self.timeframe}"

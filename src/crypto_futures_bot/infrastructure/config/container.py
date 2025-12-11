@@ -33,5 +33,6 @@ class InfrastructureContainer(containers.DeclarativeContainer):
         push_notification_service=services_container.push_notification_service,
         tracked_crypto_currency_service=services_container.tracked_crypto_currency_service,
         futures_exchange_service=adapters_container.futures_exchange_service,
+        orders_analytics_service=services_container.orders_analytics_service,
         crypto_technical_analysis_service=services_container.crypto_technical_analysis_service,
     )

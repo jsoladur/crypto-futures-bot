@@ -9,7 +9,7 @@ from crypto_futures_bot.config.configuration_properties import ConfigurationProp
 from crypto_futures_bot.constants import DEFAULT_IN_MEMORY_CACHE_TTL_IN_SECONDS
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.types import Timeframe
-from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import AccountInfo, PortfolioBalance
+from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import AccountInfo, PortfolioBalance, SymbolTicker
 
 logger = logging.getLogger(__name__)
 
@@ -38,17 +38,6 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
         return AccountInfo(currency_code=self._configuration_properties.currency_code)
 
     @override
-    @backoff.on_exception(
-        backoff.constant,
-        exception=ccxt.BaseError,
-        interval=2,
-        max_tries=5,
-        jitter=backoff.full_jitter,
-        giveup=lambda e: isinstance(e, ccxt.BadRequest) or isinstance(e, ccxt.AuthenticationError),
-        on_backoff=lambda details: logger.warning(
-            f"[Retry {details['tries']}] " + f"Waiting {details['wait']:.2f}s due to {str(details['exception'])}"
-        ),
-    )
     async def get_portfolio_balance(self) -> PortfolioBalance:
         account_info = await self.get_account_info()
         spot_balance = await self._get_spot_total_balance(account_info)
@@ -76,12 +65,71 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
         return list(futures_markets.keys())
 
     @override
+    @backoff.on_exception(
+        backoff.constant,
+        exception=ccxt.BaseError,
+        interval=2,
+        max_tries=5,
+        jitter=backoff.full_jitter,
+        giveup=lambda e: isinstance(e, ccxt.BadRequest) or isinstance(e, ccxt.AuthenticationError),
+        on_backoff=lambda details: logger.warning(
+            f"[Retry {details['tries']}] " + f"Waiting {details['wait']:.2f}s due to {str(details['exception'])}"
+        ),
+    )
+    async def get_symbol_ticker(self, symbol: str) -> SymbolTicker:
+        raw_ticker = await self._futures_client.fetch_ticker(symbol)
+        return SymbolTicker(
+            timestamp=raw_ticker["timestamp"],
+            symbol=symbol,
+            close=raw_ticker["close"],
+            bid=raw_ticker["bid"],
+            ask=raw_ticker["ask"],
+        )
+
+    @override
+    @backoff.on_exception(
+        backoff.constant,
+        exception=ccxt.BaseError,
+        interval=2,
+        max_tries=5,
+        jitter=backoff.full_jitter,
+        giveup=lambda e: isinstance(e, ccxt.BadRequest) or isinstance(e, ccxt.AuthenticationError),
+        on_backoff=lambda details: logger.warning(
+            f"[Retry {details['tries']}] " + f"Waiting {details['wait']:.2f}s due to {str(details['exception'])}"
+        ),
+    )
+    async def get_symbol_tickers(self, *, symbols: list[str] | None = None) -> list[SymbolTicker]:
+        raise NotImplementedError()
+
+    @override
+    @backoff.on_exception(
+        backoff.constant,
+        exception=ccxt.BaseError,
+        interval=2,
+        max_tries=5,
+        jitter=backoff.full_jitter,
+        giveup=lambda e: isinstance(e, ccxt.BadRequest) or isinstance(e, ccxt.AuthenticationError),
+        on_backoff=lambda details: logger.warning(
+            f"[Retry {details['tries']}] " + f"Waiting {details['wait']:.2f}s due to {str(details['exception'])}"
+        ),
+    )
     async def fetch_ohlcv(self, symbol: str, *, timeframe: Timeframe = "15m", limit: int = 251) -> list[list[Any]]:
         ohlcv = await self._futures_client.fetch_ohlcv(symbol=symbol, timeframe=timeframe, limit=limit)
         return ohlcv
 
     @cachebox.cachedmethod(
         cachebox.TTLCache(0, ttl=DEFAULT_IN_MEMORY_CACHE_TTL_IN_SECONDS), key_maker=lambda _, __: "futures_markets"
+    )
+    @backoff.on_exception(
+        backoff.constant,
+        exception=ccxt.BaseError,
+        interval=2,
+        max_tries=5,
+        jitter=backoff.full_jitter,
+        giveup=lambda e: isinstance(e, ccxt.BadRequest) or isinstance(e, ccxt.AuthenticationError),
+        on_backoff=lambda details: logger.warning(
+            f"[Retry {details['tries']}] " + f"Waiting {details['wait']:.2f}s due to {str(details['exception'])}"
+        ),
     )
     async def _load_futures_markets(self) -> dict[str, dict[str, Any]]:
         account_info = await self.get_account_info()
@@ -95,6 +143,17 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
         }
         return ret
 
+    @backoff.on_exception(
+        backoff.constant,
+        exception=ccxt.BaseError,
+        interval=2,
+        max_tries=5,
+        jitter=backoff.full_jitter,
+        giveup=lambda e: isinstance(e, ccxt.BadRequest) or isinstance(e, ccxt.AuthenticationError),
+        on_backoff=lambda details: logger.warning(
+            f"[Retry {details['tries']}] " + f"Waiting {details['wait']:.2f}s due to {str(details['exception'])}"
+        ),
+    )
     async def _get_spot_total_balance(self, account_info: AccountInfo) -> float:
         spot_balances = await self._spot_client.fetch_balance()
         spot_prices = await self._get_spot_prices()
@@ -105,6 +164,17 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
                 ret += amount * spot_prices[f"{currency}/{account_info.currency_code}"]
         return ret
 
+    @backoff.on_exception(
+        backoff.constant,
+        exception=ccxt.BaseError,
+        interval=2,
+        max_tries=5,
+        jitter=backoff.full_jitter,
+        giveup=lambda e: isinstance(e, ccxt.BadRequest) or isinstance(e, ccxt.AuthenticationError),
+        on_backoff=lambda details: logger.warning(
+            f"[Retry {details['tries']}] " + f"Waiting {details['wait']:.2f}s due to {str(details['exception'])}"
+        ),
+    )
     async def _get_futures_total_balance(self, account_info: AccountInfo) -> float:
         futures_balances = await self._futures_client.fetch_balance()
         account_currency_balance = next(
@@ -120,6 +190,17 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
             ret += float(account_currency_balance.get("equity", 0.0))
         return ret
 
+    @backoff.on_exception(
+        backoff.constant,
+        exception=ccxt.BaseError,
+        interval=2,
+        max_tries=5,
+        jitter=backoff.full_jitter,
+        giveup=lambda e: isinstance(e, ccxt.BadRequest) or isinstance(e, ccxt.AuthenticationError),
+        on_backoff=lambda details: logger.warning(
+            f"[Retry {details['tries']}] " + f"Waiting {details['wait']:.2f}s due to {str(details['exception'])}"
+        ),
+    )
     async def _get_spot_prices(self) -> dict[str, float]:
         spot_tickers = await self._spot_client.fetch_tickers()
         return {symbol: ticker["last"] for symbol, ticker in spot_tickers.items()}

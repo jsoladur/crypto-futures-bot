@@ -14,6 +14,7 @@ class TasksContainer(containers.DeclarativeContainer):
 
     tracked_crypto_currency_service = providers.Dependency()
     futures_exchange_service = providers.Dependency()
+    orders_analytics_service = providers.Dependency()
     crypto_technical_analysis_service = providers.Dependency()
     push_notification_service = providers.Dependency()
 
@@ -30,5 +31,6 @@ class TasksContainer(containers.DeclarativeContainer):
         push_notification_service=push_notification_service,
         tracked_crypto_currency_service=tracked_crypto_currency_service,
         futures_exchange_service=futures_exchange_service,
+        orders_analytics_service=orders_analytics_service,
         crypto_technical_analysis_service=crypto_technical_analysis_service,
     )

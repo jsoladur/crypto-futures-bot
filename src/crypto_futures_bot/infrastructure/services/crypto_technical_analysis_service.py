@@ -28,7 +28,7 @@ class CryptoTechnicalAnalysisService:
         account_info = await self._futures_exchange_service.get_account_info()
         symbols = [crypto_currency.to_symbol(account_info) for crypto_currency in tracked_crypto_currencies]
         tickers = await self._futures_exchange_service.get_symbol_tickers(symbols=symbols)
-        ret = pydash.order_by(tickers, "base_asset")
+        ret = pydash.order_by(tickers, ["base_asset", "quote_asset"], ["asc", "asc"])
         return ret
 
     async def get_candlestick_indicators(

@@ -145,8 +145,10 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
             f"[Retry {details['tries']}] " + f"Waiting {details['wait']:.2f}s due to {str(details['exception'])}"
         ),
     )
-    async def fetch_ohlcv(self, symbol: str, *, timeframe: Timeframe = "15m", limit: int = 251) -> list[list[Any]]:
-        ohlcv = await self._futures_client.fetch_ohlcv(symbol=symbol, timeframe=timeframe, limit=limit)
+    async def fetch_ohlcv(
+        self, symbol: str, *, timeframe: Timeframe = "15m", limit: int = 251, since: int | None = None
+    ) -> list[list[Any]]:
+        ohlcv = await self._futures_client.fetch_ohlcv(symbol=symbol, timeframe=timeframe, limit=limit, since=since)
         return ohlcv
 
     @override

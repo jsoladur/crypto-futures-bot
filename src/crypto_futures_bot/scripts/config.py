@@ -13,17 +13,13 @@ from crypto_futures_bot.scripts.services import BacktestingService
 
 
 class Container(containers.DeclarativeContainer):
-    wiring_config = containers.WiringConfiguration(modules=["crypto_futures_bot.scripts.cli"])
-
     config = providers.Singleton(ConfigurationProperties)
-
     # Mocks
     telegram_service_mock = providers.Object(MagicMock())
     push_notification_service_mock = providers.Object(MagicMock())
     event_emitter_mock = providers.Object(MagicMock())
     scheduler_mock = providers.Object(MagicMock())
     tracked_crypto_currency_service_mock = providers.Object(MagicMock())
-
     # Services
     futures_exchange_service = providers.Singleton(MEXCFuturesExchangeService, configuration_properties=config)
 

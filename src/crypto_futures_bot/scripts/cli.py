@@ -18,7 +18,7 @@ app = typer.Typer()
 
 @app.command()
 def backtest(
-    currency: str = typer.Option("ETH", help="Crypto currency to backtest"),
+    currency: str = typer.Option("DOGE", help="Crypto currency to backtest"),
     days: int = typer.Option(365, help="Number of days to backtest"),
     initial_cash: float = typer.Option(3_000.0, help="Initial cash in USDT"),
     show_plot: bool = typer.Option(False, help="Show plot"),

@@ -88,3 +88,11 @@ class AbstractFuturesExchangeService(ABC):
         Returns:
             SymbolMarketConfig: The symbol market config.
         """
+
+    @abstractmethod
+    def get_taker_fee(self) -> float:
+        """Get the taker fee from the futures exchange.
+
+        Returns:
+            float: The taker fee.
+        """

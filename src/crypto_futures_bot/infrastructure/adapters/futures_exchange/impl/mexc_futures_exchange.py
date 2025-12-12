@@ -6,7 +6,7 @@ import cachebox
 import ccxt.async_support as ccxt
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
-from crypto_futures_bot.constants import DEFAULT_IN_MEMORY_CACHE_TTL_IN_SECONDS
+from crypto_futures_bot.constants import DEFAULT_IN_MEMORY_CACHE_TTL_IN_SECONDS, MEXC_FUTURES_TAKER_FEES
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.types import Timeframe
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
@@ -162,6 +162,10 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
             price_precision=int(raw_future_market["info"]["priceScale"]),
             amount_precision=int(raw_future_market["info"]["amountScale"]),
         )
+
+    @override
+    def get_taker_fee(self) -> float:
+        return MEXC_FUTURES_TAKER_FEES
 
     @cachebox.cachedmethod(
         cachebox.TTLCache(0, ttl=DEFAULT_IN_MEMORY_CACHE_TTL_IN_SECONDS), key_maker=lambda _, __: "futures_markets"

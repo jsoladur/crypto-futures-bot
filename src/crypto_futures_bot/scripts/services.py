@@ -65,7 +65,7 @@ class BacktestingService:
         BotStrategy.symbol_market_config = symbol_market_config
 
         # 5. Run Backtest
-        bt = Backtest(df, BotStrategy, cash=initial_cash, commission=0.0004)
+        bt = Backtest(df, BotStrategy, cash=initial_cash, commission=self._exchange_service.get_taker_fee())
         stats = bt.run()
 
         echo("\n--- Backtest Result ---\n")

@@ -2,6 +2,7 @@ import math
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 from crypto_futures_bot.domain.vo import CandleStickIndicators
+from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo.symbol_market_config import SymbolMarketConfig
 from crypto_futures_bot.infrastructure.services.base import AbstractService
 from crypto_futures_bot.infrastructure.services.push_notification_service import PushNotificationService
@@ -13,10 +14,12 @@ class OrdersAnalyticsService(AbstractService):
         self,
         configuration_properties: ConfigurationProperties,
         push_notification_service: PushNotificationService,
+        futures_exchange_service: AbstractFuturesExchangeService,
         telegram_service: TelegramService,
     ) -> None:
         super().__init__(push_notification_service, telegram_service)
         self._configuration_properties = configuration_properties
+        self._futures_exchange_service = futures_exchange_service
 
     def get_stop_loss_percent_value(
         self,
@@ -77,6 +80,21 @@ class OrdersAnalyticsService(AbstractService):
             ndigits=symbol_market_config.price_precision,
         )
         return take_profit_price
+
+    def calculate_break_even_price(
+        self, entry_price: float, *, symbol_market_config: SymbolMarketConfig, is_long: bool
+    ) -> float:
+        taker_fees = self._futures_exchange_service.get_taker_fee()
+        if is_long:
+            # For Longs: Exit Price must be higher to cover entry + exit fees
+            # Formula: Entry * (1 + fee) / (1 - fee)
+            fee_multiplier = (1.0 + taker_fees) / (1.0 - taker_fees)
+        else:
+            # For Shorts: Exit Price must be lower to cover entry + exit fees
+            # Formula: Entry * (1 - fee) / (1 + fee)
+            fee_multiplier = (1.0 - taker_fees) / (1.0 + taker_fees)
+        break_even_price = round(entry_price * fee_multiplier, ndigits=symbol_market_config.price_precision)
+        return break_even_price
 
     def _ceil_round(self, value: float, *, ndigits: int) -> float:
         factor = 10**ndigits

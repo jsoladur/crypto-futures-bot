@@ -28,6 +28,7 @@ class ServicesContainer(containers.DeclarativeContainer):
     orders_analytics_service = providers.Singleton(
         OrdersAnalyticsService,
         configuration_properties=configuration_properties,
+        futures_exchange_service=futures_exchange_service,
         push_notification_service=push_notification_service,
         telegram_service=telegram_service,
     )

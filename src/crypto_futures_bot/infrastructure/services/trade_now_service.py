@@ -40,6 +40,9 @@ class TradeNowService:
             take_profit_percent_value=take_profit_percent_value,
             long=PositionHints(
                 entry_price=ticker.ask_or_close,
+                break_even_price=self._orders_analytics_service.calculate_break_even_price(
+                    entry_price=ticker.ask_or_close, symbol_market_config=symbol_market_config, is_long=True
+                ),
                 is_long=True,
                 stop_loss_price=self._orders_analytics_service.get_stop_loss_price(
                     entry_price=ticker.ask_or_close,
@@ -56,6 +59,9 @@ class TradeNowService:
             ),
             short=PositionHints(
                 entry_price=ticker.bid_or_close,
+                break_even_price=self._orders_analytics_service.calculate_break_even_price(
+                    entry_price=ticker.bid_or_close, symbol_market_config=symbol_market_config, is_long=False
+                ),
                 is_long=False,
                 stop_loss_price=self._orders_analytics_service.get_stop_loss_price(
                     entry_price=ticker.bid_or_close,

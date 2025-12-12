@@ -55,35 +55,39 @@ class CryptoTechnicalAnalysisService:
     )
     async def get_technical_analysis(self, symbol: str, *, timeframe: Timeframe = "15m") -> pd.DataFrame:
         ohlcv = await self._futures_exchange_service.fetch_ohlcv(symbol=symbol, timeframe=timeframe)
-        df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
+        df = pd.DataFrame(ohlcv, columns=["timestamp", "Open", "High", "Low", "Close", "Volume"])
         df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms", utc=True)
-        df.set_index("timestamp", inplace=True)
 
         df = self._calculate_indicators(df)
+        # Drop NaN values and reset the index.
+        # This cleans the data from the shorter lookback periods of the simple indicators.
+        df.dropna(inplace=True)
+        df.reset_index(drop=True, inplace=True)
+        df.set_index("timestamp", inplace=True)
         return df
 
     def _calculate_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
         # EMAs
-        df["ema50"] = EMAIndicator(df["close"], window=50).ema_indicator()  # MACD
-        macd = MACD(df["close"])
+        df["ema50"] = EMAIndicator(df["Close"], window=50).ema_indicator()  # MACD
+        macd = MACD(df["Close"])
         df["macd_line"] = macd.macd()
         df["macd_signal"] = macd.macd_signal()
         df["macd_hist"] = macd.macd_diff()
 
         # Stochastic RSI
-        stoch_rsi = StochRSIIndicator(df["close"])
+        stoch_rsi = StochRSIIndicator(df["Close"])
         df["stoch_rsi"] = stoch_rsi.stochrsi()
         df["stoch_rsi_k"] = stoch_rsi.stochrsi_k()
         df["stoch_rsi_d"] = stoch_rsi.stochrsi_d()
 
         # Relative Strength Index (RSI)
-        df["rsi"] = RSIIndicator(df["close"], window=14).rsi()
+        df["rsi"] = RSIIndicator(df["Close"]).rsi()
 
         # Average True Range (ATR)
-        df["atr"] = AverageTrueRange(df["high"], df["low"], df["close"], window=14).average_true_range()
+        df["atr"] = AverageTrueRange(df["High"], df["Low"], df["Close"]).average_true_range()
 
         # Relative Volume (RVOL)
-        df["volume_sma"] = df["volume"].rolling(window=20).mean()
-        df["relative_volume"] = df["volume"] / df["volume_sma"]
+        df["volume_sma"] = df["Volume"].rolling(window=20).mean()
+        df["relative_volume"] = df["Volume"] / df["volume_sma"]
         return df

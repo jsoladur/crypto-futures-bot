@@ -18,7 +18,7 @@ class OrdersAnalyticsService(AbstractService):
         super().__init__(push_notification_service, telegram_service)
         self._configuration_properties = configuration_properties
 
-    def calculate_stop_loss_percent_value(
+    def get_stop_loss_percent_value(
         self,
         avg_entry_price: float,
         *,
@@ -32,7 +32,23 @@ class OrdersAnalyticsService(AbstractService):
         stop_loss_percent_value = abs(self._ceil_round((1 - (stop_price / avg_entry_price)) * 100, ndigits=2))
         return stop_loss_percent_value
 
-    def calculate_take_profit_percent_value(
+    def get_stop_loss_price(
+        self,
+        entry_price: float,
+        *,
+        stop_loss_percent_value: float,
+        is_long: bool,
+        symbol_market_config: SymbolMarketConfig,
+    ) -> float:
+        stop_loss_price = round(
+            entry_price * (1 - stop_loss_percent_value / 100)
+            if is_long
+            else entry_price * (1 + stop_loss_percent_value / 100),
+            ndigits=symbol_market_config.price_precision,
+        )
+        return stop_loss_price
+
+    def get_take_profit_percent_value(
         self,
         avg_entry_price: float,
         *,
@@ -45,6 +61,22 @@ class OrdersAnalyticsService(AbstractService):
         )
         take_profit_percent_value = abs(self._floor_round((1 - (take_profit_price / avg_entry_price)) * 100, ndigits=2))
         return take_profit_percent_value
+
+    def get_take_profit_price(
+        self,
+        entry_price: float,
+        *,
+        take_profit_percent_value: float,
+        is_long: bool,
+        symbol_market_config: SymbolMarketConfig,
+    ) -> float:
+        take_profit_price = round(
+            entry_price * (1 + take_profit_percent_value / 100)
+            if is_long
+            else entry_price * (1 - take_profit_percent_value / 100),
+            ndigits=symbol_market_config.price_precision,
+        )
+        return take_profit_price
 
     def _ceil_round(self, value: float, *, ndigits: int) -> float:
         factor = 10**ndigits

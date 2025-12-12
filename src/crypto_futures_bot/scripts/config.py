@@ -13,7 +13,7 @@ from crypto_futures_bot.scripts.services import BacktestingService
 
 
 class Container(containers.DeclarativeContainer):
-    config = providers.Singleton(ConfigurationProperties)
+    configuration_properties = providers.Singleton(ConfigurationProperties)
     # Mocks
     telegram_service_mock = providers.Object(MagicMock())
     push_notification_service_mock = providers.Object(MagicMock())
@@ -21,7 +21,9 @@ class Container(containers.DeclarativeContainer):
     scheduler_mock = providers.Object(MagicMock())
     tracked_crypto_currency_service_mock = providers.Object(MagicMock())
     # Services
-    futures_exchange_service = providers.Singleton(MEXCFuturesExchangeService, configuration_properties=config)
+    futures_exchange_service = providers.Singleton(
+        MEXCFuturesExchangeService, configuration_properties=configuration_properties
+    )
 
     crypto_technical_analysis_service = providers.Singleton(
         CryptoTechnicalAnalysisService,
@@ -31,14 +33,15 @@ class Container(containers.DeclarativeContainer):
 
     orders_analytics_service = providers.Singleton(
         OrdersAnalyticsService,
-        configuration_properties=config,
+        configuration_properties=configuration_properties,
+        futures_exchange_service=futures_exchange_service,
         push_notification_service=push_notification_service_mock,
         telegram_service=telegram_service_mock,
     )
 
     signals_task_service = providers.Singleton(
         SignalsTaskService,
-        configuration_properties=config,
+        configuration_properties=configuration_properties,
         telegram_service=telegram_service_mock,
         push_notification_service=push_notification_service_mock,
         event_emitter=event_emitter_mock,
@@ -51,7 +54,7 @@ class Container(containers.DeclarativeContainer):
 
     backtesting_service = providers.Singleton(
         BacktestingService,
-        configuration_properties=config,
+        configuration_properties=configuration_properties,
         futures_exchange_service=futures_exchange_service,
         crypto_technical_analysis_service=crypto_technical_analysis_service,
         orders_analytics_service=orders_analytics_service,

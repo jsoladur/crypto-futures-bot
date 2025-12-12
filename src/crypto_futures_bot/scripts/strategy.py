@@ -25,6 +25,7 @@ class BotStrategy(Strategy):
 
         prev_series = self.data.df.iloc[-2]
         last_series = self.data.df.iloc[-1]
+        current_price = self.data.Close[-1]
 
         prev_candle = CandleStickIndicators.from_series(symbol="TEST", index=CandleStickEnum.PREV, series=prev_series)
         last_candle = CandleStickIndicators.from_series(symbol="TEST", index=CandleStickEnum.LAST, series=last_series)
@@ -38,9 +39,12 @@ class BotStrategy(Strategy):
         entry_price = self.data.Close[-1]
         # Exit logic
         if self.position:
-            if self.position.is_long and is_long_exit:
+            break_even_price = self.orders_service.calculate_break_even_price(
+                entry_price=entry_price, symbol_market_config=self.symbol_market_config, is_long=self.position.is_long
+            )
+            if self.position.is_long and is_long_exit and current_price > break_even_price:
                 self.position.close()
-            elif self.position.is_short and is_short_exit:
+            elif self.position.is_short and is_short_exit and current_price < break_even_price:
                 self.position.close()
 
         # Entry logic

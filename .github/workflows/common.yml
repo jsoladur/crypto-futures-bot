@@ -64,5 +64,5 @@ jobs:
           context: .
           push: ${{ inputs.should_push }}
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/crypto-stop-loss-bot:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/crypto-stop-loss-bot:${{ env.APP_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/crypto-futures-bot:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/crypto-futures-bot:${{ env.APP_VERSION }}

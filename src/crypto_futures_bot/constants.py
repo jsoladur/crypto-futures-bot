@@ -17,3 +17,5 @@ TRIGGER_BUY_ACTION_EVENT_NAME = "trigger_buy_action"
 RISK_MANAGEMENT_ALLOWED_VALUES_LIST = STOP_LOSS_STEPS_VALUE_LIST = np.concatenate(
     (np.arange(0.25, 5.25, 0.25), np.arange(5.50, 10.50, 0.50), np.arange(11, 21, 1))
 ).tolist()
+
+MEXC_FUTURES_TAKER_FEES = 0.0004

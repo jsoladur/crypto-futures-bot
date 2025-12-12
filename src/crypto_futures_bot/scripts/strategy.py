@@ -1,6 +1,5 @@
 from typing import Any
 
-import pandas as pd
 from backtesting import Strategy
 
 from crypto_futures_bot.domain.enums import CandleStickEnum
@@ -24,23 +23,8 @@ class BotStrategy(Strategy):
         if len(self.data) < 2:
             return
 
-        def get_series(idx):
-            # idx is -1 (last) or -2 (prev)
-            timestamp = self.data.index[idx]
-            return pd.Series(
-                {
-                    "ema50": self.data.ema50[idx],
-                    "macd_hist": self.data.macd_hist[idx],
-                    "stoch_rsi_k": self.data.stoch_rsi_k[idx],
-                    "stoch_rsi_d": self.data.stoch_rsi_d[idx],
-                    "close": self.data.Close[idx],
-                    "atr": self.data.atr[idx],
-                    "timestamp": timestamp,
-                }
-            )
-
-        prev_series = get_series(-2)
-        last_series = get_series(-1)
+        prev_series = self.data.df.iloc[-2]
+        last_series = self.data.df.iloc[-1]
 
         prev_candle = CandleStickIndicators.from_series(symbol="TEST", index=CandleStickEnum.PREV, series=prev_series)
         last_candle = CandleStickIndicators.from_series(symbol="TEST", index=CandleStickEnum.LAST, series=last_series)
@@ -51,9 +35,7 @@ class BotStrategy(Strategy):
         is_short_entry = self.signals_service._is_short_entry(prev_candle, last_candle)
         is_long_exit = self.signals_service._is_long_exit(prev_candle, last_candle)
         is_short_exit = self.signals_service._is_short_exit(prev_candle, last_candle)
-
         entry_price = self.data.Close[-1]
-
         # Exit logic
         if self.position:
             if self.position.is_long and is_long_exit:
@@ -74,7 +56,6 @@ class BotStrategy(Strategy):
                     last_candlestick_indicators=last_candle,
                     symbol_market_config=self.symbol_market_config,
                 )
-
                 sl_price = self.orders_service.get_stop_loss_price(
                     entry_price=entry_price,
                     stop_loss_percent_value=sl_pct,
@@ -87,9 +68,7 @@ class BotStrategy(Strategy):
                     is_long=True,
                     symbol_market_config=self.symbol_market_config,
                 )
-
                 self.buy(sl=sl_price, tp=tp_price)
-
             elif is_short_entry:
                 sl_pct = self.orders_service.get_stop_loss_percent_value(
                     avg_entry_price=entry_price,

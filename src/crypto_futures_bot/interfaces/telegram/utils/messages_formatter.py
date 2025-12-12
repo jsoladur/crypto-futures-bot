@@ -45,14 +45,16 @@ class MessagesFormatter:
         long_lines = [
             html.bold("📈 LONG Position:"),
             f"   🎯 {html.italic('Entry')} = {html.code(hints.long.entry_price)} {fiat_currency}",
+            f"   ⚖️ {html.italic('Break Even')} = {html.code(hints.long.break_even_price)} {fiat_currency}",
             f"   🔴 {html.italic('Stop Loss')} = {html.code(hints.long.stop_loss_price)} {fiat_currency}",
-            f"   🟢 {html.italic('Take Profit')} = {html.code(hints.long.take_profit_price)} {fiat_currency}",
+            f"   🏆 {html.italic('Take Profit')} = {html.code(hints.long.take_profit_price)} {fiat_currency}",
         ]
         short_lines = [
             html.bold("📉 SHORT Position:"),
             f"   🎯 {html.italic('Entry')} = {html.code(hints.short.entry_price)} {fiat_currency}",
+            f"   ⚖️ {html.italic('Break Even')} = {html.code(hints.short.break_even_price)} {fiat_currency}",
             f"   🔴 {html.italic('Stop Loss')} = {html.code(hints.short.stop_loss_price)} {fiat_currency}",
-            f"   🟢 {html.italic('Take Profit')} = {html.code(hints.short.take_profit_price)} {fiat_currency}",
+            f"   🏆 {html.italic('Take Profit')} = {html.code(hints.short.take_profit_price)} {fiat_currency}",
         ]
         message = "\n".join(header + params_lines + long_lines + short_lines)
         return message

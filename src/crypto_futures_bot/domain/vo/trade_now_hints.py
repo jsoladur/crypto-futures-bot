@@ -8,6 +8,7 @@ from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import Symbo
 class PositionHints:
     is_long: bool
     entry_price: float
+    break_even_price: float
     stop_loss_price: float
     take_profit_price: float
 

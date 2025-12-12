@@ -232,6 +232,9 @@ class SignalsTaskService(AbstractTaskService):
             is_long=is_long,
             symbol_market_config=symbol_market_config,
         )
+        break_even_price = self._orders_analytics_service.calculate_break_even_price(
+            entry_price=entry_price, symbol_market_config=symbol_market_config, is_long=is_long
+        )
         icon = "🟢" if is_long else "🔴"
         signal_type = "LONG" if is_long else "SHORT"
         message_lines = [
@@ -239,6 +242,7 @@ class SignalsTaskService(AbstractTaskService):
             "================",
             f"🏷️ {html.bold('Symbol:')} {html.code(signals_evaluation_result.crypto_currency.to_symbol(account_info=account_info))}",  # noqa: E501
             f"🎯 {html.bold('Entry Price:')} {html.code(entry_price)} {account_info.currency_code}",
+            f"⚖️ {html.bold('Break Even Price:')} {html.code(break_even_price)} {account_info.currency_code}",
             f"🛑 {html.bold('Stop Loss:')} {html.code(stop_loss_price)} {account_info.currency_code} ({stop_loss_percent_value} %)",  # noqa: E501
             f"💰 {html.bold('Take Profit:')} {html.code(take_profit_price)} {account_info.currency_code} ({take_profit_percent_value} %)",  # noqa: E501
         ]

@@ -17,7 +17,7 @@ class TrackedCryptoCurrencyService:
 
     @transactional(read_only=True)
     async def find_all(self, *, session: AsyncSession | None = None) -> list[TrackedCryptoCurrencyItem]:
-        result = await session.execute(select(TrackedCryptoCurrency))
+        result = await session.execute(select(TrackedCryptoCurrency).order_by(TrackedCryptoCurrency.currency))
         entities = result.scalars().all()
         return [TrackedCryptoCurrencyItem(currency=entity.currency) for entity in entities]
 

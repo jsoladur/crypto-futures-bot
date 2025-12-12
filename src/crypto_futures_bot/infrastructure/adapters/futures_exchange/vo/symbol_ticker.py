@@ -10,6 +10,16 @@ class SymbolTicker:
     ask: float | int | None = None
 
     @property
+    def base_asset(self) -> str:
+        return self.symbol.split("/")[0]
+
+    @property
+    def quote_asset(self) -> str:
+        base_and_contract = self.symbol.split("/")[1]
+        quote_asset = base_and_contract.split(":")[0]
+        return quote_asset
+
+    @property
     def ask_or_close(self) -> float | int:
         """
         Returns the ask price if available, otherwise returns the close price.

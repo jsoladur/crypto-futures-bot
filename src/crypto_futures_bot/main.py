@@ -10,11 +10,17 @@ from dependency_injector.providers import Singleton
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 from crypto_futures_bot.config.dependencies import get_application_container
+from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.database.alembic import run_migrations_async
 from crypto_futures_bot.infrastructure.services.base import AbstractEventHandlerService
 from crypto_futures_bot.introspection import load_modules_by_folder
 
-logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO,
+    stream=sys.stdout,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    force=True,  # re-apply your config after Alembic wipes it
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,14 +40,11 @@ async def main() -> None:
     version = application_container.application_version()
     dp: Dispatcher = application_container.interfaces_container().telegram_container().dispatcher()
     scheduler: BaseScheduler = application_container.infrastructure_container().tasks_container().scheduler()
+    futures_exchange_service: AbstractFuturesExchangeService = (
+        application_container.infrastructure_container().adapters_container().futures_exchange_service()
+    )
     logger.info(f"Initializing Crypto Futures Bot :: v{version}")
     await run_migrations_async(configuration_properties)
-    logging.basicConfig(
-        level=logging.INFO,
-        stream=sys.stdout,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-        force=True,  # re-apply your config after Alembic wipes it
-    )
     # Load Telegram commands dynamically
     _load_telegram_commands()
     # Background task manager initialization
@@ -56,7 +59,9 @@ async def main() -> None:
         if isclass(provider.provides) and issubclass(provider.provides, AbstractEventHandlerService):
             dependency_object = provider()
             dependency_object.configure()
-    logger.info("Application startup complete.")
+    logger.info("Futures exchange service initialization...")
+    await futures_exchange_service.post_init()
+    logger.info("Futures exchange service initialized...")
     await dp.start_polling(telegram_bot)
 
 

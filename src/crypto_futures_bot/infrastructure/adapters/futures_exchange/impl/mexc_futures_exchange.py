@@ -39,6 +39,22 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
         self._futures_client = ccxt.mexc({**commons_options, "options": {"defaultType": "swap"}})
 
     @override
+    @backoff.on_exception(
+        backoff.constant,
+        exception=ccxt.BaseError,
+        interval=2,
+        max_tries=5,
+        jitter=backoff.full_jitter,
+        giveup=lambda e: isinstance(e, ccxt.BadRequest) or isinstance(e, ccxt.AuthenticationError),
+        on_backoff=lambda details: logger.warning(
+            f"[Retry {details['tries']}] " + f"Waiting {details['wait']:.2f}s due to {str(details['exception'])}"
+        ),
+    )
+    async def post_init(self) -> None:
+        await self._spot_client.load_markets()
+        await self._futures_client.load_markets()
+
+    @override
     async def get_account_info(self, *, client: Any | None = None) -> AccountInfo:
         return AccountInfo(currency_code=self._configuration_properties.currency_code)
 
@@ -67,7 +83,7 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
     )
     async def get_crypto_currencies(self) -> list[str]:
         futures_markets = await self._load_futures_markets()
-        return list(futures_markets.keys())
+        return sorted(list(futures_markets.keys()))
 
     @override
     @backoff.on_exception(
@@ -104,7 +120,18 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
         ),
     )
     async def get_symbol_tickers(self, *, symbols: list[str] | None = None) -> list[SymbolTicker]:
-        raise NotImplementedError()
+        raw_tickers = await self._futures_client.fetch_tickers(symbols=symbols)
+        ret = [
+            SymbolTicker(
+                timestamp=raw_ticker["timestamp"],
+                symbol=raw_ticker["symbol"],
+                close=raw_ticker["close"],
+                bid=raw_ticker["bid"],
+                ask=raw_ticker["ask"],
+            )
+            for raw_ticker in raw_tickers.values()
+        ]
+        return ret
 
     @override
     @backoff.on_exception(

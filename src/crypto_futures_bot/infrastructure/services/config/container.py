@@ -17,7 +17,9 @@ class ServicesContainer(containers.DeclarativeContainer):
         TrackedCryptoCurrencyService, futures_exchange_service=futures_exchange_service
     )
     crypto_technical_analysis_service = providers.Singleton(
-        CryptoTechnicalAnalysisService, futures_exchange_service=futures_exchange_service
+        CryptoTechnicalAnalysisService,
+        tracked_crypto_currency_service=tracked_crypto_currency_service,
+        futures_exchange_service=futures_exchange_service,
     )
     push_notification_service = providers.Singleton(
         PushNotificationService, configuration_properties=configuration_properties

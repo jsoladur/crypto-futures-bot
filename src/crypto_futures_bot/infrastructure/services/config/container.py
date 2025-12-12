@@ -4,6 +4,7 @@ from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_servic
 from crypto_futures_bot.infrastructure.services.orders_analytics_service import OrdersAnalyticsService
 from crypto_futures_bot.infrastructure.services.push_notification_service import PushNotificationService
 from crypto_futures_bot.infrastructure.services.tracked_crypto_currency_service import TrackedCryptoCurrencyService
+from crypto_futures_bot.infrastructure.services.trade_now_service import TradeNowService
 
 
 class ServicesContainer(containers.DeclarativeContainer):
@@ -29,4 +30,10 @@ class ServicesContainer(containers.DeclarativeContainer):
         configuration_properties=configuration_properties,
         push_notification_service=push_notification_service,
         telegram_service=telegram_service,
+    )
+    trade_now_service = providers.Singleton(
+        TradeNowService,
+        futures_exchange_service=futures_exchange_service,
+        crypto_technical_analysis_service=crypto_technical_analysis_service,
+        orders_analytics_service=orders_analytics_service,
     )

@@ -53,8 +53,8 @@ class CryptoTechnicalAnalysisService:
         jitter=backoff.random_jitter,
         on_backoff=backoff_on_backoff_handler,
     )
-    async def get_technical_analysis(self, symbol: str) -> pd.DataFrame:
-        ohlcv = await self._futures_exchange_service.fetch_ohlcv(symbol=symbol)
+    async def get_technical_analysis(self, symbol: str, *, timeframe: Timeframe = "15m") -> pd.DataFrame:
+        ohlcv = await self._futures_exchange_service.fetch_ohlcv(symbol=symbol, timeframe=timeframe)
         df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
         df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms", utc=True)
         df.set_index("timestamp", inplace=True)

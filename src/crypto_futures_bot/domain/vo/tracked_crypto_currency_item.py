@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import AccountInfo
@@ -9,3 +11,7 @@ class TrackedCryptoCurrencyItem:
 
     def to_symbol(self, account_info: AccountInfo) -> str:
         return f"{self.currency}/{account_info.currency_code}:{account_info.currency_code}"
+
+    @staticmethod
+    def from_currency(currency: str) -> TrackedCryptoCurrencyItem:
+        return TrackedCryptoCurrencyItem(currency=currency)

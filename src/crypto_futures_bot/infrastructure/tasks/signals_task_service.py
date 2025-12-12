@@ -210,27 +210,27 @@ class SignalsTaskService(AbstractTaskService):
             crypto_currency=signals_evaluation_result.crypto_currency.currency
         )
         entry_price = symbol_ticker.ask_or_close if is_long else symbol_ticker.bid_or_close
-        stop_loss_percent_value = self._orders_analytics_service.calculate_stop_loss_percent_value(
+        stop_loss_percent_value = self._orders_analytics_service.get_stop_loss_percent_value(
             avg_entry_price=entry_price,
             last_candlestick_indicators=last_candle,
             symbol_market_config=symbol_market_config,
         )
-        take_profit_percent_value = self._orders_analytics_service.calculate_take_profit_percent_value(
+        take_profit_percent_value = self._orders_analytics_service.get_take_profit_percent_value(
             avg_entry_price=entry_price,
             last_candlestick_indicators=last_candle,
             symbol_market_config=symbol_market_config,
         )
-        stop_loss_price = round(
-            entry_price * (1 - stop_loss_percent_value / 100)
-            if is_long
-            else entry_price * (1 + stop_loss_percent_value / 100),
-            ndigits=symbol_market_config.price_precision,
+        stop_loss_price = self._orders_analytics_service.get_stop_loss_price(
+            entry_price=entry_price,
+            stop_loss_percent_value=stop_loss_percent_value,
+            is_long=is_long,
+            symbol_market_config=symbol_market_config,
         )
-        take_profit_price = round(
-            entry_price * (1 + take_profit_percent_value / 100)
-            if is_long
-            else entry_price * (1 - take_profit_percent_value / 100),
-            ndigits=symbol_market_config.price_precision,
+        take_profit_price = self._orders_analytics_service.get_take_profit_price(
+            entry_price=entry_price,
+            take_profit_percent_value=take_profit_percent_value,
+            is_long=is_long,
+            symbol_market_config=symbol_market_config,
         )
         icon = "🟢" if is_long else "🔴"
         signal_type = "LONG" if is_long else "SHORT"
@@ -239,8 +239,8 @@ class SignalsTaskService(AbstractTaskService):
             "================",
             f"🏷️ {html.bold('Symbol:')} {html.code(signals_evaluation_result.crypto_currency.to_symbol(account_info=account_info))}",  # noqa: E501
             f"🎯 {html.bold('Entry Price:')} {html.code(f'{entry_price} {account_info.currency_code}')}",
-            f"🛑 {html.bold('Stop Loss:')} {html.code(f'{stop_loss_price} {account_info.currency_code}')}",
-            f"💰 {html.bold('Take Profit:')} {html.code(f'{take_profit_price} {account_info.currency_code}')}",
+            f"🛑 {html.bold('Stop Loss:')} {html.code(f'{stop_loss_price} {account_info.currency_code}')} ({stop_loss_percent_value} %)",  # noqa: E501
+            f"💰 {html.bold('Take Profit:')} {html.code(f'{take_profit_price} {account_info.currency_code}')} ({take_profit_percent_value} %)",  # noqa: E501
         ]
         message = "\n".join(message_lines)
         await self._notify_alert(telegram_chat_ids=chat_ids, body_message=message)

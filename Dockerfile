@@ -10,6 +10,7 @@ ENV \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
     sqlite3 \
+    procps \
     && rm -rf /var/lib/apt/lists/*
 # ==================================================================
 FROM base as build

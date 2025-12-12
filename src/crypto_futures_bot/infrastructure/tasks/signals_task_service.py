@@ -281,42 +281,82 @@ class SignalsTaskService(AbstractTaskService):
         return is_new_signals, previous_signals
 
     def _is_long_entry(self, prev_candle: CandleStickIndicators, last_candle: CandleStickIndicators) -> bool:
-        return (
-            last_candle.closing_price > last_candle.ema50  # Closing price is above the 50-period EMA
-            and last_candle.macd_hist > 0  # MACD histogram is positive
-            and last_candle.macd_hist > prev_candle.macd_hist  # MACD histogram is increasing
-            and prev_candle.stoch_rsi_k <= prev_candle.stoch_rsi_d  # K < D (cross)
-            and last_candle.stoch_rsi_k > last_candle.stoch_rsi_d  # K > D (cross)
-            and prev_candle.stoch_rsi_k < 0.20  # oversold area
+        # 1. Trend Filter: Price is effectively bullish
+        is_trend_bullish = last_candle.closing_price > last_candle.ema50
+
+        # 2. Trigger: StochRSI Crossover (Golden Cross)
+        is_stoch_cross_up = (
+            prev_candle.stoch_rsi_k <= prev_candle.stoch_rsi_d and last_candle.stoch_rsi_k > last_candle.stoch_rsi_d
         )
+
+        # 3. Filter: Relaxed Oversold condition
+        # In strong trends, a dip to 0.40 is often enough. 0.20 is too strict.
+        is_oversold = prev_candle.stoch_rsi_k < 0.40
+
+        # 4. Momentum Confirmation (OPTIONAL - REMOVED MACD HIST > 0)
+        # Instead of requiring MACD Hist > 0, we just ensure we aren't crashing.
+        # You could ensure the MACD Histogram is simply rising (ticking up)
+        is_momentum_recovering = last_candle.macd_hist > prev_candle.macd_hist
+
+        return is_trend_bullish and is_stoch_cross_up and is_oversold and is_momentum_recovering
+
+    def _is_long_entry(self, prev_candle: CandleStickIndicators, last_candle: CandleStickIndicators) -> bool:
+        # TREND: Price above EMA 50
+        trend_ok = last_candle.closing_price > last_candle.ema50
+
+        # TRIGGER: Stoch RSI Cross up
+        stoch_cross = (
+            prev_candle.stoch_rsi_k <= prev_candle.stoch_rsi_d and last_candle.stoch_rsi_k > last_candle.stoch_rsi_d
+        )
+
+        # FILTER: Relaxed oversold (0.35 gives you more entries than 0.20)
+        stoch_condition = prev_candle.stoch_rsi_k < 0.35
+
+        # FILTER: MACD merely needs to be improving, not strictly positive
+        # This catches the bottom of the V-shape recovery
+        macd_improving = last_candle.macd_hist > prev_candle.macd_hist
+
+        return trend_ok and stoch_cross and stoch_condition and macd_improving
 
     def _is_long_exit(self, prev_candle: CandleStickIndicators, last_candle: CandleStickIndicators) -> bool:
-        return (
-            last_candle.macd_hist < 0  # MACD histogram is negative
-            and last_candle.macd_hist < prev_candle.macd_hist  # MACD histogram is decreasing
-            and prev_candle.stoch_rsi_k >= prev_candle.stoch_rsi_d  # K > D (cross)
-            and last_candle.stoch_rsi_k < last_candle.stoch_rsi_d  # K < D (cross)
-            and prev_candle.stoch_rsi_k > 0.80  # overbought area
+        # EXIT 1: Technical Overbought Cross (Take Profit on Scalp)
+        stoch_exit = (
+            prev_candle.stoch_rsi_k >= prev_candle.stoch_rsi_d
+            and last_candle.stoch_rsi_k < last_candle.stoch_rsi_d
+            and prev_candle.stoch_rsi_k > 0.80
         )
+
+        # EXIT 2: Trend Failure (Stop the bleeding early)
+        # If MACD histogram flips red significantly, momentum is lost
+        momentum_lost = last_candle.macd_hist < 0
+
+        return stoch_exit or momentum_lost
 
     def _is_short_entry(self, prev_candle: CandleStickIndicators, last_candle: CandleStickIndicators) -> bool:
-        return (
-            last_candle.closing_price < last_candle.ema50  # Closing price is below the 50-period EMA
-            and last_candle.macd_hist < 0  # MACD histogram is negative
-            and last_candle.macd_hist < prev_candle.macd_hist  # MACD histogram is decreasing
-            and prev_candle.stoch_rsi_k >= prev_candle.stoch_rsi_d  # K > D (cross)
-            and last_candle.stoch_rsi_k < last_candle.stoch_rsi_d  # K < D (cross)
-            and prev_candle.stoch_rsi_k > 0.80  # overbought area
+        trend_ok = last_candle.closing_price < last_candle.ema50
+
+        stoch_cross = (
+            prev_candle.stoch_rsi_k >= prev_candle.stoch_rsi_d and last_candle.stoch_rsi_k < last_candle.stoch_rsi_d
         )
 
+        # Relaxed overbought to 0.65
+        stoch_condition = prev_candle.stoch_rsi_k > 0.65
+
+        # MACD Histogram is falling (becoming more negative)
+        macd_worsening = last_candle.macd_hist < prev_candle.macd_hist
+
+        return trend_ok and stoch_cross and stoch_condition and macd_worsening
+
     def _is_short_exit(self, prev_candle: CandleStickIndicators, last_candle: CandleStickIndicators) -> bool:
-        return (
-            last_candle.macd_hist > 0  # MACD histogram is positive
-            and last_candle.macd_hist > prev_candle.macd_hist  # MACD histogram is increasing
-            and prev_candle.stoch_rsi_k <= prev_candle.stoch_rsi_d  # K < D (cross)
-            and last_candle.stoch_rsi_k > last_candle.stoch_rsi_d  # K > D (cross)
-            and prev_candle.stoch_rsi_k < 0.20  # oversold area
+        stoch_exit = (
+            prev_candle.stoch_rsi_k <= prev_candle.stoch_rsi_d
+            and last_candle.stoch_rsi_k > last_candle.stoch_rsi_d
+            and prev_candle.stoch_rsi_k < 0.20
         )
+
+        momentum_lost = last_candle.macd_hist > 0
+
+        return stoch_exit or momentum_lost
 
     async def _notify_alert(self, telegram_chat_ids: list[str], body_message: str) -> None:
         await asyncio.gather(

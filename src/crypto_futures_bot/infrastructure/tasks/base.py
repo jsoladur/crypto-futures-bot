@@ -8,13 +8,21 @@ from apscheduler.triggers.base import BaseTrigger
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 from crypto_futures_bot.domain.enums import TaskTypeEnum
 from crypto_futures_bot.infrastructure.services.base import AbstractService
+from crypto_futures_bot.infrastructure.services.push_notification_service import PushNotificationService
+from crypto_futures_bot.interfaces.telegram.services.telegram_service import TelegramService
 
 logger = logging.getLogger(__name__)
 
 
 class AbstractTaskService(AbstractService, metaclass=ABCMeta):
-    def __init__(self, configuration_properties: ConfigurationProperties, scheduler: AsyncIOScheduler) -> None:
-        super().__init__()
+    def __init__(
+        self,
+        configuration_properties: ConfigurationProperties,
+        scheduler: AsyncIOScheduler,
+        push_notification_service: PushNotificationService,
+        telegram_service: TelegramService,
+    ) -> None:
+        super().__init__(push_notification_service, telegram_service)
         self._configuration_properties = configuration_properties
         self._scheduler = scheduler
         self._job: Job | None = None

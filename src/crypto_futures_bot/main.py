@@ -36,6 +36,12 @@ async def main() -> None:
     scheduler: BaseScheduler = application_container.infrastructure_container().tasks_container().scheduler()
     logger.info(f"Initializing Crypto Futures Bot :: v{version}")
     await run_migrations_async(configuration_properties)
+    logging.basicConfig(
+        level=logging.INFO,
+        stream=sys.stdout,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        force=True,  # re-apply your config after Alembic wipes it
+    )
     # Load Telegram commands dynamically
     _load_telegram_commands()
     # Background task manager initialization

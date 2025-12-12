@@ -26,5 +26,13 @@ class InfrastructureContainer(containers.DeclarativeContainer):
         telegram_service=telegram_service,
     )
     tasks_container = providers.Container(
-        TasksContainer, configuration_properties=configuration_properties, event_emitter=event_emitter
+        TasksContainer,
+        configuration_properties=configuration_properties,
+        event_emitter=event_emitter,
+        telegram_service=telegram_service,
+        push_notification_service=services_container.push_notification_service,
+        tracked_crypto_currency_service=services_container.tracked_crypto_currency_service,
+        futures_exchange_service=adapters_container.futures_exchange_service,
+        orders_analytics_service=services_container.orders_analytics_service,
+        crypto_technical_analysis_service=services_container.crypto_technical_analysis_service,
     )

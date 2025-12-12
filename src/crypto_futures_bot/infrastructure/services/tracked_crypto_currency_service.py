@@ -3,10 +3,10 @@ import logging
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from crypto_futures_bot.domain.vo import TrackedCryptoCurrencyItem
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.database.models.tracked_crypto_currency import TrackedCryptoCurrency
 from crypto_futures_bot.infrastructure.services.decorators import transactional
-from crypto_futures_bot.interfaces.telegram.services.vo.tracked_crypto_currency_item import TrackedCryptoCurrencyItem
 
 logger = logging.getLogger(__name__)
 

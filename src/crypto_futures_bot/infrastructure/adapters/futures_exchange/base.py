@@ -2,7 +2,12 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.types import Timeframe
-from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo.portfolio_balance import PortfolioBalance
+from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
+    AccountInfo,
+    PortfolioBalance,
+    SymbolMarketConfig,
+    SymbolTicker,
+)
 
 
 class AbstractFuturesExchangeService(ABC):
@@ -10,11 +15,42 @@ class AbstractFuturesExchangeService(ABC):
         pass
 
     @abstractmethod
-    def get_portfolio_balance(self) -> PortfolioBalance:
+    async def get_account_info(self, *, client: Any | None = None) -> AccountInfo:
+        """Get the account info from the futures exchange.
+
+        Returns:
+            AccountInfo: The account info."""
+
+    @abstractmethod
+    async def get_portfolio_balance(self) -> PortfolioBalance:
         """Get the portfolio balance from the futures exchange.
 
         Returns:
             PortfolioBalance: The portfolio balance.
+        """
+
+    @abstractmethod
+    async def get_symbol_ticker(self, symbol: str) -> SymbolTicker:
+        """Get the symbol ticker from the futures exchange.
+
+        Args:
+            symbol (str): The trading pair symbol (e.g., 'BTC/USDT:USDT').
+
+        Returns:
+            SymbolTicker: The symbol ticker.
+        """
+
+    @abstractmethod
+    async def get_symbol_tickers(self, *, symbols: list[str] | None = None) -> list[SymbolTicker]:
+        """Get the list of symbol tickers from the futures exchange.
+
+        Args:
+            symbols (list[str] | None, optional):
+                The list of trading pair symbols (e.g., 'BTC/USDT:USDT').
+                Defaults to None.
+
+        Returns:
+            list[SymbolTicker]: The list of symbol tickers.
         """
 
     @abstractmethod
@@ -26,14 +62,25 @@ class AbstractFuturesExchangeService(ABC):
         """
 
     @abstractmethod
-    async def fetch_ohlcv(self, symbol: str, timeframe: Timeframe, limit: int = 251) -> list[list[Any]]:
+    async def fetch_ohlcv(self, symbol: str, *, timeframe: Timeframe = "15m", limit: int = 251) -> list[list[Any]]:
         """Fetches OHLCV (Open, High, Low, Close, Volume) data for a given symbol and timeframe.
 
         Args:
             symbol (str): The trading pair symbol (e.g., 'BTC/USDT').
-            timeframe (Timeframe): The timeframe for the OHLCV data.
+            timeframe (Timeframe, optional): The timeframe for the OHLCV data. Defaults to "15m".
             limit (int, optional): The maximum number of data points to fetch. Defaults to 251.
 
         Returns:
             list[list[Any]]: A list of OHLCV data points.
+        """
+
+    @abstractmethod
+    async def get_symbol_market_config(self, crypto_currency: str) -> SymbolMarketConfig:
+        """Get the symbol market config from the futures exchange.
+
+        Args:
+            crypto_currency (str): The trading pair symbol (e.g., 'BTC').
+
+        Returns:
+            SymbolMarketConfig: The symbol market config.
         """

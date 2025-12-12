@@ -238,9 +238,9 @@ class SignalsTaskService(AbstractTaskService):
             f"{icon} {html.bold(signal_type + ' ENTRY SIGNAL')} for {html.code(signals_evaluation_result.crypto_currency.currency)} {icon}",  # noqa: E501
             "================",
             f"🏷️ {html.bold('Symbol:')} {html.code(signals_evaluation_result.crypto_currency.to_symbol(account_info=account_info))}",  # noqa: E501
-            f"🎯 {html.bold('Entry Price:')} {html.code(f'{entry_price} {account_info.currency_code}')}",
-            f"🛑 {html.bold('Stop Loss:')} {html.code(f'{stop_loss_price} {account_info.currency_code}')} ({stop_loss_percent_value} %)",  # noqa: E501
-            f"💰 {html.bold('Take Profit:')} {html.code(f'{take_profit_price} {account_info.currency_code}')} ({take_profit_percent_value} %)",  # noqa: E501
+            f"🎯 {html.bold('Entry Price:')} {html.code(entry_price)} {account_info.currency_code}",
+            f"🛑 {html.bold('Stop Loss:')} {html.code(stop_loss_price)} {account_info.currency_code} ({stop_loss_percent_value} %)",  # noqa: E501
+            f"💰 {html.bold('Take Profit:')} {html.code(take_profit_price)} {account_info.currency_code} ({take_profit_percent_value} %)",  # noqa: E501
         ]
         message = "\n".join(message_lines)
         await self._notify_alert(telegram_chat_ids=chat_ids, body_message=message)
@@ -261,7 +261,7 @@ class SignalsTaskService(AbstractTaskService):
             f"{icon} {html.bold(signal_type + ' EXIT SIGNAL')} for {html.code(signals_evaluation_result.crypto_currency.currency)} {icon}",  # noqa: E501
             "================",
             f"🏷️ {html.bold('Symbol:')} {html.code(signals_evaluation_result.crypto_currency.to_symbol(account_info=account_info))}",  # noqa: E501
-            f"↩️ {html.bold('Exit Price:')} {html.code(f'{exit_price} {account_info.currency_code}')}",
+            f"↩️ {html.bold('Exit Price:')} {html.code(exit_price)} {account_info.currency_code}",
         ]
         message = "\n".join(message_lines)
         await self._notify_alert(telegram_chat_ids=chat_ids, body_message=message)

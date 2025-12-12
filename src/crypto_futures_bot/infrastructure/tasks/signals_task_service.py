@@ -10,14 +10,13 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from pyee.asyncio import AsyncIOEventEmitter
 
-from crypto_futures_bot.adapters.futures_exchange.vo import SymbolTicker
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 from crypto_futures_bot.constants import SIGNALS_EVALUATION_RESULT_EVENT_NAME, SIGNALS_TASK_SERVICE_CRON_PATTERN
 from crypto_futures_bot.domain.enums import CandleStickEnum, PushNotificationTypeEnum, TaskTypeEnum
 from crypto_futures_bot.domain.vo import SignalsEvaluationResult, TrackedCryptoCurrencyItem
 from crypto_futures_bot.domain.vo.candlestick_indicators import CandleStickIndicators
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
-from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import AccountInfo
+from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import AccountInfo, SymbolTicker
 from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_service import CryptoTechnicalAnalysisService
 from crypto_futures_bot.infrastructure.services.orders_analytics_service import OrdersAnalyticsService
 from crypto_futures_bot.infrastructure.services.push_notification_service import PushNotificationService
@@ -255,14 +254,14 @@ class SignalsTaskService(AbstractTaskService):
         account_info: AccountInfo,
         symbol_ticker: SymbolTicker,
     ) -> None:
-        icon = "🟢" if is_long else "🔴"
+        icon = "🏃‍♂️💨" if is_long else "🏃‍♀️💨"
         signal_type = "LONG" if is_long else "SHORT"
         exit_price = symbol_ticker.bid_or_close if is_long else symbol_ticker.ask_or_close
         message_lines = [
             f"{icon} {html.bold(signal_type + ' EXIT SIGNAL')} for {html.code(signals_evaluation_result.crypto_currency.currency)} {icon}",  # noqa: E501
             "================",
             f"🏷️ {html.bold('Symbol:')} {html.code(signals_evaluation_result.crypto_currency.to_symbol(account_info=account_info))}",  # noqa: E501
-            f"🎯 {html.bold('Exit Price:')} {html.code(f'{exit_price} {account_info.currency_code}')}",
+            f"↩️ {html.bold('Exit Price:')} {html.code(f'{exit_price} {account_info.currency_code}')}",
         ]
         message = "\n".join(message_lines)
         await self._notify_alert(telegram_chat_ids=chat_ids, body_message=message)

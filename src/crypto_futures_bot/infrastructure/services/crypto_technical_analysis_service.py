@@ -1,5 +1,6 @@
 import backoff
 import pandas as pd
+import pydash
 from ta.momentum import RSIIndicator, StochRSIIndicator
 from ta.trend import MACD, EMAIndicator
 from ta.volatility import AverageTrueRange
@@ -8,12 +9,27 @@ from crypto_futures_bot.domain.enums.candlestick_enum import CandleStickEnum
 from crypto_futures_bot.domain.vo.candlestick_indicators import CandleStickIndicators
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.types import Timeframe
+from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo.symbol_ticker import SymbolTicker
+from crypto_futures_bot.infrastructure.services.tracked_crypto_currency_service import TrackedCryptoCurrencyService
 from crypto_futures_bot.interfaces.telegram.services.utils import backoff_on_backoff_handler
 
 
 class CryptoTechnicalAnalysisService:
-    def __init__(self, futures_exchange_service: AbstractFuturesExchangeService) -> None:
+    def __init__(
+        self,
+        tracked_crypto_currency_service: TrackedCryptoCurrencyService,
+        futures_exchange_service: AbstractFuturesExchangeService,
+    ) -> None:
         self._futures_exchange_service = futures_exchange_service
+        self._tracked_crypto_currency_service = tracked_crypto_currency_service
+
+    async def get_tracked_crypto_currency_prices(self) -> list[SymbolTicker]:
+        tracked_crypto_currencies = await self._tracked_crypto_currency_service.find_all()
+        account_info = await self._futures_exchange_service.get_account_info()
+        symbols = [crypto_currency.to_symbol(account_info) for crypto_currency in tracked_crypto_currencies]
+        tickers = await self._futures_exchange_service.get_symbol_tickers(symbols=symbols)
+        ret = pydash.order_by(tickers, "base_asset")
+        return ret
 
     async def get_candlestick_indicators(
         self,

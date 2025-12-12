@@ -13,8 +13,12 @@ class KeyboardsBuilder:
     def get_home_keyboard(self) -> InlineKeyboardMarkup:
         builder = InlineKeyboardBuilder()
         builder.row(InlineKeyboardButton(text="💰 Portfolio Balance", callback_data="portfolio_balance"))
-        builder.row(InlineKeyboardButton(text="🛰️ Tracker", callback_data="tracked_crypto_currencies_home"))
+        builder.row(
+            InlineKeyboardButton(text="🔍 Tracker", callback_data="tracked_crypto_currencies_home"),
+            InlineKeyboardButton(text="💹 Prices", callback_data="prices"),
+        )
         builder.row(InlineKeyboardButton(text="🔔 Push Notifications", callback_data="push_notifications_home"))
+        builder.row(InlineKeyboardButton(text="🚪 Logout", callback_data="logout"))
         return builder.as_markup()
 
     def get_login_keyboard(self) -> InlineKeyboardMarkup:
@@ -29,7 +33,7 @@ class KeyboardsBuilder:
         for tracked_crypto_currency in tracked_crypto_currencies:
             builder.row(
                 InlineKeyboardButton(
-                    text=f"🛰️ {tracked_crypto_currency.currency}",
+                    text=f"🔍 {tracked_crypto_currency.currency}",
                     callback_data=f"remove_tracked_crypto_currency_$_{tracked_crypto_currency.currency}",
                 )
             )

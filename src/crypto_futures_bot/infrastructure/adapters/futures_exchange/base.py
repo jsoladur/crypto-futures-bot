@@ -15,6 +15,10 @@ class AbstractFuturesExchangeService(ABC):
         pass
 
     @abstractmethod
+    async def post_init(self) -> None:
+        """Post initialization method."""
+
+    @abstractmethod
     async def get_account_info(self, *, client: Any | None = None) -> AccountInfo:
         """Get the account info from the futures exchange.
 

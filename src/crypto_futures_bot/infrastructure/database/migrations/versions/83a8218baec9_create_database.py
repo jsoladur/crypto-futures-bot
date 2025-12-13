@@ -1,8 +1,8 @@
 """Create database
 
-Revision ID: d56a9c68a130
+Revision ID: 83a8218baec9
 Revises:
-Create Date: 2025-12-13 12:45:51.236055
+Create Date: 2025-12-13 13:05:48.845210
 
 """
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "d56a9c68a130"
+revision: str = "83a8218baec9"
 down_revision: str | Sequence[str] | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
@@ -29,13 +29,13 @@ def upgrade() -> None:
         sa.Column("position_type", sa.Enum("LONG", "SHORT", name="positiontypeenum"), nullable=False),
         sa.Column("action_type", sa.Enum("ENTRY", "EXIT", name="marketactiontypeenum"), nullable=False),
         sa.Column("entry_price", sa.Float(), nullable=True),
-        sa.Column("break_event_price", sa.Float(), nullable=True),
-        sa.Column("sl_percent", sa.Float(), nullable=True),
-        sa.Column("tp_percent", sa.Float(), nullable=True),
-        sa.Column("sl_price", sa.Float(), nullable=True),
-        sa.Column("tp_price", sa.Float(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), nullable=False),
-        sa.Column("last_updated_at", sa.DateTime(), nullable=False),
+        sa.Column("break_even_price", sa.Float(), nullable=True),
+        sa.Column("stop_loss_percent_value", sa.Float(), nullable=True),
+        sa.Column("take_profit_percent_value", sa.Float(), nullable=True),
+        sa.Column("stop_loss_price", sa.Float(), nullable=True),
+        sa.Column("take_profit_price", sa.Float(), nullable=True),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("last_updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
@@ -46,8 +46,8 @@ def upgrade() -> None:
         ),
         sa.Column("chat_id", sa.Integer(), nullable=False),
         sa.Column("activated", sa.Boolean(), nullable=False),
-        sa.Column("created_at", sa.DateTime(), nullable=False),
-        sa.Column("last_updated_at", sa.DateTime(), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("last_updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("notification_type", "chat_id"),
     )
@@ -55,8 +55,8 @@ def upgrade() -> None:
         "tracked_crypto_currency",
         sa.Column("id", sa.UUID(), nullable=False),
         sa.Column("currency", sa.String(), nullable=False),
-        sa.Column("created_at", sa.DateTime(), nullable=False),
-        sa.Column("last_updated_at", sa.DateTime(), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("last_updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     # ### end Alembic commands ###

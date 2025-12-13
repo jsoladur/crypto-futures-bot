@@ -41,6 +41,7 @@ class ServicesContainer(containers.DeclarativeContainer):
     )
     market_signal_service = providers.Singleton(
         MarketSignalService,
+        configuration_properties=configuration_properties,
         event_emitter=event_emitter,
         push_notification_service=push_notification_service,
         telegram_service=telegram_service,

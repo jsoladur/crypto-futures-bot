@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
+from crypto_futures_bot.domain.types import Timeframe
 from crypto_futures_bot.domain.vo.tracked_crypto_currency_item import TrackedCryptoCurrencyItem
-from crypto_futures_bot.infrastructure.adapters.futures_exchange.types import Timeframe
 
 
 @dataclass(frozen=True, kw_only=True)

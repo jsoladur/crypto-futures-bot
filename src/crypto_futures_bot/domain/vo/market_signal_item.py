@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 
 from crypto_futures_bot.domain.enums import MarketActionTypeEnum, PositionTypeEnum
 from crypto_futures_bot.domain.types import Timeframe
@@ -7,6 +8,7 @@ from crypto_futures_bot.domain.vo.tracked_crypto_currency_item import TrackedCry
 
 @dataclass(kw_only=True, frozen=True)
 class MarketSignalItem:
+    timestamp: datetime
     crypto_currency: TrackedCryptoCurrencyItem
     timeframe: Timeframe
     position_type: PositionTypeEnum

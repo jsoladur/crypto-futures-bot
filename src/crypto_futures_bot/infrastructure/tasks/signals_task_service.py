@@ -15,7 +15,6 @@ from crypto_futures_bot.constants import (
     DEFAULT_LONG_ENTRY_OVERSOLD_THRESHOLD,
     DEFAULT_LONG_EXIT_OVERBOUGHT_THRESHOLD,
     DEFAULT_SHORT_ENTRY_OVERBOUGHT_THRESHOLD,
-    DEFAULT_SHORT_EXIT_OVERSOLD_THRESHOLD,
     SIGNALS_EVALUATION_RESULT_EVENT_NAME,
     SIGNALS_TASK_SERVICE_CRON_PATTERN,
 )
@@ -143,13 +142,17 @@ class SignalsTaskService(AbstractTaskService):
             index=CandleStickEnum.LAST,
             technical_analysis_df=technical_analysis_df,
         )
+        long_entry = self._is_long_entry(prev_candle=prev_candle, last_candle=last_candle)
+        short_entry = self._is_short_entry(prev_candle=prev_candle, last_candle=last_candle)
         signals_evaluation_result = SignalsEvaluationResult(
             timestamp=last_candle.timestamp,
             crypto_currency=tracked_crypto_currency,
-            long_entry=self._is_long_entry(prev_candle=prev_candle, last_candle=last_candle),
-            long_exit=self._is_long_exit(prev_candle=prev_candle, last_candle=last_candle),
-            short_entry=self._is_short_entry(prev_candle=prev_candle, last_candle=last_candle),
-            short_exit=self._is_short_exit(prev_candle=prev_candle, last_candle=last_candle),
+            long_entry=long_entry,
+            long_exit=self._is_long_exit(prev_candle=prev_candle, last_candle=last_candle) if not long_entry else False,
+            short_entry=short_entry,
+            short_exit=self._is_short_exit(prev_candle=prev_candle, last_candle=last_candle)
+            if not short_entry
+            else False,
         )
         return signals_evaluation_result, last_candle
 
@@ -297,13 +300,17 @@ class SignalsTaskService(AbstractTaskService):
         return trend_ok and stoch_cross and stoch_condition and macd_improving
 
     def _is_long_exit(self, prev_candle: CandleStickIndicators, last_candle: CandleStickIndicators) -> bool:
-        stoch_exit = (
+        # 1. HARD EXIT: Trend Broken (Price falls below EMA50)
+        trend_broken = last_candle.closing_price < last_candle.ema50
+        # 2. SOFT EXIT: Take Profit on Overbought
+        stoch_take_profit = (
             prev_candle.stoch_rsi_k >= prev_candle.stoch_rsi_d
             and last_candle.stoch_rsi_k < last_candle.stoch_rsi_d
             and prev_candle.stoch_rsi_k > DEFAULT_LONG_EXIT_OVERBOUGHT_THRESHOLD
         )
-        momentum_lost = last_candle.macd_hist < 0
-        return stoch_exit or momentum_lost
+        # 3. MOMENTUM EXIT: Only exit if momentum is failing
+        momentum_failure = last_candle.macd_hist < 0 and last_candle.macd_hist < prev_candle.macd_hist
+        return trend_broken or stoch_take_profit or momentum_failure
 
     def _is_short_entry(self, prev_candle: CandleStickIndicators, last_candle: CandleStickIndicators) -> bool:
         trend_ok = last_candle.closing_price < last_candle.ema50
@@ -315,13 +322,17 @@ class SignalsTaskService(AbstractTaskService):
         return trend_ok and stoch_cross and stoch_condition and macd_worsening
 
     def _is_short_exit(self, prev_candle: CandleStickIndicators, last_candle: CandleStickIndicators) -> bool:
-        stoch_exit = (
+        # 1. HARD EXIT: Price breaks above EMA50
+        trend_broken = last_candle.closing_price > last_candle.ema50
+        # 2. SOFT EXIT: Take Profit on Oversold
+        stoch_take_profit = (
             prev_candle.stoch_rsi_k <= prev_candle.stoch_rsi_d
             and last_candle.stoch_rsi_k > last_candle.stoch_rsi_d
-            and prev_candle.stoch_rsi_k < DEFAULT_SHORT_EXIT_OVERSOLD_THRESHOLD
+            and prev_candle.stoch_rsi_k < 0.20
         )
-        momentum_lost = last_candle.macd_hist > 0
-        return stoch_exit or momentum_lost
+        # 3. MOMENTUM EXIT: Only exit if momentum is failing
+        momentum_failure = last_candle.macd_hist > 0 and last_candle.macd_hist > prev_candle.macd_hist
+        return trend_broken or stoch_take_profit or momentum_failure
 
     async def _notify_alert(self, telegram_chat_ids: list[str], body_message: str) -> None:
         await asyncio.gather(

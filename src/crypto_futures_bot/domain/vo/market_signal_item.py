@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from crypto_futures_bot.domain.enums import MarketActionTypeEnum, PositionTypeEnum
 from crypto_futures_bot.domain.types import Timeframe
-from crypto_futures_bot.domain.vo import TrackedCryptoCurrencyItem
+from crypto_futures_bot.domain.vo.tracked_crypto_currency_item import TrackedCryptoCurrencyItem
 
 
 @dataclass(kw_only=True, frozen=True)

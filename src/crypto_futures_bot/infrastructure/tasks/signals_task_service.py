@@ -12,12 +12,19 @@ from pyee.asyncio import AsyncIOEventEmitter
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 from crypto_futures_bot.constants import SIGNALS_EVALUATION_RESULT_EVENT_NAME, SIGNALS_TASK_SERVICE_CRON_PATTERN
-from crypto_futures_bot.domain.enums import CandleStickEnum, PushNotificationTypeEnum, TaskTypeEnum
+from crypto_futures_bot.domain.enums import (
+    CandleStickEnum,
+    MarketActionTypeEnum,
+    PositionTypeEnum,
+    PushNotificationTypeEnum,
+    TaskTypeEnum,
+)
 from crypto_futures_bot.domain.vo import SignalsEvaluationResult, TrackedCryptoCurrencyItem
 from crypto_futures_bot.domain.vo.candlestick_indicators import CandleStickIndicators
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import AccountInfo, SymbolTicker
 from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_service import CryptoTechnicalAnalysisService
+from crypto_futures_bot.infrastructure.services.market_signal_service import MarketSignalService
 from crypto_futures_bot.infrastructure.services.push_notification_service import PushNotificationService
 from crypto_futures_bot.infrastructure.services.tracked_crypto_currency_service import TrackedCryptoCurrencyService
 from crypto_futures_bot.infrastructure.services.trade_now_service import TradeNowService
@@ -39,6 +46,7 @@ class SignalsTaskService(AbstractTaskService):
         futures_exchange_service: AbstractFuturesExchangeService,
         crypto_technical_analysis_service: CryptoTechnicalAnalysisService,
         trade_now_service: TradeNowService,
+        market_signal_service: MarketSignalService,
     ) -> None:
         super().__init__(configuration_properties, scheduler, push_notification_service, telegram_service)
         self._event_emitter = event_emitter
@@ -46,7 +54,7 @@ class SignalsTaskService(AbstractTaskService):
         self._futures_exchange_service = futures_exchange_service
         self._crypto_technical_analysis_service = crypto_technical_analysis_service
         self._trade_now_service = trade_now_service
-        self._last_signal_evalutation_result_cache: dict[str, SignalsEvaluationResult] = {}
+        self._market_signal_service = market_signal_service
         self._job = self._create_job()
 
     @override
@@ -99,26 +107,21 @@ class SignalsTaskService(AbstractTaskService):
                 technical_analysis_df=technical_analysis_df,
                 account_info=account_info,
             )
-            is_new_signals, *_ = self._is_new_signals(signals_evaluation_result)
-            if is_new_signals:
-                try:
-                    chat_ids = await self._push_notification_service.get_actived_subscription_by_type(
-                        notification_type=PushNotificationTypeEnum.SIGNALS
-                    )
-                    if chat_ids:
-                        await self._notify_signals(
-                            signals_evaluation_result=signals_evaluation_result,
-                            chat_ids=chat_ids,
-                            account_info=account_info,
-                            last_candle=last_candle,
-                        )
-                finally:
-                    self._event_emitter.emit(SIGNALS_EVALUATION_RESULT_EVENT_NAME, signals_evaluation_result)
-            else:  # pragma: no cover
-                logger.info("Calculated signals were already notified previously!")
+            chat_ids = await self._push_notification_service.get_actived_subscription_by_type(
+                notification_type=PushNotificationTypeEnum.SIGNALS
+            )
+            if chat_ids:
+                await self._notify_signals(
+                    signals_evaluation_result=signals_evaluation_result,
+                    chat_ids=chat_ids,
+                    account_info=account_info,
+                    last_candle=last_candle,
+                )
         except Exception as e:
             logger.error(f"Error evaluating signals for {tracked_crypto_currency}: {e}", exc_info=True)
             await self._notify_fatal_error_via_telegram(e)
+        finally:
+            self._event_emitter.emit(SIGNALS_EVALUATION_RESULT_EVENT_NAME, signals_evaluation_result)
 
     async def _check_signals(
         self,
@@ -179,26 +182,33 @@ class SignalsTaskService(AbstractTaskService):
         account_info: AccountInfo,
         last_candle: CandleStickIndicators,
     ) -> None:
-        symbol_ticker = await self._futures_exchange_service.get_symbol_ticker(
-            symbol=signals_evaluation_result.crypto_currency.to_symbol(account_info=account_info)
+        current_market_action_type = MarketActionTypeEnum.ENTRY if is_entry else MarketActionTypeEnum.EXIT
+        last_market_signal = await self._market_signal_service.find_last_market_signal(
+            signals_evaluation_result.crypto_currency,
+            position_type=PositionTypeEnum.LONG if is_long else PositionTypeEnum.SHORT,
+            timeframe=signals_evaluation_result.timeframe,
         )
-        if is_entry:
-            await self._notify_entry(
-                signals_evaluation_result=signals_evaluation_result,
-                is_long=is_long,
-                chat_ids=chat_ids,
-                account_info=account_info,
-                last_candle=last_candle,
-                symbol_ticker=symbol_ticker,
+        if last_market_signal is None or last_market_signal.action_type != current_market_action_type:
+            symbol_ticker = await self._futures_exchange_service.get_symbol_ticker(
+                symbol=signals_evaluation_result.crypto_currency.to_symbol(account_info=account_info)
             )
-        else:
-            await self._notify_exit(
-                signals_evaluation_result=signals_evaluation_result,
-                is_long=is_long,
-                chat_ids=chat_ids,
-                account_info=account_info,
-                symbol_ticker=symbol_ticker,
-            )
+            if is_entry:
+                await self._notify_entry(
+                    signals_evaluation_result=signals_evaluation_result,
+                    is_long=is_long,
+                    chat_ids=chat_ids,
+                    account_info=account_info,
+                    last_candle=last_candle,
+                    symbol_ticker=symbol_ticker,
+                )
+            else:
+                await self._notify_exit(
+                    signals_evaluation_result=signals_evaluation_result,
+                    is_long=is_long,
+                    chat_ids=chat_ids,
+                    account_info=account_info,
+                    symbol_ticker=symbol_ticker,
+                )
 
     async def _notify_entry(
         self,
@@ -246,16 +256,6 @@ class SignalsTaskService(AbstractTaskService):
         ]
         message = "\n".join(message_lines)
         await self._notify_alert(telegram_chat_ids=chat_ids, body_message=message)
-
-    def _is_new_signals(self, current_signals: SignalsEvaluationResult) -> tuple[bool, SignalsEvaluationResult | None]:
-        is_new_signals = current_signals.cache_key not in self._last_signal_evalutation_result_cache
-        previous_signals: SignalsEvaluationResult | None = None
-        if not is_new_signals:  # pragma: no cover
-            previous_signals = self._last_signal_evalutation_result_cache[current_signals.cache_key]
-            is_new_signals = previous_signals != current_signals
-            logger.info(f"Previous ({repr(previous_signals)}) != Current ({repr(current_signals)}) ? {is_new_signals}")
-        self._last_signal_evalutation_result_cache[current_signals.cache_key] = current_signals
-        return is_new_signals, previous_signals
 
     def _is_long_entry(self, prev_candle: CandleStickIndicators, last_candle: CandleStickIndicators) -> bool:
         trend_ok = last_candle.closing_price > last_candle.ema50

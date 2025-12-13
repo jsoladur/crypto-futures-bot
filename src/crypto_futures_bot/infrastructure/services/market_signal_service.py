@@ -60,7 +60,8 @@ class MarketSignalService(AbstractEventHandlerService):
             .where(MarketSignal.crypto_currency == crypto_currency.currency)
             .where(MarketSignal.position_type == position_type)
             .where(MarketSignal.timeframe == timeframe)
-            .order_by(MarketSignal.created_at, ascending=False)
+            .order_by(MarketSignal.created_at.desc())
+            .limit(1)
         )
         query_result = await session.execute(query)
         last_market_signal = query_result.scalars().one_or_none()
@@ -81,7 +82,7 @@ class MarketSignalService(AbstractEventHandlerService):
             signals_field_names = [field.name for field in fields(signals_evaluation_result) if field.type is bool]
             for signals_field_name in signals_field_names:
                 if getattr(signals_evaluation_result, signals_field_name):
-                    self._store_market_signal_if_needed(
+                    await self._store_market_signal_if_needed(
                         signals_evaluation_result,
                         trade_now_hints,
                         is_long=signals_field_name.startswith("long"),
@@ -89,7 +90,7 @@ class MarketSignalService(AbstractEventHandlerService):
                         session=session,
                     )
 
-    def _store_market_signal_if_needed(
+    async def _store_market_signal_if_needed(
         self,
         signals: SignalsEvaluationResult,
         trade_now_hints: TradeNowHints,
@@ -100,10 +101,10 @@ class MarketSignalService(AbstractEventHandlerService):
     ) -> None:
         position_type = PositionTypeEnum.LONG if is_long else PositionTypeEnum.SHORT
         action_type = MarketActionTypeEnum.ENTRY if is_entry else MarketActionTypeEnum.EXIT
-        last_market_signal = self.find_last_market_signal(
+        last_market_signal = await self.find_last_market_signal(
             signals.crypto_currency, position_type=position_type, timeframe=signals.timeframe, session=session
         )
-        if last_market_signal.position_type != position_type:
+        if last_market_signal is None or last_market_signal.action_type != action_type:
             position_hints = trade_now_hints.long if is_long else trade_now_hints.short
             market_signal = MarketSignal(
                 crypto_currency=signals.crypto_currency.currency,
@@ -128,9 +129,9 @@ class MarketSignalService(AbstractEventHandlerService):
         )
         query = (
             delete(MarketSignal)
-            .where(MarketSignal.symbol == signals.symbol)
+            .where(MarketSignal.crypto_currency == signals.crypto_currency.currency)
             .where(MarketSignal.timeframe == signals.timeframe)
-            .where(MarketSignal.timestamp < expiration_date)
+            .where(MarketSignal.created_at < expiration_date)
         )
         await session.execute(query)
 

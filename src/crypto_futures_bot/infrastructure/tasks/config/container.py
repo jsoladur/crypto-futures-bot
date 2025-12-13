@@ -17,6 +17,7 @@ class TasksContainer(containers.DeclarativeContainer):
     futures_exchange_service = providers.Dependency()
     crypto_technical_analysis_service = providers.Dependency()
     trade_now_service = providers.Dependency()
+    market_signal_service = providers.Dependency()
 
     scheduler = providers.Singleton(AsyncIOScheduler)
 
@@ -33,4 +34,5 @@ class TasksContainer(containers.DeclarativeContainer):
         futures_exchange_service=futures_exchange_service,
         crypto_technical_analysis_service=crypto_technical_analysis_service,
         trade_now_service=trade_now_service,
+        market_signal_service=market_signal_service,
     )

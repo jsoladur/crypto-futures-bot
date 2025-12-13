@@ -268,7 +268,7 @@ class SignalsTaskService(AbstractTaskService):
         account_info: AccountInfo,
         symbol_ticker: SymbolTicker,
     ) -> None:
-        icon = "🏃‍♂️💨" if is_long else "🏃‍♀️💨"
+        icon = "🟦" if is_long else "🟧"
         signal_type = "LONG" if is_long else "SHORT"
         exit_price = symbol_ticker.bid_or_close if is_long else symbol_ticker.ask_or_close
         message_lines = [

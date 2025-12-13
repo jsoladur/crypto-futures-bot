@@ -1,8 +1,17 @@
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 from aiogram import html
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
-from crypto_futures_bot.domain.vo import TradeNowHints
-from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import PortfolioBalance, SymbolTicker
+from crypto_futures_bot.domain.enums import MarketActionTypeEnum, PositionTypeEnum
+from crypto_futures_bot.domain.vo import MarketSignalItem, TradeNowHints
+from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
+    AccountInfo,
+    PortfolioBalance,
+    SymbolMarketConfig,
+    SymbolTicker,
+)
 
 
 class MessagesFormatter:
@@ -58,3 +67,49 @@ class MessagesFormatter:
         ]
         message = "\n".join(header + params_lines + long_lines + short_lines)
         return message
+
+    def format_market_signals_message(
+        self,
+        *,
+        currency: str,
+        account_info: AccountInfo,
+        symbol_market_config: SymbolMarketConfig,
+        market_signals: list[MarketSignalItem],
+    ) -> str:
+        header = [
+            "==========================",
+            f"🚦 MARKET SIGNALS :: {html.bold(currency)} 🚦",
+            "==========================",
+        ]
+        signals_lines = []
+        for idx, market_signal in enumerate(market_signals):
+            additional_info_lines = []
+            if market_signal.action_type == MarketActionTypeEnum.ENTRY:
+                icon = "🟢" if market_signal.position_type == PositionTypeEnum.LONG else "🔴"
+                additional_info_lines.extend(
+                    [
+                        f"🎯 {html.bold('Entry Price:')} {html.code(round(market_signal.entry_price, ndigits=symbol_market_config.price_precision))} {account_info.currency_code}",  # noqa: E501
+                        f"⚖️ {html.bold('Break Even Price:')} {html.code(round(market_signal.break_even_price, ndigits=symbol_market_config.price_precision))} {account_info.currency_code}",  # noqa: E501
+                        f"🛑 {html.bold('Stop Loss:')} {html.code(round(market_signal.stop_loss_price, ndigits=symbol_market_config.price_precision))} {account_info.currency_code} ({market_signal.stop_loss_percent_value} %)",  # noqa: E501
+                        f"💰 {html.bold('Take Profit:')} {html.code(round(market_signal.take_profit_price, ndigits=symbol_market_config.price_precision))} {account_info.currency_code} ({market_signal.take_profit_percent_value} %)",  # noqa: E501
+                    ]
+                )
+            elif market_signal.action_type == MarketActionTypeEnum.EXIT:
+                icon = "🟦" if market_signal.position_type == PositionTypeEnum.LONG else "🟧"
+            else:
+                icon = "🟡"
+            signals_lines.extend(
+                [
+                    f"{icon} {html.bold(market_signal.position_type.value)} {html.bold(market_signal.action_type.value)}",  # noqa: E501
+                    "================================",
+                    f"🗓️ {html.bold('Timestamp:')} {self._format_timestamp_with_timezone(market_signal.timestamp)}",  # noqa: E501
+                    *additional_info_lines,
+                ]
+            )
+            if idx + 1 < len(market_signals):
+                signals_lines.append("")
+        message = "\n".join(header + signals_lines)
+        return message
+
+    def _format_timestamp_with_timezone(self, timestamp: datetime, *, zoneinfo: str = "Europe/Madrid") -> str:
+        return timestamp.astimezone(ZoneInfo(zoneinfo)).strftime("%d-%m-%Y %H:%M")

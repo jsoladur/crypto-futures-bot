@@ -47,6 +47,25 @@ class MarketSignalService(AbstractEventHandlerService):
         self._event_emitter.add_listener(SIGNALS_EVALUATION_RESULT_EVENT_NAME, self._handle_signals_evaluation_result)
 
     @transactional(read_only=True)
+    async def find_all_market_signals(
+        self,
+        crypto_currency: TrackedCryptoCurrencyItem,
+        *,
+        position_type: PositionTypeEnum | None = None,
+        timeframe: Timeframe | None = None,
+        session: AsyncSession | None = None,
+    ) -> list[MarketSignalItem]:
+        query = select(MarketSignal).where(MarketSignal.crypto_currency == crypto_currency.currency)
+        if position_type is not None:
+            query = query.where(MarketSignal.position_type == position_type)
+        if timeframe is not None:
+            query = query.where(MarketSignal.timeframe == timeframe)
+        query = query.order_by(MarketSignal.created_at.desc())
+        query_result = await session.execute(query)
+        ret = [self._convert_model_to_vo(market_signal) for market_signal in query_result.scalars().all()]
+        return ret
+
+    @transactional(read_only=True)
     async def find_last_market_signal(
         self,
         crypto_currency: TrackedCryptoCurrencyItem,
@@ -137,6 +156,7 @@ class MarketSignalService(AbstractEventHandlerService):
 
     def _convert_model_to_vo(self, market_signal: MarketSignal) -> MarketSignalItem:
         return MarketSignalItem(
+            timestamp=market_signal.created_at,
             crypto_currency=TrackedCryptoCurrencyItem.from_currency(market_signal.crypto_currency),
             timeframe=market_signal.timeframe,
             position_type=market_signal.position_type,

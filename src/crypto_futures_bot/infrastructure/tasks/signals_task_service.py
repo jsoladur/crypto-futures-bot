@@ -11,13 +11,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from pyee.asyncio import AsyncIOEventEmitter
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
-from crypto_futures_bot.constants import (
-    DEFAULT_LONG_ENTRY_OVERSOLD_THRESHOLD,
-    DEFAULT_LONG_EXIT_OVERBOUGHT_THRESHOLD,
-    DEFAULT_SHORT_ENTRY_OVERBOUGHT_THRESHOLD,
-    SIGNALS_EVALUATION_RESULT_EVENT_NAME,
-    SIGNALS_TASK_SERVICE_CRON_PATTERN,
-)
+from crypto_futures_bot.constants import SIGNALS_EVALUATION_RESULT_EVENT_NAME, SIGNALS_TASK_SERVICE_CRON_PATTERN
 from crypto_futures_bot.domain.enums import CandleStickEnum, PushNotificationTypeEnum, TaskTypeEnum
 from crypto_futures_bot.domain.vo import SignalsEvaluationResult, TrackedCryptoCurrencyItem
 from crypto_futures_bot.domain.vo.candlestick_indicators import CandleStickIndicators
@@ -295,7 +289,7 @@ class SignalsTaskService(AbstractTaskService):
         stoch_cross = (
             prev_candle.stoch_rsi_k <= prev_candle.stoch_rsi_d and last_candle.stoch_rsi_k > last_candle.stoch_rsi_d
         )
-        stoch_condition = prev_candle.stoch_rsi_k < DEFAULT_LONG_ENTRY_OVERSOLD_THRESHOLD
+        stoch_condition = prev_candle.stoch_rsi_k < self._configuration_properties.long_entry_oversold_threshold
         macd_improving = last_candle.macd_hist > prev_candle.macd_hist
         return trend_ok and stoch_cross and stoch_condition and macd_improving
 
@@ -306,7 +300,7 @@ class SignalsTaskService(AbstractTaskService):
         stoch_take_profit = (
             prev_candle.stoch_rsi_k >= prev_candle.stoch_rsi_d
             and last_candle.stoch_rsi_k < last_candle.stoch_rsi_d
-            and prev_candle.stoch_rsi_k > DEFAULT_LONG_EXIT_OVERBOUGHT_THRESHOLD
+            and prev_candle.stoch_rsi_k > self._configuration_properties.long_exit_overbought_threshold
         )
         # 3. MOMENTUM EXIT: Only exit if momentum is failing
         momentum_failure = last_candle.macd_hist < 0 and last_candle.macd_hist < prev_candle.macd_hist
@@ -317,7 +311,7 @@ class SignalsTaskService(AbstractTaskService):
         stoch_cross = (
             prev_candle.stoch_rsi_k >= prev_candle.stoch_rsi_d and last_candle.stoch_rsi_k < last_candle.stoch_rsi_d
         )
-        stoch_condition = prev_candle.stoch_rsi_k > DEFAULT_SHORT_ENTRY_OVERBOUGHT_THRESHOLD
+        stoch_condition = prev_candle.stoch_rsi_k > self._configuration_properties.short_entry_overbought_threshold
         macd_worsening = last_candle.macd_hist < prev_candle.macd_hist
         return trend_ok and stoch_cross and stoch_condition and macd_worsening
 
@@ -328,7 +322,7 @@ class SignalsTaskService(AbstractTaskService):
         stoch_take_profit = (
             prev_candle.stoch_rsi_k <= prev_candle.stoch_rsi_d
             and last_candle.stoch_rsi_k > last_candle.stoch_rsi_d
-            and prev_candle.stoch_rsi_k < 0.20
+            and prev_candle.stoch_rsi_k < self._configuration_properties.short_exit_oversold_threshold
         )
         # 3. MOMENTUM EXIT: Only exit if momentum is failing
         momentum_failure = last_candle.macd_hist > 0 and last_candle.macd_hist > prev_candle.macd_hist

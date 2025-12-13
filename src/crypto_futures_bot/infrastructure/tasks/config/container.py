@@ -13,10 +13,11 @@ class TasksContainer(containers.DeclarativeContainer):
     telegram_service = providers.Dependency()
 
     tracked_crypto_currency_service = providers.Dependency()
-    futures_exchange_service = providers.Dependency()
-    orders_analytics_service = providers.Dependency()
-    crypto_technical_analysis_service = providers.Dependency()
     push_notification_service = providers.Dependency()
+    futures_exchange_service = providers.Dependency()
+    crypto_technical_analysis_service = providers.Dependency()
+    trade_now_service = providers.Dependency()
+    market_signal_service = providers.Dependency()
 
     scheduler = providers.Singleton(AsyncIOScheduler)
 
@@ -31,6 +32,7 @@ class TasksContainer(containers.DeclarativeContainer):
         push_notification_service=push_notification_service,
         tracked_crypto_currency_service=tracked_crypto_currency_service,
         futures_exchange_service=futures_exchange_service,
-        orders_analytics_service=orders_analytics_service,
         crypto_technical_analysis_service=crypto_technical_analysis_service,
+        trade_now_service=trade_now_service,
+        market_signal_service=market_signal_service,
     )

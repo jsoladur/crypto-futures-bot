@@ -8,9 +8,9 @@ from ta.trend import MACD, EMAIndicator
 from ta.volatility import AverageTrueRange
 
 from crypto_futures_bot.domain.enums.candlestick_enum import CandleStickEnum
+from crypto_futures_bot.domain.types import Timeframe
 from crypto_futures_bot.domain.vo.candlestick_indicators import CandleStickIndicators
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
-from crypto_futures_bot.infrastructure.adapters.futures_exchange.types import Timeframe
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo.symbol_ticker import SymbolTicker
 from crypto_futures_bot.infrastructure.services.tracked_crypto_currency_service import TrackedCryptoCurrencyService
 from crypto_futures_bot.interfaces.telegram.services.utils import backoff_on_backoff_handler

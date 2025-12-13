@@ -18,9 +18,9 @@ from crypto_futures_bot.domain.vo.candlestick_indicators import CandleStickIndic
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import AccountInfo, SymbolTicker
 from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_service import CryptoTechnicalAnalysisService
-from crypto_futures_bot.infrastructure.services.orders_analytics_service import OrdersAnalyticsService
 from crypto_futures_bot.infrastructure.services.push_notification_service import PushNotificationService
 from crypto_futures_bot.infrastructure.services.tracked_crypto_currency_service import TrackedCryptoCurrencyService
+from crypto_futures_bot.infrastructure.services.trade_now_service import TradeNowService
 from crypto_futures_bot.infrastructure.tasks.base import AbstractTaskService
 from crypto_futures_bot.interfaces.telegram.services.telegram_service import TelegramService
 
@@ -37,15 +37,15 @@ class SignalsTaskService(AbstractTaskService):
         scheduler: AsyncIOScheduler,
         tracked_crypto_currency_service: TrackedCryptoCurrencyService,
         futures_exchange_service: AbstractFuturesExchangeService,
-        orders_analytics_service: OrdersAnalyticsService,
         crypto_technical_analysis_service: CryptoTechnicalAnalysisService,
+        trade_now_service: TradeNowService,
     ) -> None:
         super().__init__(configuration_properties, scheduler, push_notification_service, telegram_service)
         self._event_emitter = event_emitter
         self._tracked_crypto_currency_service = tracked_crypto_currency_service
         self._futures_exchange_service = futures_exchange_service
-        self._orders_analytics_service = orders_analytics_service
         self._crypto_technical_analysis_service = crypto_technical_analysis_service
+        self._trade_now_service = trade_now_service
         self._last_signal_evalutation_result_cache: dict[str, SignalsEvaluationResult] = {}
         self._job = self._create_job()
 
@@ -210,45 +210,18 @@ class SignalsTaskService(AbstractTaskService):
         last_candle: CandleStickIndicators,
         symbol_ticker: SymbolTicker,
     ) -> None:
-        symbol_market_config = await self._futures_exchange_service.get_symbol_market_config(
-            crypto_currency=signals_evaluation_result.crypto_currency.currency
-        )
-        entry_price = symbol_ticker.ask_or_close if is_long else symbol_ticker.bid_or_close
-        stop_loss_percent_value = self._orders_analytics_service.get_stop_loss_percent_value(
-            avg_entry_price=entry_price,
-            last_candlestick_indicators=last_candle,
-            symbol_market_config=symbol_market_config,
-        )
-        take_profit_percent_value = self._orders_analytics_service.get_take_profit_percent_value(
-            avg_entry_price=entry_price,
-            last_candlestick_indicators=last_candle,
-            symbol_market_config=symbol_market_config,
-        )
-        stop_loss_price = self._orders_analytics_service.get_stop_loss_price(
-            entry_price=entry_price,
-            stop_loss_percent_value=stop_loss_percent_value,
-            is_long=is_long,
-            symbol_market_config=symbol_market_config,
-        )
-        take_profit_price = self._orders_analytics_service.get_take_profit_price(
-            entry_price=entry_price,
-            take_profit_percent_value=take_profit_percent_value,
-            is_long=is_long,
-            symbol_market_config=symbol_market_config,
-        )
-        break_even_price = self._orders_analytics_service.calculate_break_even_price(
-            entry_price=entry_price, symbol_market_config=symbol_market_config, is_long=is_long
-        )
+        trade_now_hints = await self._trade_now_service.get_trade_now_hints(signals_evaluation_result.crypto_currency)
+        position_hints = trade_now_hints.long if is_long else trade_now_hints.short
         icon = "🟢" if is_long else "🔴"
         signal_type = "LONG" if is_long else "SHORT"
         message_lines = [
             f"{icon} {html.bold(signal_type + ' ENTRY SIGNAL')} for {html.code(signals_evaluation_result.crypto_currency.currency)} {icon}",  # noqa: E501
-            "================",
+            "================================",
             f"🏷️ {html.bold('Symbol:')} {html.code(signals_evaluation_result.crypto_currency.to_symbol(account_info=account_info))}",  # noqa: E501
-            f"🎯 {html.bold('Entry Price:')} {html.code(entry_price)} {account_info.currency_code}",
-            f"⚖️ {html.bold('Break Even Price:')} {html.code(break_even_price)} {account_info.currency_code}",
-            f"🛑 {html.bold('Stop Loss:')} {html.code(stop_loss_price)} {account_info.currency_code} ({stop_loss_percent_value} %)",  # noqa: E501
-            f"💰 {html.bold('Take Profit:')} {html.code(take_profit_price)} {account_info.currency_code} ({take_profit_percent_value} %)",  # noqa: E501
+            f"🎯 {html.bold('Entry Price:')} {html.code(position_hints.entry_price)} {account_info.currency_code}",
+            f"⚖️ {html.bold('Break Even Price:')} {html.code(position_hints.break_even_price)} {account_info.currency_code}",  # noqa: E501
+            f"🛑 {html.bold('Stop Loss:')} {html.code(position_hints.stop_loss_price)} {account_info.currency_code} ({trade_now_hints.stop_loss_percent_value} %)",  # noqa: E501
+            f"💰 {html.bold('Take Profit:')} {html.code(position_hints.take_profit_price)} {account_info.currency_code} ({trade_now_hints.take_profit_percent_value} %)",  # noqa: E501
         ]
         message = "\n".join(message_lines)
         await self._notify_alert(telegram_chat_ids=chat_ids, body_message=message)
@@ -267,7 +240,7 @@ class SignalsTaskService(AbstractTaskService):
         exit_price = symbol_ticker.bid_or_close if is_long else symbol_ticker.ask_or_close
         message_lines = [
             f"{icon} {html.bold(signal_type + ' EXIT SIGNAL')} for {html.code(signals_evaluation_result.crypto_currency.currency)} {icon}",  # noqa: E501
-            "================",
+            "================================",
             f"🏷️ {html.bold('Symbol:')} {html.code(signals_evaluation_result.crypto_currency.to_symbol(account_info=account_info))}",  # noqa: E501
             f"↩️ {html.bold('Exit Price:')} {html.code(exit_price)} {account_info.currency_code}",
         ]

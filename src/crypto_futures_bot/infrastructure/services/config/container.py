@@ -44,4 +44,5 @@ class ServicesContainer(containers.DeclarativeContainer):
         event_emitter=event_emitter,
         push_notification_service=push_notification_service,
         telegram_service=telegram_service,
+        trade_now_service=trade_now_service,
     )

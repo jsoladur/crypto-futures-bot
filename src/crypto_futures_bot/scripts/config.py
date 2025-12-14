@@ -7,7 +7,9 @@ from crypto_futures_bot.infrastructure.adapters.futures_exchange.impl.mexc_futur
     MEXCFuturesExchangeService,
 )
 from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_service import CryptoTechnicalAnalysisService
+from crypto_futures_bot.infrastructure.services.market_signal_service import MarketSignalService
 from crypto_futures_bot.infrastructure.services.orders_analytics_service import OrdersAnalyticsService
+from crypto_futures_bot.infrastructure.services.trade_now_service import TradeNowService
 from crypto_futures_bot.infrastructure.tasks.signals_task_service import SignalsTaskService
 from crypto_futures_bot.scripts.services import BacktestingService
 
@@ -39,6 +41,22 @@ class Container(containers.DeclarativeContainer):
         telegram_service=telegram_service_mock,
     )
 
+    trade_now_service = providers.Singleton(
+        TradeNowService,
+        futures_exchange_service=futures_exchange_service,
+        crypto_technical_analysis_service=crypto_technical_analysis_service,
+        orders_analytics_service=orders_analytics_service,
+    )
+
+    market_signal_service = providers.Singleton(
+        MarketSignalService,
+        configuration_properties=configuration_properties,
+        event_emitter=event_emitter_mock,
+        push_notification_service=push_notification_service_mock,
+        telegram_service=telegram_service_mock,
+        trade_now_service=trade_now_service,
+    )
+
     signals_task_service = providers.Singleton(
         SignalsTaskService,
         configuration_properties=configuration_properties,
@@ -48,8 +66,9 @@ class Container(containers.DeclarativeContainer):
         scheduler=scheduler_mock,
         tracked_crypto_currency_service=tracked_crypto_currency_service_mock,
         futures_exchange_service=futures_exchange_service,
-        orders_analytics_service=orders_analytics_service,
         crypto_technical_analysis_service=crypto_technical_analysis_service,
+        market_signal_service=market_signal_service,
+        trade_now_service=trade_now_service,
     )
 
     backtesting_service = providers.Singleton(

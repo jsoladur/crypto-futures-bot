@@ -177,8 +177,8 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
         ),
     )
     async def get_open_positions(self) -> list[Position]:
-        open_orders = await self._futures_client.fetch_open_orders()
-        logger.info(open_orders)
+        open_positions = await self._futures_client.fetch_positions()
+        logger.info(open_positions)
         # TODO: To be implemented!
         return []
 

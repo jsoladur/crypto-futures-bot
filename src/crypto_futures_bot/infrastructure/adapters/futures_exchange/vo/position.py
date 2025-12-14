@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from crypto_futures_bot.domain.enums import PositionOpenTypeEnum, PositionTypeEnum
 
 
-@dataclass
+@dataclass(kw_only=True, frozen=True)
 class Position:
     # Identification
     position_id: str

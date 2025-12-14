@@ -187,6 +187,8 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
                 contracts=float(raw_position["contracts"]),
                 contract_size=float(raw_position["contractSize"]),
                 fee=float(raw_position["info"]["totalFee"]),
+                stop_loss_price=None,
+                take_profit_price=None,
             )
             for raw_position in raw_open_positions
         ]

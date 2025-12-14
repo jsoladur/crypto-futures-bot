@@ -31,4 +31,4 @@ class PositionMetrics:
         """
         Unrealised economic result including already-paid fees.
         """
-        return self.get_unrealised_pnl() + self.position.fee
+        return self.get_unrealised_pnl() - self.position.fee

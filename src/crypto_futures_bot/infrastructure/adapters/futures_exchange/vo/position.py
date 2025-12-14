@@ -25,6 +25,10 @@ class Position:
     contracts: float
     contract_size: float
 
+    # Stop Loss and Take profit
+    stop_loss_price: float | None = None
+    take_profit_price: float | None = None
+
     # Costs
     fee: float
 
@@ -37,22 +41,3 @@ class Position:
         base_and_contract = self.symbol.split("/")[1]
         quote_asset = base_and_contract.split(":")[0]
         return quote_asset
-
-    def get_unrealised_pnl(self, mark_price: float) -> float:
-        """
-        Unrealised PnL for USDT-margined linear futures.
-
-        Positive = profit
-        Negative = loss
-        """
-        direction = 1 if self.position_type is PositionTypeEnum.LONG else -1
-        return direction * (mark_price - self.entry_price) * self.contracts * self.contract_size
-
-    def get_unrealised_pnl_ratio(self, mark_price: float) -> float:
-        return self.get_unrealised_pnl(mark_price) / self.initial_margin
-
-    def get_unrealised_net_revenue(self, mark_price: float) -> float:
-        """
-        Unrealised economic result including already-paid fees.
-        """
-        return self.get_unrealised_pnl(mark_price) + self.fee

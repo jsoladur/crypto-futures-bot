@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
 from crypto_futures_bot.config.dependencies import get_application_container
-from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
+from crypto_futures_bot.infrastructure.services.orders_analytics_service import OrdersAnalyticsService
 from crypto_futures_bot.interfaces.telegram.services.session_storage_service import SessionStorageService
 from crypto_futures_bot.interfaces.telegram.utils.exceptions_utils import format_exception
 from crypto_futures_bot.interfaces.telegram.utils.keyboards_builder import KeyboardsBuilder
@@ -24,8 +24,8 @@ keyboards_builder: KeyboardsBuilder = (
 messages_formatter: MessagesFormatter = (
     application_container.interfaces_container().telegram_container().messages_formatter()
 )
-futures_exchange_service: AbstractFuturesExchangeService = (
-    application_container.infrastructure_container().services_container().futures_exchange_service()
+orders_analytics_service: OrdersAnalyticsService = (
+    application_container.infrastructure_container().services_container().orders_analytics_service()
 )
 
 
@@ -34,11 +34,11 @@ async def get_positions_callback_handler(callback_query: CallbackQuery, state: F
     is_user_logged = await session_storage_service.is_user_logged(state)
     if is_user_logged:
         try:
-            open_positions = await futures_exchange_service.get_open_positions()
-            if open_positions:
-                for idx, open_position in enumerate(open_positions):
-                    answer_text = messages_formatter.format_position(open_position)
-                    if idx + 1 >= len(open_positions):
+            open_position_metrics_list = await orders_analytics_service.get_open_position_metrics()
+            if open_position_metrics_list:
+                for idx, open_position_metrics in enumerate(open_position_metrics_list):
+                    answer_text = messages_formatter.format_position_metrics(open_position_metrics)
+                    if idx + 1 >= len(open_position_metrics_list):
                         await callback_query.message.answer(
                             answer_text, reply_markup=keyboards_builder.get_go_back_home_keyboard()
                         )

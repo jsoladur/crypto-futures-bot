@@ -1,7 +1,7 @@
 import math
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
-from crypto_futures_bot.domain.vo import CandleStickIndicators
+from crypto_futures_bot.domain.vo import CandleStickIndicators, PositionMetrics
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo.symbol_market_config import SymbolMarketConfig
 from crypto_futures_bot.infrastructure.services.base import AbstractService
@@ -20,6 +20,15 @@ class OrdersAnalyticsService(AbstractService):
         super().__init__(push_notification_service, telegram_service)
         self._configuration_properties = configuration_properties
         self._futures_exchange_service = futures_exchange_service
+
+    async def get_open_position_metrics(self) -> list[PositionMetrics]:
+        positions = await self._futures_exchange_service.get_open_positions()
+        tickers = await self._futures_exchange_service.get_symbol_tickers(
+            symbols=[position.symbol for position in positions]
+        )
+        return [
+            PositionMetrics(position=position, mark_price=tickers[position.symbol].mark_price) for position in positions
+        ]
 
     def get_stop_loss_percent_value(
         self,

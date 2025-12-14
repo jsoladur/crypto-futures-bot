@@ -5,6 +5,7 @@ from crypto_futures_bot.domain.types import Timeframe
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
     AccountInfo,
     PortfolioBalance,
+    Position,
     SymbolMarketConfig,
     SymbolTicker,
 )
@@ -87,6 +88,14 @@ class AbstractFuturesExchangeService(ABC):
 
         Returns:
             SymbolMarketConfig: The symbol market config.
+        """
+
+    @abstractmethod
+    async def get_open_positions(self) -> list[Position]:
+        """Get the list of open positions from the futures exchange.
+
+        Returns:
+            list[Position]: The list of open positions.
         """
 
     @abstractmethod

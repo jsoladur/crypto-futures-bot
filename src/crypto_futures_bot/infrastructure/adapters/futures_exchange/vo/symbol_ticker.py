@@ -8,6 +8,7 @@ class SymbolTicker:
     close: float | int
     bid: float | int | None = None
     ask: float | int | None = None
+    mark_price: float | int | None = None
 
     @property
     def base_asset(self) -> str:

@@ -12,6 +12,7 @@ from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import Abs
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
     AccountInfo,
     PortfolioBalance,
+    Position,
     SymbolMarketConfig,
     SymbolTicker,
 )
@@ -162,6 +163,24 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
             price_precision=int(raw_future_market["info"]["priceScale"]),
             amount_precision=int(raw_future_market["info"]["amountScale"]),
         )
+
+    @override
+    @backoff.on_exception(
+        backoff.constant,
+        exception=ccxt.BaseError,
+        interval=2,
+        max_tries=5,
+        jitter=backoff.full_jitter,
+        giveup=lambda e: isinstance(e, ccxt.BadRequest) or isinstance(e, ccxt.AuthenticationError),
+        on_backoff=lambda details: logger.warning(
+            f"[Retry {details['tries']}] " + f"Waiting {details['wait']:.2f}s due to {str(details['exception'])}"
+        ),
+    )
+    async def get_open_positions(self) -> list[Position]:
+        open_orders = await self._futures_client.fetch_open_orders()
+        logger.info(open_orders)
+        # TODO: To be implemented!
+        return []
 
     @override
     def get_taker_fee(self) -> float:

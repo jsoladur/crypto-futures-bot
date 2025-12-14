@@ -26,9 +26,13 @@ class OrdersAnalyticsService(AbstractService):
         tickers = await self._futures_exchange_service.get_symbol_tickers(
             symbols=[position.symbol for position in positions]
         )
-        return [
-            PositionMetrics(position=position, mark_price=tickers[position.symbol].mark_price) for position in positions
-        ]
+        tickers = {ticker.symbol: ticker for ticker in tickers}
+        ret = []
+        for position in positions:
+            ticker = tickers[position.symbol]
+            symbol_market_config = await self._futures_exchange_service.get_symbol_market_config(ticker.base_asset)
+            ret.append(PositionMetrics(position=position, symbol_market_config=symbol_market_config, ticker=ticker))
+        return ret
 
     def get_stop_loss_percent_value(
         self,

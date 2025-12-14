@@ -174,24 +174,41 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
     )
     async def get_open_positions(self) -> list[Position]:
         raw_open_positions = await self._futures_client.fetch_positions()
-        ret = [
-            Position(
-                position_id=str(raw_position["info"]["positionId"]),
-                symbol=raw_position["symbol"],
-                initial_margin=float(raw_position["initialMargin"]),
-                leverage=int(raw_position["leverage"]),
-                liquidation_price=float(raw_position["liquidationPrice"]),
-                open_type=self._map_open_type(raw_position["marginMode"]),
-                position_type=self._map_position_type(raw_position["side"]),
-                entry_price=float(raw_position["entryPrice"]),
-                contracts=float(raw_position["contracts"]),
-                contract_size=float(raw_position["contractSize"]),
-                fee=float(raw_position["info"]["totalFee"]),
-                stop_loss_price=None,
-                take_profit_price=None,
+        raw_stop_orders = await self._futures_client.request(
+            "/stoporder/open_orders", api=["contract", "private"], method="GET"
+        )
+        ret = []
+        for raw_position in raw_open_positions:
+            position_id = str(raw_position["info"]["positionId"])
+            stop_order = next(
+                (
+                    stop_order
+                    for stop_order in raw_stop_orders.get("data", [])
+                    if stop_order.get("positionId") == position_id
+                ),
+                None,
             )
-            for raw_position in raw_open_positions
-        ]
+            ret.append(
+                Position(
+                    position_id=position_id,
+                    symbol=raw_position["symbol"],
+                    initial_margin=float(raw_position["initialMargin"]),
+                    leverage=int(raw_position["leverage"]),
+                    liquidation_price=float(raw_position["liquidationPrice"]),
+                    open_type=self._map_open_type(int(raw_position["info"]["openType"])),
+                    position_type=self._map_position_type(raw_position["side"]),
+                    entry_price=float(raw_position["entryPrice"]),
+                    contracts=float(raw_position["contracts"]),
+                    contract_size=float(raw_position["contractSize"]),
+                    fee=float(raw_position["info"]["totalFee"]),
+                    stop_loss_price=float(stop_order.get("stopLossPrice"))
+                    if stop_order and "stopLossPrice" in stop_order
+                    else None,
+                    take_profit_price=float(stop_order.get("takeProfitPrice"))
+                    if stop_order and "takeProfitPrice" in stop_order
+                    else None,
+                )
+            )
         return ret
 
     @override
@@ -314,20 +331,20 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
             case _:
                 raise ValueError(f"Unknown position side: {side}")
 
-    def _map_open_type(self, margin_mode: str) -> PositionOpenTypeEnum:
+    def _map_open_type(self, open_type: int) -> PositionOpenTypeEnum:
         """
         Map the raw 'marginMode' from the exchange to PositionOpenTypeEnum using match/case.
 
         Args:
-            margin_mode: str, e.g., "cross" or "isolated"
+            open_type: int, e.g., 1 (isolated) or 2 (cross)
 
         Returns:
             PositionOpenTypeEnum.CROSS or PositionOpenTypeEnum.ISOLATED
         """
-        match margin_mode.lower():
-            case "cross":
-                return PositionOpenTypeEnum.CROSS
-            case "isolated":
+        match open_type:
+            case 1:
                 return PositionOpenTypeEnum.ISOLATED
+            case 2:
+                return PositionOpenTypeEnum.CROSS
             case _:
-                raise ValueError(f"Unknown margin mode: {margin_mode}")
+                raise ValueError(f"Unknown open type: {open_type}")

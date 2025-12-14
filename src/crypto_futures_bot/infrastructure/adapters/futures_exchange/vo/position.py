@@ -31,13 +31,3 @@ class Position:
 
     # Costs
     fee: float
-
-    @property
-    def base_asset(self) -> str:
-        return self.symbol.split("/")[0]
-
-    @property
-    def quote_asset(self) -> str:
-        base_and_contract = self.symbol.split("/")[1]
-        quote_asset = base_and_contract.split(":")[0]
-        return quote_asset

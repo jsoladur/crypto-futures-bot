@@ -7,11 +7,13 @@ import ccxt.async_support as ccxt
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 from crypto_futures_bot.constants import DEFAULT_IN_MEMORY_CACHE_TTL_IN_SECONDS, MEXC_FUTURES_TAKER_FEES
+from crypto_futures_bot.domain.enums import PositionOpenTypeEnum, PositionTypeEnum
 from crypto_futures_bot.domain.types import Timeframe
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
     AccountInfo,
     PortfolioBalance,
+    Position,
     SymbolMarketConfig,
     SymbolTicker,
 )
@@ -99,13 +101,7 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
     )
     async def get_symbol_ticker(self, symbol: str) -> SymbolTicker:
         raw_ticker = await self._futures_client.fetch_ticker(symbol)
-        return SymbolTicker(
-            timestamp=raw_ticker["timestamp"],
-            symbol=symbol,
-            close=raw_ticker["close"],
-            bid=raw_ticker["bid"],
-            ask=raw_ticker["ask"],
-        )
+        return self._convert_raw_ticker_to_symbol_ticker(raw_ticker)
 
     @override
     @backoff.on_exception(
@@ -121,17 +117,18 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
     )
     async def get_symbol_tickers(self, *, symbols: list[str] | None = None) -> list[SymbolTicker]:
         raw_tickers = await self._futures_client.fetch_tickers(symbols=symbols)
-        ret = [
-            SymbolTicker(
-                timestamp=raw_ticker["timestamp"],
-                symbol=raw_ticker["symbol"],
-                close=raw_ticker["close"],
-                bid=raw_ticker["bid"],
-                ask=raw_ticker["ask"],
-            )
-            for raw_ticker in raw_tickers.values()
-        ]
+        ret = [self._convert_raw_ticker_to_symbol_ticker(raw_ticker) for raw_ticker in raw_tickers.values()]
         return ret
+
+    def _convert_raw_ticker_to_symbol_ticker(self, raw_ticker: dict[str, Any]) -> SymbolTicker:
+        return SymbolTicker(
+            timestamp=raw_ticker["timestamp"],
+            symbol=raw_ticker["symbol"],
+            close=raw_ticker["close"],
+            bid=raw_ticker["bid"],
+            ask=raw_ticker["ask"],
+            mark_price=raw_ticker["info"]["fairPrice"],
+        )
 
     @override
     @backoff.on_exception(
@@ -162,6 +159,57 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
             price_precision=int(raw_future_market["info"]["priceScale"]),
             amount_precision=int(raw_future_market["info"]["amountScale"]),
         )
+
+    @override
+    @backoff.on_exception(
+        backoff.constant,
+        exception=ccxt.BaseError,
+        interval=2,
+        max_tries=5,
+        jitter=backoff.full_jitter,
+        giveup=lambda e: isinstance(e, ccxt.BadRequest) or isinstance(e, ccxt.AuthenticationError),
+        on_backoff=lambda details: logger.warning(
+            f"[Retry {details['tries']}] " + f"Waiting {details['wait']:.2f}s due to {str(details['exception'])}"
+        ),
+    )
+    async def get_open_positions(self) -> list[Position]:
+        raw_open_positions = await self._futures_client.fetch_positions()
+        raw_stop_orders = await self._futures_client.request(
+            "/stoporder/open_orders", api=["contract", "private"], method="GET"
+        )
+        ret = []
+        for raw_position in raw_open_positions:
+            position_id = str(raw_position["info"]["positionId"])
+            stop_order = next(
+                (
+                    stop_order
+                    for stop_order in raw_stop_orders.get("data", [])
+                    if stop_order.get("positionId") == position_id
+                ),
+                None,
+            )
+            ret.append(
+                Position(
+                    position_id=position_id,
+                    symbol=raw_position["symbol"],
+                    initial_margin=float(raw_position["initialMargin"]),
+                    leverage=int(raw_position["leverage"]),
+                    liquidation_price=float(raw_position["liquidationPrice"]),
+                    open_type=self._map_open_type(int(raw_position["info"]["openType"])),
+                    position_type=self._map_position_type(raw_position["side"]),
+                    entry_price=float(raw_position["entryPrice"]),
+                    contracts=float(raw_position["contracts"]),
+                    contract_size=float(raw_position["contractSize"]),
+                    fee=float(raw_position["info"]["totalFee"]),
+                    stop_loss_price=float(stop_order.get("stopLossPrice"))
+                    if stop_order and "stopLossPrice" in stop_order
+                    else None,
+                    take_profit_price=float(stop_order.get("takeProfitPrice"))
+                    if stop_order and "takeProfitPrice" in stop_order
+                    else None,
+                )
+            )
+        return ret
 
     @override
     def get_taker_fee(self) -> float:
@@ -254,3 +302,49 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
     async def _get_spot_prices(self) -> dict[str, float]:
         spot_tickers = await self._spot_client.fetch_tickers()
         return {symbol: ticker["last"] for symbol, ticker in spot_tickers.items()}
+
+    def _convert_raw_ticker_to_symbol_ticker(self, raw_ticker: dict[str, Any]) -> SymbolTicker:
+        return SymbolTicker(
+            timestamp=raw_ticker["timestamp"],
+            symbol=raw_ticker["symbol"],
+            close=raw_ticker["close"],
+            bid=raw_ticker["bid"],
+            ask=raw_ticker["ask"],
+            mark_price=float(raw_ticker["info"]["fairPrice"]),
+        )
+
+    def _map_position_type(self, side: str) -> PositionTypeEnum:
+        """
+        Map the raw 'side' field from the exchange to PositionTypeEnum using match/case.
+
+        Args:
+            side: str, e.g., "long" or "short"
+
+        Returns:
+            PositionTypeEnum.LONG or PositionTypeEnum.SHORT
+        """
+        match side.lower():
+            case "long":
+                return PositionTypeEnum.LONG
+            case "short":
+                return PositionTypeEnum.SHORT
+            case _:
+                raise ValueError(f"Unknown position side: {side}")
+
+    def _map_open_type(self, open_type: int) -> PositionOpenTypeEnum:
+        """
+        Map the raw 'marginMode' from the exchange to PositionOpenTypeEnum using match/case.
+
+        Args:
+            open_type: int, e.g., 1 (isolated) or 2 (cross)
+
+        Returns:
+            PositionOpenTypeEnum.CROSS or PositionOpenTypeEnum.ISOLATED
+        """
+        match open_type:
+            case 1:
+                return PositionOpenTypeEnum.ISOLATED
+            case 2:
+                return PositionOpenTypeEnum.CROSS
+            case _:
+                raise ValueError(f"Unknown open type: {open_type}")

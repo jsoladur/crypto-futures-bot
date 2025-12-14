@@ -1,11 +1,12 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+import pydash
 from aiogram import html
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
-from crypto_futures_bot.domain.enums import MarketActionTypeEnum, PositionTypeEnum
-from crypto_futures_bot.domain.vo import MarketSignalItem, TradeNowHints
+from crypto_futures_bot.domain.enums import MarketActionTypeEnum, PositionOpenTypeEnum, PositionTypeEnum
+from crypto_futures_bot.domain.vo import MarketSignalItem, PositionMetrics, TradeNowHints
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
     AccountInfo,
     PortfolioBalance,
@@ -110,6 +111,36 @@ class MessagesFormatter:
                 signals_lines.append("")
         message = "\n".join(header + signals_lines)
         return message
+
+    def format_position_metrics(self, position_metrics: PositionMetrics) -> str:
+        position = position_metrics.position
+        ticker = position_metrics.ticker
+        icon = "🟢" if position.position_type == PositionTypeEnum.LONG else "🔴"
+        margin_icon = "🔒" if position.open_type == PositionOpenTypeEnum.ISOLATED else "🔗"
+        message_lines = [
+            f"{icon} {html.bold(position.position_type.value.upper())} {html.code(position.symbol)} || {margin_icon} {html.bold(pydash.start_case(position.open_type.value))} {html.bold(position.leverage)}x",  # noqa: E501
+            "====================================================",
+            f"🔥 {html.bold('Current Price')} ({html.bold('Bid' if position.position_type == PositionTypeEnum.LONG else 'Ask')}) = {ticker.bid_or_close if position.position_type == PositionTypeEnum.LONG else ticker.ask_or_close} {ticker.quote_asset}",  # noqa: E501
+            f"🏦 {html.bold('Unrealized PnL')} = {position_metrics.get_unrealised_pnl()} {ticker.quote_asset} [{position_metrics.get_unrealised_pnl_ratio()}%]",  # noqa: E501
+            f"🤑 {html.bold('Unrealized Net Revenue')} = {position_metrics.get_unrealised_net_revenue()} {ticker.quote_asset}",  # noqa: E501
+            "----------------------------------------------------",
+            f"💰 {html.bold('Notional')} = {position_metrics.notional} {ticker.quote_asset}",
+            f"🧱 {html.bold('Initial Margin')} = {position.initial_margin} {ticker.quote_asset}",
+            "----------------------------------------------------",
+            f"🎯 {html.bold('Avg. Entry Price')} = {position.entry_price} {ticker.quote_asset}",
+            f"☠️ {html.bold('Liq. Price')} = {position.liquidation_price} {ticker.quote_asset}",
+            "----------------------------------------------------",
+            # Risk controls
+            f"🛑 {html.bold('Stop Loss')} = {position.stop_loss_price} {ticker.quote_asset}"
+            if position.stop_loss_price is not None
+            else "🛑 Stop Loss = —",
+            f"🎉 {html.bold('Take Profit')} = {position.take_profit_price} {ticker.quote_asset}"
+            if position.take_profit_price is not None
+            else "🎉 Take Profit = —",
+            "----------------------------------------------------",
+            f"💸 {html.bold('Fees Paid')} = {position.fee} {ticker.quote_asset}",
+        ]
+        return "\n".join(message_lines)
 
     def _format_timestamp_with_timezone(self, timestamp: datetime, *, zoneinfo: str = "Europe/Madrid") -> str:
         return timestamp.astimezone(ZoneInfo(zoneinfo)).strftime("%d-%m-%Y %H:%M")

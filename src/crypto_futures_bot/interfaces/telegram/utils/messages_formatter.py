@@ -121,11 +121,11 @@ class MessagesFormatter:
             f"{icon} {html.bold(position.position_type.value.upper())} {html.code(position.symbol)} || {margin_icon} {html.bold(pydash.start_case(position.open_type.value))} {html.bold(position.leverage)}x",  # noqa: E501
             "====================================================",
             f"🔥 {html.bold('Current Price')} ({html.bold('Bid' if position.position_type == PositionTypeEnum.LONG else 'Ask')}) = {ticker.bid_or_close if position.position_type == PositionTypeEnum.LONG else ticker.ask_or_close} {ticker.quote_asset}",  # noqa: E501
-            f"🏦 {html.bold('Unrealized PnL')} = {position_metrics.get_unrealised_pnl()} {ticker.quote_asset} [{position_metrics.get_unrealised_pnl_ratio()}%]",  # noqa: E501
-            f"🤑 {html.bold('Unrealized Net Revenue')} = {position_metrics.get_unrealised_net_revenue()} {ticker.quote_asset}",  # noqa: E501
+            f"🏦 {html.bold('Unrealized PnL')} = {'+' if position_metrics.unrealised_pnl > 0 else '-'}{abs(position_metrics.unrealised_pnl)} {ticker.quote_asset} [{position_metrics.unrealised_pnl_ratio}%]",  # noqa: E501
+            f"🤑 {html.bold('Unrealized Net Revenue')} = {'+' if position_metrics.unrealised_net_revenue > 0 else '-'}{abs(position_metrics.unrealised_net_revenue)} {ticker.quote_asset}",  # noqa: E501
             "----------------------------------------------------",
             f"💰 {html.bold('Notional')} = {position_metrics.notional} {ticker.quote_asset}",
-            f"🧱 {html.bold('Initial Margin')} = {position.initial_margin} {ticker.quote_asset}",
+            f"🧱 {html.bold('Initial Margin')} = {position_metrics.initial_margin} {ticker.quote_asset}",
             "----------------------------------------------------",
             f"🎯 {html.bold('Avg. Entry Price')} = {position.entry_price} {ticker.quote_asset}",
             f"☠️ {html.bold('Liq. Price')} = {position.liquidation_price} {ticker.quote_asset}",
@@ -140,6 +140,18 @@ class MessagesFormatter:
             "----------------------------------------------------",
             f"💸 {html.bold('Fees Paid')} = {position.fee} {ticker.quote_asset}",
         ]
+        if position_metrics.profit_factor is not None:
+            message_lines.append(
+                f"⚖️ {html.bold('Profit Factor')} = {position_metrics.profit_factor} {ticker.quote_asset}"  # noqa: E501
+            )
+        if position_metrics.potential_profit_at_tp is not None:
+            message_lines.append(
+                f"🟢 {html.bold('Potential Profit at TP')} = {'+' if position_metrics.potential_profit_at_tp > 0 else '-'}{abs(position_metrics.potential_profit_at_tp)} {ticker.quote_asset}"  # noqa: E501
+            )
+        if position_metrics.potential_loss_at_sl is not None:
+            message_lines.append(
+                f"🔴 {html.bold('Potential Loss at SL')} = {'+' if position_metrics.potential_loss_at_sl > 0 else '-'}{abs(position_metrics.potential_loss_at_sl)} {ticker.quote_asset}"  # noqa: E501
+            )
         return "\n".join(message_lines)
 
     def _format_timestamp_with_timezone(self, timestamp: datetime, *, zoneinfo: str = "Europe/Madrid") -> str:

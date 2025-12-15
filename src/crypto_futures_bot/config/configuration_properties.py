@@ -44,3 +44,6 @@ class ConfigurationProperties(BaseSettings):
     short_exit_oversold_threshold: float = DEFAULT_SHORT_EXIT_OVERSOLD_THRESHOLD
 
     market_signal_retention_days: int = DEFAULT_MARKET_SIGNAL_RETENTION_DAYS
+
+    notify_entry_signals: bool = True
+    notify_exit_signals: bool = False

@@ -266,9 +266,9 @@ class SignalsTaskService(AbstractTaskService):
         )
         # FILTER: Must be Oversold (Buying the dip)
         stoch_condition = prev_candle.stoch_rsi_k < self._configuration_properties.long_entry_oversold_threshold
-        # MOMENTUM: Histogram is ticking up (Recovery started)
-        macd_improving = last_candle.macd_hist > prev_candle.macd_hist
-        return trend_ok and stoch_cross and stoch_condition and macd_improving
+        # MOMENTUM: Histogram must be positive (Recovery started)
+        macd_positive = last_candle.macd_hist > 0
+        return trend_ok and stoch_cross and stoch_condition and macd_positive
 
     def _is_long_exit(self, prev_candle: CandleStickIndicators, last_candle: CandleStickIndicators) -> bool:
         # HARD EXIT: Trend Broken (Price falls below EMA50)
@@ -280,7 +280,7 @@ class SignalsTaskService(AbstractTaskService):
             and prev_candle.stoch_rsi_k > self._configuration_properties.long_exit_overbought_threshold
         )
         # MOMENTUM EXIT: Only exit if momentum is failing
-        momentum_failure = last_candle.macd_hist < 0 and last_candle.macd_hist < prev_candle.macd_hist
+        momentum_failure = last_candle.macd_hist < 0
         return trend_broken or stoch_take_profit or momentum_failure
 
     def _is_short_entry(self, prev_candle: CandleStickIndicators, last_candle: CandleStickIndicators) -> bool:
@@ -289,8 +289,8 @@ class SignalsTaskService(AbstractTaskService):
             prev_candle.stoch_rsi_k >= prev_candle.stoch_rsi_d and last_candle.stoch_rsi_k < last_candle.stoch_rsi_d
         )
         stoch_condition = prev_candle.stoch_rsi_k > self._configuration_properties.short_entry_overbought_threshold
-        macd_worsening = last_candle.macd_hist < prev_candle.macd_hist
-        return trend_ok and stoch_cross and stoch_condition and macd_worsening
+        macd_negative = last_candle.macd_hist < 0
+        return trend_ok and stoch_cross and stoch_condition and macd_negative
 
     def _is_short_exit(self, prev_candle: CandleStickIndicators, last_candle: CandleStickIndicators) -> bool:
         # HARD EXIT: Price breaks above EMA50
@@ -302,7 +302,7 @@ class SignalsTaskService(AbstractTaskService):
             and prev_candle.stoch_rsi_k < self._configuration_properties.short_exit_oversold_threshold
         )
         # MOMENTUM EXIT: Only exit if momentum is failing
-        momentum_failure = last_candle.macd_hist > 0 and last_candle.macd_hist > prev_candle.macd_hist
+        momentum_failure = last_candle.macd_hist > 0
         return trend_broken or stoch_take_profit or momentum_failure
 
     async def _notify_alert(self, telegram_chat_ids: list[str], body_message: str) -> None:

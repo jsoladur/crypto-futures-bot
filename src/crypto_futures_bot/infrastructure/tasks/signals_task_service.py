@@ -220,6 +220,8 @@ class SignalsTaskService(AbstractTaskService):
         last_candle: CandleStickIndicators,
         symbol_ticker: SymbolTicker,
     ) -> None:
+        if not self._configuration_properties.notify_entry_signals:
+            return
         trade_now_hints = await self._trade_now_service.get_trade_now_hints(signals_evaluation_result.crypto_currency)
         position_hints = trade_now_hints.long if is_long else trade_now_hints.short
         icon = "🟢" if is_long else "🔴"
@@ -245,6 +247,8 @@ class SignalsTaskService(AbstractTaskService):
         account_info: AccountInfo,
         symbol_ticker: SymbolTicker,
     ) -> None:
+        if not self._configuration_properties.notify_exit_signals:
+            return
         icon = "🟦" if is_long else "🟧"
         signal_type = "LONG" if is_long else "SHORT"
         exit_price = symbol_ticker.bid_or_close if is_long else symbol_ticker.ask_or_close

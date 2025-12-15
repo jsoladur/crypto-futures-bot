@@ -13,7 +13,10 @@ class KeyboardsBuilder:
     def get_home_keyboard(self) -> InlineKeyboardMarkup:
         builder = InlineKeyboardBuilder()
         builder.row(InlineKeyboardButton(text="💰 Portfolio Balance", callback_data="portfolio_balance"))
-        builder.row(InlineKeyboardButton(text="🔍 Tracker", callback_data="tracked_crypto_currencies_home"))
+        builder.row(
+            InlineKeyboardButton(text="🔍 Tracker", callback_data="tracked_crypto_currencies_home"),
+            InlineKeyboardButton(text="🧩 Parametrization", callback_data="signal_parametrization_home"),
+        )
         builder.row(
             InlineKeyboardButton(text="💹 Prices", callback_data="prices"),
             InlineKeyboardButton(text="🔥 Positions", callback_data="positions"),
@@ -43,6 +46,20 @@ class KeyboardsBuilder:
                 InlineKeyboardButton(
                     text=f"🚦 {crypto_currency.currency}",
                     callback_data=f"show_market_signals_$_{crypto_currency.currency}",
+                )
+            )
+        builder.row(InlineKeyboardButton(text="🔙 Back", callback_data="go_back_home"))
+        return builder.as_markup()
+
+    def get_signal_parametrization_keyboard(
+        self, crypto_currencies: list[TrackedCryptoCurrencyItem]
+    ) -> InlineKeyboardMarkup:
+        builder = InlineKeyboardBuilder()
+        for crypto_currency in crypto_currencies:
+            builder.row(
+                InlineKeyboardButton(
+                    text=f"🧩 {crypto_currency.currency}",
+                    callback_data=f"show_signal_parametrization_$_{crypto_currency.currency}",
                 )
             )
         builder.row(InlineKeyboardButton(text="🔙 Back", callback_data="go_back_home"))

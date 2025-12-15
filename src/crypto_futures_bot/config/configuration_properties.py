@@ -3,8 +3,6 @@ from __future__ import annotations
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from crypto_futures_bot.constants import (
-    DEFAULT_ATR_SL_MULT,
-    DEFAULT_ATR_TP_MULT,
     DEFAULT_CURRENCY_CODE,
     DEFAULT_JOB_INTERVAL_SECONDS,
     DEFAULT_LONG_ENTRY_OVERSOLD_THRESHOLD,
@@ -44,8 +42,5 @@ class ConfigurationProperties(BaseSettings):
     long_exit_overbought_threshold: float = DEFAULT_LONG_EXIT_OVERBOUGHT_THRESHOLD
     short_entry_overbought_threshold: float = DEFAULT_SHORT_ENTRY_OVERBOUGHT_THRESHOLD
     short_exit_oversold_threshold: float = DEFAULT_SHORT_EXIT_OVERSOLD_THRESHOLD
-
-    atr_sl_mult: float = DEFAULT_ATR_SL_MULT
-    atr_tp_mult: float = DEFAULT_ATR_TP_MULT
 
     market_signal_retention_days: int = DEFAULT_MARKET_SIGNAL_RETENTION_DAYS

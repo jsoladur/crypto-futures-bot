@@ -1,7 +1,7 @@
 import math
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
-from crypto_futures_bot.domain.vo import CandleStickIndicators, PositionMetrics
+from crypto_futures_bot.domain.vo import CandleStickIndicators, PositionMetrics, SignalParametrizationItem
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo.symbol_market_config import SymbolMarketConfig
 from crypto_futures_bot.infrastructure.services.base import AbstractService
@@ -39,10 +39,11 @@ class OrdersAnalyticsService(AbstractService):
         avg_entry_price: float,
         *,
         last_candlestick_indicators: CandleStickIndicators,
+        signal_parametrization_item: SignalParametrizationItem,
         symbol_market_config: SymbolMarketConfig,
     ) -> float:
         stop_price = round(
-            avg_entry_price - (last_candlestick_indicators.atr * self._configuration_properties.atr_sl_mult),
+            avg_entry_price - (last_candlestick_indicators.atr * signal_parametrization_item.atr_sl_mult),
             ndigits=symbol_market_config.price_precision,
         )
         stop_loss_percent_value = abs(self._ceil_round((1 - (stop_price / avg_entry_price)) * 100, ndigits=2))
@@ -69,10 +70,11 @@ class OrdersAnalyticsService(AbstractService):
         avg_entry_price: float,
         *,
         last_candlestick_indicators: CandleStickIndicators,
+        signal_parametrization_item: SignalParametrizationItem,
         symbol_market_config: SymbolMarketConfig,
     ) -> float:
         take_profit_price = round(
-            avg_entry_price + (last_candlestick_indicators.atr * self._configuration_properties.atr_tp_mult),
+            avg_entry_price + (last_candlestick_indicators.atr * signal_parametrization_item.atr_tp_mult),
             ndigits=symbol_market_config.price_precision,
         )
         take_profit_percent_value = abs(self._floor_round((1 - (take_profit_price / avg_entry_price)) * 100, ndigits=2))

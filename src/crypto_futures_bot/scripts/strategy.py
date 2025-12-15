@@ -37,9 +37,9 @@ class BotStrategy(Strategy):
         is_short_entry = self.signals_task_service._is_short_entry(prev_candle, last_candle)
         is_long_exit = self.signals_task_service._is_long_exit(prev_candle, last_candle)
         is_short_exit = self.signals_task_service._is_short_exit(prev_candle, last_candle)
-        entry_price = self.data.Close[-1]
         # Exit logic
         if self.position:
+            entry_price = self.trades[-1].entry_price
             break_even_price = self.orders_analytics_service.calculate_break_even_price(
                 entry_price=entry_price, symbol_market_config=self.symbol_market_config, is_long=self.position.is_long
             )
@@ -49,6 +49,7 @@ class BotStrategy(Strategy):
                 self.position.close()
         # Entry logic
         elif is_long_entry or is_short_entry:
+            entry_price = self.data.Close[-1]
             sl_pct = self.orders_analytics_service.get_stop_loss_percent_value(
                 avg_entry_price=entry_price,
                 last_candlestick_indicators=last_candle,

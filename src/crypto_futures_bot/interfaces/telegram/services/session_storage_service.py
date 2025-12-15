@@ -31,6 +31,17 @@ class SessionStorageService:
         data[SessionKeysEnum.USER_CONTEXT.value] = userinfo
         await state.set_data(data)
 
+    async def get_signal_parametrization_crypto_currency_form(self, chat_id: int) -> str:
+        data = self._in_memory_storage_by_chat_id.setdefault(chat_id, {})
+        if SessionKeysEnum.SIGNAL_PARAMETRIZATION_CRYPTO_CURRENCY_FORM.value not in data:
+            return ValueError("Missing signal parametrization crypto currency form")
+        crypto_currency = data.pop(SessionKeysEnum.SIGNAL_PARAMETRIZATION_CRYPTO_CURRENCY_FORM.value)
+        return crypto_currency
+
+    async def set_signal_parametrization_crypto_currency_form(self, state: FSMContext, crypto_currency: str) -> None:
+        data = self._in_memory_storage_by_chat_id.setdefault(state.key.chat_id, {})
+        data[SessionKeysEnum.SIGNAL_PARAMETRIZATION_CRYPTO_CURRENCY_FORM.value] = crypto_currency
+
     async def perform_logout(self, state: FSMContext) -> bool:
         data = await state.get_data()
         if SessionKeysEnum.USER_CONTEXT.value in data:

@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 
 import typer
 
+from crypto_futures_bot.constants import DEFAULT_ATR_SL_MULT, DEFAULT_ATR_TP_MULT
 from crypto_futures_bot.scripts.config import Container
 from crypto_futures_bot.scripts.services import BacktestingService
 
@@ -21,6 +22,8 @@ def backtest(
     currency: str = typer.Option("DOGE", help="Crypto currency to backtest"),
     days: int = typer.Option(365, help="Number of days to backtest"),
     initial_cash: float = typer.Option(3_000.0, help="Initial cash in USDT"),
+    atr_sl_mult: float = typer.Option(DEFAULT_ATR_SL_MULT, help="ATR SL multiplier"),
+    atr_tp_mult: float = typer.Option(DEFAULT_ATR_TP_MULT, help="ATR TP multiplier"),
     show_plot: bool = typer.Option(False, help="Show plot"),
 ):
     """
@@ -34,6 +37,8 @@ def backtest(
             end_date=end_date,
             crypto_currency=currency,
             initial_cash=initial_cash,
+            atr_sl_mult=atr_sl_mult,
+            atr_tp_mult=atr_tp_mult,
             show_plot=show_plot,
         )
     )

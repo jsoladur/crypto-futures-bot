@@ -6,7 +6,7 @@ from aiogram import html
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 from crypto_futures_bot.domain.enums import MarketActionTypeEnum, PositionOpenTypeEnum, PositionTypeEnum
-from crypto_futures_bot.domain.vo import MarketSignalItem, PositionMetrics, TradeNowHints
+from crypto_futures_bot.domain.vo import MarketSignalItem, PositionMetrics, SignalParametrizationItem, TradeNowHints
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
     AccountInfo,
     PortfolioBalance,
@@ -153,6 +153,14 @@ class MessagesFormatter:
                 f"🔴 {html.bold('Potential Loss at SL')} = {'+' if position_metrics.potential_loss_at_sl > 0 else '-'}{abs(position_metrics.potential_loss_at_sl)} {ticker.quote_asset}"  # noqa: E501
             )
         return "\n".join(message_lines)
+
+    def format_signal_parametrization_message(self, signal_parametrization: SignalParametrizationItem) -> str:
+        message_lines = [
+            f"🛡️ SL ATR x = {html.code(signal_parametrization.atr_sl_mult)}",
+            f"🏁 TP ATR x = {html.code(signal_parametrization.atr_tp_mult)}",
+        ]
+        ret = "\n".join(message_lines)
+        return ret
 
     def _format_timestamp_with_timezone(self, timestamp: datetime, *, zoneinfo: str = "Europe/Madrid") -> str:
         return timestamp.astimezone(ZoneInfo(zoneinfo)).strftime("%d-%m-%Y %H:%M")

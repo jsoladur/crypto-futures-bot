@@ -2,16 +2,19 @@ from crypto_futures_bot.domain.vo import PositionHints, TrackedCryptoCurrencyIte
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_service import CryptoTechnicalAnalysisService
 from crypto_futures_bot.infrastructure.services.orders_analytics_service import OrdersAnalyticsService
+from crypto_futures_bot.infrastructure.services.signal_parametrization_service import SignalParametrizationService
 
 
 class TradeNowService:
     def __init__(
         self,
         futures_exchange_service: AbstractFuturesExchangeService,
+        signal_parametrization_service: SignalParametrizationService,
         crypto_technical_analysis_service: CryptoTechnicalAnalysisService,
         orders_analytics_service: OrdersAnalyticsService,
     ):
         self._futures_exchange_service = futures_exchange_service
+        self._signal_parametrization_service = signal_parametrization_service
         self._crypto_technical_analysis_service = crypto_technical_analysis_service
         self._orders_analytics_service = orders_analytics_service
 
@@ -19,6 +22,9 @@ class TradeNowService:
         account_info = await self._futures_exchange_service.get_account_info()
         symbol = tracked_crypto_currency.to_symbol(account_info)
         ticker = await self._futures_exchange_service.get_symbol_ticker(symbol=symbol)
+        signal_parametrization_item = await self._signal_parametrization_service.find_by_crypto_currency(
+            crypto_currency=tracked_crypto_currency.currency
+        )
         symbol_market_config = await self._futures_exchange_service.get_symbol_market_config(
             crypto_currency=tracked_crypto_currency.currency
         )
@@ -26,11 +32,13 @@ class TradeNowService:
         stop_loss_percent_value = self._orders_analytics_service.get_stop_loss_percent_value(
             avg_entry_price=ticker.ask_or_close,
             last_candlestick_indicators=candlestick_indicators,
+            signal_parametrization_item=signal_parametrization_item,
             symbol_market_config=symbol_market_config,
         )
         take_profit_percent_value = self._orders_analytics_service.get_take_profit_percent_value(
             avg_entry_price=ticker.ask_or_close,
             last_candlestick_indicators=candlestick_indicators,
+            signal_parametrization_item=signal_parametrization_item,
             symbol_market_config=symbol_market_config,
         )
         return TradeNowHints(

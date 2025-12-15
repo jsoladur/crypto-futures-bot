@@ -7,3 +7,4 @@ class SessionKeysEnum(str, Enum):
     """
 
     USER_CONTEXT = "user_ctx"
+    SIGNAL_PARAMETRIZATION_CRYPTO_CURRENCY_FORM = "signal_parametrization_crypto_currency_form"

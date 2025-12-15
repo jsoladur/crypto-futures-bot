@@ -8,6 +8,8 @@ from typer import echo
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 from crypto_futures_bot.constants import DEFAULT_CURRENCY_CODE
+from crypto_futures_bot.domain.types import Timeframe
+from crypto_futures_bot.domain.vo import SignalParametrizationItem
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.impl.mexc_futures_exchange import (
     MEXCFuturesExchangeService,
 )
@@ -39,10 +41,37 @@ class BacktestingService:
         start_date: datetime,
         end_date: datetime,
         crypto_currency: str,
-        initial_cash: float,
         *,
+        initial_cash: float,
+        atr_sl_mult: float,
+        atr_tp_mult: float,
         show_plot: bool = False,
     ) -> None:
+        bt, stats = await self._internal_run(
+            crypto_currency=crypto_currency,
+            start_date=start_date,
+            end_date=end_date,
+            initial_cash=initial_cash,
+            atr_sl_mult=atr_sl_mult,
+            atr_tp_mult=atr_tp_mult,
+            show_plot=show_plot,
+        )
+        echo(f"\n--- Backtest Result for {crypto_currency} ---\n")
+        echo(stats)
+        if show_plot:
+            bt.plot()  # Requires browser
+
+    async def _internal_run(
+        self,
+        *,
+        crypto_currency: str,
+        start_date: datetime,
+        end_date: datetime,
+        initial_cash: float,
+        atr_sl_mult: float,
+        atr_tp_mult: float,
+        show_plot: bool = False,
+    ) -> tuple[Backtest, pd.Series]:
         symbol = f"{crypto_currency}/{DEFAULT_CURRENCY_CODE}:{DEFAULT_CURRENCY_CODE}"
         await self._exchange_service.post_init()
         echo(f"Starting backtest for {symbol} from {start_date} to {end_date}")
@@ -51,60 +80,70 @@ class BacktestingService:
         if df is None or df.empty:
             echo("No data found, aborting backtest.")
             return
-        # 2. Calculate Indicators
-        # Accessing protected method to avoid code duplication as per requirements
-
-        # 3. Prepare Data for Backtesting
+        # 2. Prepare Data for Backtesting
         df.dropna(inplace=True)
-        # 4. Configure Strategy
+        # 3. Configure Strategy
         # We need the symbol market config for precision
         symbol_market_config = await self._exchange_service.get_symbol_market_config(crypto_currency)
-
-        BotStrategy.signals_service = self._signals_task_service
-        BotStrategy.orders_service = self._orders_analytics_service
-        BotStrategy.symbol_market_config = symbol_market_config
-
-        # 5. Run Backtest
+        # 4. Run Backtest
         bt = Backtest(df, BotStrategy, cash=initial_cash, commission=self._exchange_service.get_taker_fee())
-        stats = bt.run()
+        stats = bt.run(
+            signals_task_service=self._signals_task_service,
+            orders_analytics_service=self._orders_analytics_service,
+            symbol_market_config=symbol_market_config,
+            signal_parametrization=SignalParametrizationItem(
+                crypto_currency=crypto_currency, atr_sl_mult=atr_sl_mult, atr_tp_mult=atr_tp_mult
+            ),
+        )
+        return bt, stats
 
-        echo("\n--- Backtest Result ---\n")
-        echo(stats)
-        if show_plot:
-            bt.plot()  # Requires browser
-
-    async def _download_data(self, symbol: str, start_date: datetime, end_date: datetime) -> pd.DataFrame | None:
+    async def _download_data(
+        self, symbol: str, start_date: datetime, end_date: datetime, *, timeframe: Timeframe = "15m"
+    ) -> pd.DataFrame | None:
         echo(f"Downloading data for {symbol}...")
-
-        timeframe = "15m"
         limit = 1000
         all_ohlcv = []
-
         current_since = int(start_date.timestamp() * 1000)
         end_ts = int(end_date.timestamp() * 1000)
 
-        while current_since < end_ts:
-            ohlcv = await self._exchange_service.fetch_ohlcv(
-                symbol, timeframe=timeframe, limit=limit, since=current_since
-            )
-            if not ohlcv:
-                break
-            all_ohlcv.extend(ohlcv)
-            echo(f"Fetched {len(ohlcv)} candles. Last timestamp: {ohlcv[-1][0]}")
+        from tqdm.asyncio import tqdm
 
-            last_timestamp = ohlcv[-1][0]
-            if last_timestamp <= current_since:
-                # Avoid infinite loop if exchange returns same data
-                current_since += 15 * 60 * 1000
-            else:
-                current_since = last_timestamp + 1
-
-            await asyncio.sleep(0.05)
-
+        with tqdm(
+            total=end_ts - current_since,
+            unit="ms",
+            desc=f"Downloading {symbol} OHLCV",
+            initial=0,
+            dynamic_ncols=True,
+            unit_scale=True,
+        ) as pbar:
+            while current_since < end_ts:
+                ohlcv = await self._exchange_service.fetch_ohlcv(
+                    symbol, timeframe=timeframe, limit=limit, since=current_since
+                )
+                if not ohlcv:
+                    timeframe_duration_ms = self._calculate_timeframe_duration_ms(timeframe)
+                    current_since += timeframe_duration_ms * limit
+                    pbar.update(timeframe_duration_ms)
+                else:
+                    all_ohlcv.extend(ohlcv)
+                    last_timestamp_fetched = ohlcv[-1][0]
+                    progress_made = last_timestamp_fetched - current_since + 1
+                    pbar.update(progress_made)
+                    current_since = last_timestamp_fetched + 1
+                await asyncio.sleep(0.05)
         echo(f"Total candles fetched: {len(all_ohlcv)}")
-
         if not all_ohlcv:
             return None
-
         df = await self._crypto_technical_analysis_service.get_technical_analysis(symbol, ohlcv=all_ohlcv)
         return df
+
+    def _calculate_timeframe_duration_ms(self, timeframe: Timeframe) -> int:
+        if timeframe.endswith("m"):
+            timeframe_duration_ms = int(timeframe[:-1]) * 60 * 1000
+        elif timeframe.endswith("h"):
+            timeframe_duration_ms = int(timeframe[:-1]) * 60 * 60 * 1000
+        elif timeframe.endswith("d"):
+            timeframe_duration_ms = int(timeframe[:-1]) * 24 * 60 * 60 * 1000
+        else:
+            timeframe_duration_ms = 15 * 60 * 1000
+        return timeframe_duration_ms

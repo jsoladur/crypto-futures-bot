@@ -44,12 +44,12 @@ async def show_signal_parametrization_callback_handler(callback_query: CallbackQ
             message = (
                 f"🧩 Signal parametrization for {html.bold(crypto_currency)} 🧩\n\n"
                 + signal_parametrization_formatted
-                + "ℹ️️ Would you like to modify these parameters?"
+                + "\n\nℹ️️ Would you like to modify these parameters?"
             )
             await callback_query.message.answer(
                 message,
                 reply_markup=keyboards_builder.get_yes_no_keyboard(
-                    yes_button_callback_data=f"edit_signal_parametrization$${crypto_currency}"
+                    yes_button_callback_data=f"edit_signal_parametrization_$_{crypto_currency}"
                 ),
             )
         except Exception as e:

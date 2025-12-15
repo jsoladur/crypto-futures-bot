@@ -1,13 +1,15 @@
 import asyncio
 import logging
 from datetime import datetime
+from itertools import product
 
 import pandas as pd
 from backtesting import Backtest
+from tqdm.asyncio import tqdm
 from typer import echo
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
-from crypto_futures_bot.constants import DEFAULT_CURRENCY_CODE
+from crypto_futures_bot.constants import DEFAULT_CURRENCY_CODE, SL_MULTIPLIERS, TP_MULTIPLIERS
 from crypto_futures_bot.domain.types import Timeframe
 from crypto_futures_bot.domain.vo import SignalParametrizationItem
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.impl.mexc_futures_exchange import (
@@ -17,6 +19,7 @@ from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_servic
 from crypto_futures_bot.infrastructure.services.orders_analytics_service import OrdersAnalyticsService
 from crypto_futures_bot.infrastructure.tasks.signals_task_service import SignalsTaskService
 from crypto_futures_bot.scripts.strategy import BotStrategy
+from crypto_futures_bot.scripts.vo import BacktestingResult
 
 logger = logging.getLogger(__name__)
 
@@ -47,10 +50,12 @@ class BacktestingService:
         atr_tp_mult: float,
         show_plot: bool = False,
     ) -> None:
+        symbol, df = await self._calculate_historical_indicators(
+            crypto_currency=crypto_currency, start_date=start_date, end_date=end_date
+        )
         bt, stats = await self._internal_run(
-            crypto_currency=crypto_currency,
-            start_date=start_date,
-            end_date=end_date,
+            symbol=symbol,
+            df=df,
             initial_cash=initial_cash,
             atr_sl_mult=atr_sl_mult,
             atr_tp_mult=atr_tp_mult,
@@ -59,30 +64,55 @@ class BacktestingService:
         echo(f"\n--- Backtest Result for {crypto_currency} ---\n")
         echo(stats)
         if show_plot:
-            bt.plot()  # Requires browser
+            bt.plot()
+
+    async def research(
+        self, start_date: datetime, end_date: datetime, crypto_currency: str, *, initial_cash: float
+    ) -> None:
+        echo(f"\n--- Research for {crypto_currency} ---\n")
+        signal_parametrization_items = self._calculate_signal_parametrization_items(crypto_currency)
+        symbol, df = await self._calculate_historical_indicators(
+            crypto_currency=crypto_currency, start_date=start_date, end_date=end_date
+        )
+        results = []
+        for signal_parametrization_item in tqdm(
+            signal_parametrization_items, desc="Researching signal parametrizations"
+        ):
+            *_, stats = await self._internal_run(
+                symbol=symbol,
+                df=df,
+                initial_cash=initial_cash,
+                atr_sl_mult=signal_parametrization_item.atr_sl_mult,
+                atr_tp_mult=signal_parametrization_item.atr_tp_mult,
+                show_plot=False,
+            )
+            results.append(BacktestingResult(signal_parametrization_item=signal_parametrization_item, stats=stats))
+        results.sort(
+            key=lambda r: (
+                r.stats.get("Return [%]", -float("inf")),
+                r.stats.get("Win Rate [%]", -float("inf")),
+                -r.stats.get(
+                    "Max. Drawdown [%]", float("inf")
+                ),  # Negative for sorting ascending (lower drawdown is better)
+            ),
+            reverse=True,
+        )
+        best_result = results[0]
+        echo("\n--- Best Backtesting Result ---")
+        echo(f"Signal Parametrization: {best_result.signal_parametrization_item}")
+        echo(best_result.stats)
 
     async def _internal_run(
         self,
         *,
-        crypto_currency: str,
-        start_date: datetime,
-        end_date: datetime,
+        symbol: str,
+        df: pd.DataFrame,
         initial_cash: float,
         atr_sl_mult: float,
         atr_tp_mult: float,
         show_plot: bool = False,
     ) -> tuple[Backtest, pd.Series]:
-        symbol = f"{crypto_currency}/{DEFAULT_CURRENCY_CODE}:{DEFAULT_CURRENCY_CODE}"
-        await self._exchange_service.post_init()
-        echo(f"Starting backtest for {symbol} from {start_date} to {end_date}")
-        # 1. Download Data
-        df = await self._download_data(symbol, start_date, end_date)
-        if df is None or df.empty:
-            echo("No data found, aborting backtest.")
-            return
-        # 2. Prepare Data for Backtesting
-        df.dropna(inplace=True)
-        # 3. Configure Strategy
+        crypto_currency = symbol.split("/")[0]
         # We need the symbol market config for precision
         symbol_market_config = await self._exchange_service.get_symbol_market_config(crypto_currency)
         # 4. Run Backtest
@@ -97,6 +127,21 @@ class BacktestingService:
         )
         return bt, stats
 
+    async def _calculate_historical_indicators(
+        self, crypto_currency: str, start_date: datetime, end_date: datetime
+    ) -> tuple[str, pd.DataFrame]:
+        symbol = f"{crypto_currency}/{DEFAULT_CURRENCY_CODE}:{DEFAULT_CURRENCY_CODE}"
+        await self._exchange_service.post_init()
+        echo(f"Starting backtest for {symbol} from {start_date} to {end_date}")
+        # 1. Download Data
+        df = await self._download_data(symbol, start_date, end_date)
+        if df is None or df.empty:
+            echo("No data found, aborting backtest.")
+            return
+        # 2. Prepare Data for Backtesting
+        df.dropna(inplace=True)
+        return symbol, df
+
     async def _download_data(
         self, symbol: str, start_date: datetime, end_date: datetime, *, timeframe: Timeframe = "15m"
     ) -> pd.DataFrame | None:
@@ -105,8 +150,6 @@ class BacktestingService:
         all_ohlcv = []
         current_since = int(start_date.timestamp() * 1000)
         end_ts = int(end_date.timestamp() * 1000)
-
-        from tqdm.asyncio import tqdm
 
         with tqdm(
             total=end_ts - current_since,
@@ -147,3 +190,9 @@ class BacktestingService:
         else:
             timeframe_duration_ms = 15 * 60 * 1000
         return timeframe_duration_ms
+
+    def _calculate_signal_parametrization_items(self, crypto_currency: str) -> list[SignalParametrizationItem]:
+        return [
+            SignalParametrizationItem(crypto_currency=crypto_currency, atr_sl_mult=atr_sl_mult, atr_tp_mult=atr_tp_mult)
+            for atr_sl_mult, atr_tp_mult in product(SL_MULTIPLIERS, TP_MULTIPLIERS)
+        ]

@@ -26,7 +26,7 @@ class BotStrategy(Strategy):
 
         prev_series = self.data.df.iloc[-2]
         last_series = self.data.df.iloc[-1]
-        current_price = self.data.Close[-1]
+        # current_price = self.data.Close[-1]
 
         prev_candle = CandleStickIndicators.from_series(symbol="TEST", index=CandleStickEnum.PREV, series=prev_series)
         last_candle = CandleStickIndicators.from_series(symbol="TEST", index=CandleStickEnum.LAST, series=last_series)
@@ -35,20 +35,21 @@ class BotStrategy(Strategy):
         # We access private methods of signals_task_service
         is_long_entry = self.signals_task_service._is_long_entry(prev_candle, last_candle)
         is_short_entry = self.signals_task_service._is_short_entry(prev_candle, last_candle)
-        is_long_exit = self.signals_task_service._is_long_exit(prev_candle, last_candle)
-        is_short_exit = self.signals_task_service._is_short_exit(prev_candle, last_candle)
-        entry_price = self.data.Close[-1]
+        # is_long_exit = self.signals_task_service._is_long_exit(prev_candle, last_candle)
+        # is_short_exit = self.signals_task_service._is_short_exit(prev_candle, last_candle)
         # Exit logic
-        if self.position:
-            break_even_price = self.orders_analytics_service.calculate_break_even_price(
-                entry_price=entry_price, symbol_market_config=self.symbol_market_config, is_long=self.position.is_long
-            )
-            if self.position.is_long and is_long_exit and current_price > break_even_price:
-                self.position.close()
-            elif self.position.is_short and is_short_exit and current_price < break_even_price:
-                self.position.close()
+        # if self.position:
+        #     entry_price = self.trades[-1].entry_price
+        #     break_even_price = self.orders_analytics_service.calculate_break_even_price(
+        #         entry_price=entry_price, symbol_market_config=self.symbol_market_config, is_long=self.position.is_long
+        #     )
+        #     if self.position.is_long and is_long_exit and current_price > break_even_price:
+        #         self.position.close()
+        #     elif self.position.is_short and is_short_exit and current_price < break_even_price:
+        #         self.position.close()
         # Entry logic
-        elif is_long_entry or is_short_entry:
+        if not self.position and (is_long_entry or is_short_entry):
+            entry_price = self.data.Close[-1]
             sl_pct = self.orders_analytics_service.get_stop_loss_percent_value(
                 avg_entry_price=entry_price,
                 last_candlestick_indicators=last_candle,

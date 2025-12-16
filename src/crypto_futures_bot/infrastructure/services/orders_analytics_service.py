@@ -23,15 +23,16 @@ class OrdersAnalyticsService(AbstractService):
 
     async def get_open_position_metrics(self) -> list[PositionMetrics]:
         positions = await self._futures_exchange_service.get_open_positions()
-        tickers = await self._futures_exchange_service.get_symbol_tickers(
-            symbols=[position.symbol for position in positions]
-        )
-        tickers = {ticker.symbol: ticker for ticker in tickers}
         ret = []
-        for position in positions:
-            ticker = tickers[position.symbol]
-            symbol_market_config = await self._futures_exchange_service.get_symbol_market_config(ticker.base_asset)
-            ret.append(PositionMetrics(position=position, symbol_market_config=symbol_market_config, ticker=ticker))
+        if positions:
+            tickers = await self._futures_exchange_service.get_symbol_tickers(
+                symbols=[position.symbol for position in positions]
+            )
+            tickers = {ticker.symbol: ticker for ticker in tickers}
+            for position in positions:
+                ticker = tickers[position.symbol]
+                symbol_market_config = await self._futures_exchange_service.get_symbol_market_config(ticker.base_asset)
+                ret.append(PositionMetrics(position=position, symbol_market_config=symbol_market_config, ticker=ticker))
         return ret
 
     def get_stop_loss_percent_value(

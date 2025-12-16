@@ -16,6 +16,18 @@ PAIRS=(
     "HYPE"
     "ZEC"
     "RENDER"
+    "PENGU"
+    "PEPE"
+    "HBAR"
+    "CAKE"
+    "JUP"
+    "FIL"
+    "AVAX"
+    "NEAR"
+    "TAO"
+    "DOT"
+    "USELESS"
+    "ULTIMA"
 )
 
 # Define the directory where the result logs will be saved.

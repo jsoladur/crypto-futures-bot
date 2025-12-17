@@ -60,7 +60,7 @@ class MessagesFormatter:
             html.bold("📈 LONG Position:"),
             f"    🎯 {html.italic('Entry')} = {html.code(hints.long.entry_price)} {fiat_currency}",
             f"    ⚖️ {html.italic('Break Even')} = {html.code(hints.long.break_even_price)} {fiat_currency}",
-            f"    🔴 {html.bold('STOP LOSS')} = {html.code(hints.long.stop_loss_price)} {fiat_currency}",
+            f"    🛑 {html.bold('STOP LOSS')} = {html.code(hints.long.stop_loss_price)} {fiat_currency}",
             f"    🏆 {html.bold('TAKE PROFIT')} = {html.code(hints.long.take_profit_price)} {fiat_currency}",
             "     --------------------------------",
             f"    ✳️ {html.italic('Move SL to Break Even')} = {html.code(hints.long.move_sl_to_break_even_price)} {fiat_currency}",  # noqa: E501
@@ -71,7 +71,7 @@ class MessagesFormatter:
             html.bold("📉 SHORT Position:"),
             f"    🎯 {html.italic('Entry')} = {html.code(hints.short.entry_price)} {fiat_currency}",
             f"    ⚖️ {html.italic('Break Even')} = {html.code(hints.short.break_even_price)} {fiat_currency}",
-            f"    🔴 {html.bold('STOP LOSS')} = {html.code(hints.short.stop_loss_price)} {fiat_currency}",
+            f"    🛑 {html.bold('STOP LOSS')} = {html.code(hints.short.stop_loss_price)} {fiat_currency}",
             f"    🏆 {html.bold('TAKE PROFIT')} = {html.code(hints.short.take_profit_price)} {fiat_currency}",
             "     --------------------------------",
             f"    ✳️ {html.italic('Move SL to Break Even')} = {html.code(hints.short.move_sl_to_break_even_price)} {fiat_currency}",  # noqa: E501

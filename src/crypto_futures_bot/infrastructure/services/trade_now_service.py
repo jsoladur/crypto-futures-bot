@@ -30,16 +30,34 @@ class TradeNowService:
         )
         candlestick_indicators = await self._crypto_technical_analysis_service.get_candlestick_indicators(symbol=symbol)
         stop_loss_percent_value = self._orders_analytics_service.get_stop_loss_percent_value(
-            avg_entry_price=ticker.ask_or_close,
+            entry_price=ticker.ask_or_close,
             last_candlestick_indicators=candlestick_indicators,
             signal_parametrization_item=signal_parametrization_item,
             symbol_market_config=symbol_market_config,
         )
         take_profit_percent_value = self._orders_analytics_service.get_take_profit_percent_value(
-            avg_entry_price=ticker.ask_or_close,
+            entry_price=ticker.ask_or_close,
             last_candlestick_indicators=candlestick_indicators,
             signal_parametrization_item=signal_parametrization_item,
             symbol_market_config=symbol_market_config,
+        )
+        long_move_sl_to_break_even_price, long_move_sl_to_first_target_profit_price, long_take_profit_price = (
+            self._orders_analytics_service.get_take_profit_price_levels(
+                entry_price=ticker.ask_or_close,
+                is_long=True,
+                last_candlestick_indicators=candlestick_indicators,
+                signal_parametrization_item=signal_parametrization_item,
+                symbol_market_config=symbol_market_config,
+            )
+        )
+        short_move_sl_to_break_even_price, short_move_sl_to_first_target_profit_price, short_take_profit_price = (
+            self._orders_analytics_service.get_take_profit_price_levels(
+                entry_price=ticker.bid_or_close,
+                is_long=False,
+                last_candlestick_indicators=candlestick_indicators,
+                signal_parametrization_item=signal_parametrization_item,
+                symbol_market_config=symbol_market_config,
+            )
         )
         return TradeNowHints(
             ticker=ticker,
@@ -58,12 +76,9 @@ class TradeNowService:
                     is_long=True,
                     symbol_market_config=symbol_market_config,
                 ),
-                take_profit_price=self._orders_analytics_service.get_take_profit_price(
-                    entry_price=ticker.ask_or_close,
-                    take_profit_percent_value=take_profit_percent_value,
-                    is_long=True,
-                    symbol_market_config=symbol_market_config,
-                ),
+                move_sl_to_break_even_price=long_move_sl_to_break_even_price,
+                move_sl_to_first_target_profit_price=long_move_sl_to_first_target_profit_price,
+                take_profit_price=long_take_profit_price,
             ),
             short=PositionHints(
                 entry_price=ticker.bid_or_close,
@@ -77,11 +92,8 @@ class TradeNowService:
                     is_long=False,
                     symbol_market_config=symbol_market_config,
                 ),
-                take_profit_price=self._orders_analytics_service.get_take_profit_price(
-                    entry_price=ticker.bid_or_close,
-                    take_profit_percent_value=take_profit_percent_value,
-                    is_long=False,
-                    symbol_market_config=symbol_market_config,
-                ),
+                move_sl_to_break_even_price=short_move_sl_to_break_even_price,
+                move_sl_to_first_target_profit_price=short_move_sl_to_first_target_profit_price,
+                take_profit_price=short_take_profit_price,
             ),
         )

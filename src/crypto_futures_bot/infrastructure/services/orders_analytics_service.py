@@ -37,17 +37,17 @@ class OrdersAnalyticsService(AbstractService):
 
     def get_stop_loss_percent_value(
         self,
-        avg_entry_price: float,
+        entry_price: float,
         *,
         last_candlestick_indicators: CandleStickIndicators,
         signal_parametrization_item: SignalParametrizationItem,
         symbol_market_config: SymbolMarketConfig,
     ) -> float:
         stop_price = round(
-            avg_entry_price - (last_candlestick_indicators.atr * signal_parametrization_item.atr_sl_mult),
+            entry_price - (last_candlestick_indicators.atr * signal_parametrization_item.atr_sl_mult),
             ndigits=symbol_market_config.price_precision,
         )
-        stop_loss_percent_value = abs(self._ceil_round((1 - (stop_price / avg_entry_price)) * 100, ndigits=2))
+        stop_loss_percent_value = abs(self._ceil_round((1 - (stop_price / entry_price)) * 100, ndigits=2))
         return stop_loss_percent_value
 
     def get_stop_loss_price(
@@ -68,34 +68,42 @@ class OrdersAnalyticsService(AbstractService):
 
     def get_take_profit_percent_value(
         self,
-        avg_entry_price: float,
+        entry_price: float,
         *,
         last_candlestick_indicators: CandleStickIndicators,
         signal_parametrization_item: SignalParametrizationItem,
         symbol_market_config: SymbolMarketConfig,
     ) -> float:
         take_profit_price = round(
-            avg_entry_price + (last_candlestick_indicators.atr * signal_parametrization_item.atr_tp_mult),
+            entry_price + (last_candlestick_indicators.atr * signal_parametrization_item.atr_tp_mult),
             ndigits=symbol_market_config.price_precision,
         )
-        take_profit_percent_value = abs(self._floor_round((1 - (take_profit_price / avg_entry_price)) * 100, ndigits=2))
+        take_profit_percent_value = abs(self._floor_round((1 - (take_profit_price / entry_price)) * 100, ndigits=2))
         return take_profit_percent_value
 
-    def get_take_profit_price(
+    def get_take_profit_price_levels(
         self,
         entry_price: float,
         *,
-        take_profit_percent_value: float,
         is_long: bool,
+        last_candlestick_indicators: CandleStickIndicators,
+        signal_parametrization_item: SignalParametrizationItem,
         symbol_market_config: SymbolMarketConfig,
-    ) -> float:
-        take_profit_price = round(
-            entry_price * (1 + take_profit_percent_value / 100)
-            if is_long
-            else entry_price * (1 - take_profit_percent_value / 100),
-            ndigits=symbol_market_config.price_precision,
+    ) -> tuple[float, float, float]:
+        atr_tp1 = last_candlestick_indicators.atr * max(1.5, signal_parametrization_item.atr_tp_mult * 0.4)
+        atr_tp2 = last_candlestick_indicators.atr * max(1.5, signal_parametrization_item.atr_tp_mult * 0.65)
+        atr_tp3 = last_candlestick_indicators.atr * signal_parametrization_item.atr_tp_mult
+        move_sl_to_break_even_price = round(
+            entry_price + atr_tp1 if is_long else entry_price - atr_tp1, ndigits=symbol_market_config.price_precision
         )
-        return take_profit_price
+        move_sl_to_first_target_profit_price = round(
+            entry_price + atr_tp2 if is_long else entry_price - atr_tp2, ndigits=symbol_market_config.price_precision
+        )
+
+        take_profit_price = round(
+            entry_price + atr_tp3 if is_long else entry_price - atr_tp3, ndigits=symbol_market_config.price_precision
+        )
+        return move_sl_to_break_even_price, move_sl_to_first_target_profit_price, take_profit_price
 
     def calculate_break_even_price(
         self, entry_price: float, *, symbol_market_config: SymbolMarketConfig, is_long: bool

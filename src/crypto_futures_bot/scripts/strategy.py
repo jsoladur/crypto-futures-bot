@@ -51,13 +51,13 @@ class BotStrategy(Strategy):
         if not self.position and (is_long_entry or is_short_entry):
             entry_price = self.data.Close[-1]
             sl_pct = self.orders_analytics_service.get_stop_loss_percent_value(
-                avg_entry_price=entry_price,
+                entry_price=entry_price,
                 last_candlestick_indicators=last_candle,
                 symbol_market_config=self.symbol_market_config,
                 signal_parametrization_item=self.signal_parametrization,
             )
             tp_pct = self.orders_analytics_service.get_take_profit_percent_value(
-                avg_entry_price=entry_price,
+                entry_price=entry_price,
                 last_candlestick_indicators=last_candle,
                 symbol_market_config=self.symbol_market_config,
                 signal_parametrization_item=self.signal_parametrization,
@@ -69,7 +69,7 @@ class BotStrategy(Strategy):
                 is_long=is_long_entry,
                 symbol_market_config=self.symbol_market_config,
             )
-            tp_price = self.orders_analytics_service.get_take_profit_price(
+            tp_price = self.orders_analytics_serviceget_take_profit_price_levels(
                 entry_price=entry_price,
                 take_profit_percent_value=tp_pct,
                 is_long=is_long_entry,

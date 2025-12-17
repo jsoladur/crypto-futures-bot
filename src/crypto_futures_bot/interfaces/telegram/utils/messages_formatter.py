@@ -29,12 +29,15 @@ class MessagesFormatter:
         return ret
 
     def format_portfolio_balance(self, portfolio_balance: PortfolioBalance) -> str:
-        message_lines = ["===========================", "🏦  PORTFOLIO BALANCE 🏦", "==========================="]
-        message_lines.append(
-            html.italic(
-                f"📊  {html.bold('Total')}: {portfolio_balance.total_balance} {portfolio_balance.currency_code}"  # noqa: E501
-            )
-        )
+        message_lines = [
+            "===========================",
+            "🏦  PORTFOLIO BALANCE 🏦",
+            "===========================",
+            f"📊  Spot Balance: {html.italic(f'{portfolio_balance.spot_balance} {portfolio_balance.currency_code}')}",
+            f"📊  Futures Balance: {html.italic(f'{portfolio_balance.futures_balance} {portfolio_balance.currency_code}')}",  # noqa: E501
+            "------------------------------------------------------",
+            f"📊  {html.bold('TOTAL')}: {html.bold(f'{portfolio_balance.total_balance} {portfolio_balance.currency_code}')}",  # noqa: E501
+        ]
         ret = "\n".join(message_lines)
         return ret
 
@@ -48,23 +51,31 @@ class MessagesFormatter:
         ]
         params_lines = [
             html.bold("⚙️ SL/TP Parameters:"),
-            f"   🔥 {html.italic('Last Price')} = {html.code(f'{ticker.close:.4f} {fiat_currency}')}",
-            f"   🚏 {html.bold('Stop Loss')} = {hints.stop_loss_percent_value}%",
-            f"   🏆 {html.bold('Take Profit')} = {hints.take_profit_percent_value}%",
+            f"    🔥 {html.italic('Last Price')} = {html.code(f'{ticker.close:.4f} {fiat_currency}')}",
+            f"    🚏 {html.bold('Stop Loss')} = {hints.stop_loss_percent_value}%",
+            f"    🏆 {html.bold('Take Profit')} = {hints.take_profit_percent_value}%",
+            "",
         ]
         long_lines = [
             html.bold("📈 LONG Position:"),
-            f"   🎯 {html.italic('Entry')} = {html.code(hints.long.entry_price)} {fiat_currency}",
-            f"   ⚖️ {html.italic('Break Even')} = {html.code(hints.long.break_even_price)} {fiat_currency}",
-            f"   🔴 {html.italic('Stop Loss')} = {html.code(hints.long.stop_loss_price)} {fiat_currency}",
-            f"   🏆 {html.italic('Take Profit')} = {html.code(hints.long.take_profit_price)} {fiat_currency}",
+            f"    🎯 {html.italic('Entry')} = {html.code(hints.long.entry_price)} {fiat_currency}",
+            f"    ⚖️ {html.italic('Break Even')} = {html.code(hints.long.break_even_price)} {fiat_currency}",
+            f"    🔴 {html.bold('STOP LOSS')} = {html.code(hints.long.stop_loss_price)} {fiat_currency}",
+            f"    🏆 {html.bold('TAKE PROFIT')} = {html.code(hints.long.take_profit_price)} {fiat_currency}",
+            "     --------------------------------",
+            f"    ✳️ {html.italic('Move SL to Break Even')} = {html.code(hints.long.move_sl_to_break_even_price)} {fiat_currency}",  # noqa: E501
+            f"    ☝️ {html.italic('Move SL to First Target Profit')} = {html.code(hints.long.move_sl_to_first_target_profit_price)} {fiat_currency}",  # noqa: E501
+            "",
         ]
         short_lines = [
             html.bold("📉 SHORT Position:"),
-            f"   🎯 {html.italic('Entry')} = {html.code(hints.short.entry_price)} {fiat_currency}",
-            f"   ⚖️ {html.italic('Break Even')} = {html.code(hints.short.break_even_price)} {fiat_currency}",
-            f"   🔴 {html.italic('Stop Loss')} = {html.code(hints.short.stop_loss_price)} {fiat_currency}",
-            f"   🏆 {html.italic('Take Profit')} = {html.code(hints.short.take_profit_price)} {fiat_currency}",
+            f"    🎯 {html.italic('Entry')} = {html.code(hints.short.entry_price)} {fiat_currency}",
+            f"    ⚖️ {html.italic('Break Even')} = {html.code(hints.short.break_even_price)} {fiat_currency}",
+            f"    🔴 {html.bold('STOP LOSS')} = {html.code(hints.short.stop_loss_price)} {fiat_currency}",
+            f"    🏆 {html.bold('TAKE PROFIT')} = {html.code(hints.short.take_profit_price)} {fiat_currency}",
+            "     --------------------------------",
+            f"    ✳️ {html.italic('Move SL to Break Even')} = {html.code(hints.short.move_sl_to_break_even_price)} {fiat_currency}",  # noqa: E501
+            f"    ☝️ {html.italic('Move SL to First Target Profit')} = {html.code(hints.short.move_sl_to_first_target_profit_price)} {fiat_currency}",  # noqa: E501
         ]
         message = "\n".join(header + params_lines + long_lines + short_lines)
         return message

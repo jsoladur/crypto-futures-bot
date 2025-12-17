@@ -15,10 +15,10 @@ class KeyboardsBuilder:
         builder.row(InlineKeyboardButton(text="💰 Portfolio Balance", callback_data="portfolio_balance"))
         builder.row(
             InlineKeyboardButton(text="🔍 Tracker", callback_data="tracked_crypto_currencies_home"),
-            InlineKeyboardButton(text="🧩 Parametrization", callback_data="signal_parametrization_home"),
+            InlineKeyboardButton(text="💹 Prices", callback_data="prices"),
         )
         builder.row(
-            InlineKeyboardButton(text="💹 Prices", callback_data="prices"),
+            InlineKeyboardButton(text="🧩 Parametrization", callback_data="signal_parametrization_home"),
             InlineKeyboardButton(text="🔥 Positions", callback_data="positions"),
         )
         builder.row(

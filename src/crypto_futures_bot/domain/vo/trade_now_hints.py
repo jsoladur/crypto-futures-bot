@@ -10,6 +10,8 @@ class PositionHints:
     entry_price: float
     break_even_price: float
     stop_loss_price: float
+    move_sl_to_break_even_price: float
+    move_sl_to_first_target_profit_price: float
     take_profit_price: float
 
 

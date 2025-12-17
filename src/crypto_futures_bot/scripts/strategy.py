@@ -38,6 +38,8 @@ class BotStrategy(Strategy):
         # 2. Check Signals
         is_long_entry = self.signals_task_service._is_long_entry(prev_candle, last_candle)
         is_short_entry = self.signals_task_service._is_short_entry(prev_candle, last_candle)
+        is_long_exit = self.signals_task_service._is_long_exit(prev_candle, last_candle)
+        is_short_exit = self.signals_task_service._is_short_exit(prev_candle, last_candle)
 
         # -----------------------------------------------------------
         # TRAILING STOP LOGIC (Manage Existing Position)
@@ -89,6 +91,19 @@ class BotStrategy(Strategy):
                 elif current_low <= trigger_level_1:
                     if current_trade.sl > break_even_price:
                         current_trade.sl = break_even_price
+
+            # 3. SIGNAL EXIT LOGIC (Momentum Protection)
+            # We ONLY execute this if we are currently profitable (or at least Break Even)
+            # This preserves "Logic A" which saved your backtest
+            is_profitable = False
+            if self.position.is_long:
+                is_profitable = current_price > break_even_price
+                if is_long_exit and is_profitable:
+                    self.position.close()
+            else:  # Short
+                is_profitable = current_price < break_even_price
+                if is_short_exit and is_profitable:
+                    self.position.close()
 
         # -----------------------------------------------------------
         # ENTRY LOGIC

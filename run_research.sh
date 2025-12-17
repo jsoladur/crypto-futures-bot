@@ -5,29 +5,12 @@ source .venv/bin/activate
 # --- CONFIGURATION ---
 # Define the "" pairs you want to test.
 PAIRS=(
-    "XRP"
     "BNB"
     "DOGE"
-    "ETH"
-    "LINK"
-    "MYX"
-    "SUI"
-    "SOL"
-    "HYPE"
-    "ZEC"
-    "RENDER"
     "PENGU"
-    "PEPE"
-    "HBAR"
-    "CAKE"
-    "JUP"
-    "FIL"
-    "AVAX"
-    "NEAR"
-    "TAO"
-    "DOT"
-    "USELESS"
-    "ULTIMA"
+    "SOL"
+    "XRP"
+    "ZEC"
 )
 
 # Define the directory where the result logs will be saved.

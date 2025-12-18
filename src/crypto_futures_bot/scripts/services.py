@@ -118,6 +118,7 @@ class BacktestingService:
                     short_entry_overbought_threshold=signal_parametrization_item.short_entry_overbought_threshold,
                     atr_sl_mult=signal_parametrization_item.atr_sl_mult,
                     atr_tp_mult=signal_parametrization_item.atr_tp_mult,
+                    use_tqdm=False,
                 )
                 results.append(BacktestingResult(signal_parametrization_item=signal_parametrization_item, stats=stats))
         results.sort(

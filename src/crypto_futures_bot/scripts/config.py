@@ -71,6 +71,7 @@ class Container(containers.DeclarativeContainer):
         crypto_technical_analysis_service=crypto_technical_analysis_service,
         market_signal_service=market_signal_service,
         trade_now_service=trade_now_service,
+        signal_parametrization_service=signal_parametrization_service,
     )
 
     backtesting_service = providers.Singleton(

@@ -32,83 +32,19 @@ class BotStrategy(Strategy):
         last_candle = CandleStickIndicators.from_series(symbol="TEST", index=CandleStickEnum.LAST, series=last_series)
 
         current_price = self.data.Close[-1]
-        current_high = self.data.High[-1]
-        current_low = self.data.Low[-1]
 
         # 2. Check Signals
-        is_long_entry = self.signals_task_service._is_long_entry(prev_candle, last_candle)
-        is_short_entry = self.signals_task_service._is_short_entry(prev_candle, last_candle)
-        is_long_exit = self.signals_task_service._is_long_exit(prev_candle, last_candle)
-        is_short_exit = self.signals_task_service._is_short_exit(prev_candle, last_candle)
-
-        # -----------------------------------------------------------
-        # TRAILING STOP LOGIC (Manage Existing Position)
-        # -----------------------------------------------------------
-        if self.position:
-            # FIX 1: Use the POSITION direction, not the current signal
-            current_trade = self.trades[-1]
-            entry_price = current_trade.entry_price
-
-            # Calculate dynamic levels based on original entry
-            trigger_level_1, trigger_level_2, _ = self.orders_analytics_service.get_take_profit_price_levels(
-                entry_price=entry_price,
-                is_long=self.position.is_long,  # <--- Fix: Use Position direction
-                last_candlestick_indicators=last_candle,
-                signal_parametrization_item=self.signal_parametrization,
-                symbol_market_config=self.symbol_market_config,
-            )
-
-            # Calculate Break Even Price
-            break_even_price = self.orders_analytics_service.calculate_break_even_price(
-                entry_price=entry_price, symbol_market_config=self.symbol_market_config, is_long=self.position.is_long
-            )
-
-            # LONG MANAGEMENT
-            if self.position.is_long:
-                # Ladder Step 2: If we hit Target 2, move SL to Target 1 (Trigger Level 1)
-                # Note: Your text said "move to break_even_price" here, but usually laddering moves up.
-                # I implemented your text requirement: Move to 'trigger_level_1'
-                # (Assuming trigger_level_1 > break_even > entry)
-                if current_high >= trigger_level_2:
-                    # Logic: If price hits 5% gain, lock in 2% gain.
-                    if current_trade.sl < trigger_level_1:  # Only move up
-                        current_trade.sl = trigger_level_1
-
-                # Ladder Step 1: If we hit Target 1, move SL to Break Even
-                elif current_high >= trigger_level_1:
-                    if current_trade.sl < break_even_price:  # Only move up
-                        current_trade.sl = break_even_price
-
-            # SHORT MANAGEMENT (FIX 2: Add this block)
-            else:
-                # Ladder Step 2: Price drops BELOW Target 2
-                if current_low <= trigger_level_2:
-                    # Stop Loss moves DOWN for shorts. Check if new SL is lower than current.
-                    if current_trade.sl > trigger_level_1:
-                        current_trade.sl = trigger_level_1
-
-                # Ladder Step 1: Price drops BELOW Target 1
-                elif current_low <= trigger_level_1:
-                    if current_trade.sl > break_even_price:
-                        current_trade.sl = break_even_price
-
-            # 3. SIGNAL EXIT LOGIC (Momentum Protection)
-            # We ONLY execute this if we are currently profitable (or at least Break Even)
-            # This preserves "Logic A" which saved your backtest
-            is_profitable = False
-            if self.position.is_long:
-                is_profitable = current_price > break_even_price
-                if is_long_exit and is_profitable:
-                    self.position.close()
-            else:  # Short
-                is_profitable = current_price < break_even_price
-                if is_short_exit and is_profitable:
-                    self.position.close()
+        is_long_entry = self.signals_task_service._is_long_entry(
+            prev_candle, last_candle, signal_parametrization_item=self.signal_parametrization
+        )
+        is_short_entry = self.signals_task_service._is_short_entry(
+            prev_candle, last_candle, signal_parametrization_item=self.signal_parametrization
+        )
 
         # -----------------------------------------------------------
         # ENTRY LOGIC
         # -----------------------------------------------------------
-        elif is_long_entry or is_short_entry:
+        if not self.position and (is_long_entry or is_short_entry):
             sl_pct = self.orders_analytics_service.get_stop_loss_percent_value(
                 entry_price=current_price,
                 last_candlestick_indicators=last_candle,

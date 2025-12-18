@@ -9,7 +9,13 @@ from tqdm.asyncio import tqdm
 from typer import echo
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
-from crypto_futures_bot.constants import DEFAULT_CURRENCY_CODE, SL_MULTIPLIERS, TP_MULTIPLIERS
+from crypto_futures_bot.constants import (
+    DEFAULT_CURRENCY_CODE,
+    LONG_ENTRY_OVERSOLD_THRESHOLDS,
+    SHORT_ENTRY_OVERBOUGHT_THRESHOLDS,
+    SL_MULTIPLIERS,
+    TP_MULTIPLIERS,
+)
 from crypto_futures_bot.domain.types import Timeframe
 from crypto_futures_bot.domain.vo import SignalParametrizationItem
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.impl.mexc_futures_exchange import (
@@ -46,6 +52,8 @@ class BacktestingService:
         crypto_currency: str,
         *,
         initial_cash: float,
+        long_entry_oversold_threshold: float,
+        short_entry_overbought_threshold: float,
         atr_sl_mult: float,
         atr_tp_mult: float,
         show_plot: bool = False,
@@ -57,6 +65,8 @@ class BacktestingService:
             symbol=symbol,
             df=df,
             initial_cash=initial_cash,
+            long_entry_oversold_threshold=long_entry_oversold_threshold,
+            short_entry_overbought_threshold=short_entry_overbought_threshold,
             atr_sl_mult=atr_sl_mult,
             atr_tp_mult=atr_tp_mult,
             show_plot=show_plot,
@@ -82,6 +92,8 @@ class BacktestingService:
                 symbol=symbol,
                 df=df,
                 initial_cash=initial_cash,
+                long_entry_oversold_threshold=signal_parametrization_item.long_entry_oversold_threshold,
+                short_entry_overbought_threshold=signal_parametrization_item.short_entry_overbought_threshold,
                 atr_sl_mult=signal_parametrization_item.atr_sl_mult,
                 atr_tp_mult=signal_parametrization_item.atr_tp_mult,
                 show_plot=False,
@@ -108,6 +120,8 @@ class BacktestingService:
         symbol: str,
         df: pd.DataFrame,
         initial_cash: float,
+        long_entry_oversold_threshold: float,
+        short_entry_overbought_threshold: float,
         atr_sl_mult: float,
         atr_tp_mult: float,
         show_plot: bool = False,
@@ -122,7 +136,11 @@ class BacktestingService:
             orders_analytics_service=self._orders_analytics_service,
             symbol_market_config=symbol_market_config,
             signal_parametrization=SignalParametrizationItem(
-                crypto_currency=crypto_currency, atr_sl_mult=atr_sl_mult, atr_tp_mult=atr_tp_mult
+                crypto_currency=crypto_currency,
+                atr_sl_mult=atr_sl_mult,
+                atr_tp_mult=atr_tp_mult,
+                long_entry_oversold_threshold=long_entry_oversold_threshold,
+                short_entry_overbought_threshold=short_entry_overbought_threshold,
             ),
         )
         return bt, stats
@@ -193,6 +211,14 @@ class BacktestingService:
 
     def _calculate_signal_parametrization_items(self, crypto_currency: str) -> list[SignalParametrizationItem]:
         return [
-            SignalParametrizationItem(crypto_currency=crypto_currency, atr_sl_mult=atr_sl_mult, atr_tp_mult=atr_tp_mult)
-            for atr_sl_mult, atr_tp_mult in product(SL_MULTIPLIERS, TP_MULTIPLIERS)
+            SignalParametrizationItem(
+                crypto_currency=crypto_currency,
+                atr_sl_mult=atr_sl_mult,
+                atr_tp_mult=atr_tp_mult,
+                long_entry_oversold_threshold=long_entry_oversold_threshold,
+                short_entry_overbought_threshold=short_entry_overbought_threshold,
+            )
+            for long_entry_oversold_threshold, short_entry_overbought_threshold, atr_sl_mult, atr_tp_mult in product(
+                LONG_ENTRY_OVERSOLD_THRESHOLDS, SHORT_ENTRY_OVERBOUGHT_THRESHOLDS, SL_MULTIPLIERS, TP_MULTIPLIERS
+            )
         ]

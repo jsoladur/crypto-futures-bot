@@ -121,7 +121,10 @@ class BacktestingService:
                     use_tqdm=False,
                 )
                 results.append(
-                    BacktestingResult(signal_parametrization_item=signal_parametrization_item, stats=stats.to_dict())
+                    BacktestingResult(
+                        signal_parametrization_item=signal_parametrization_item,
+                        stats={key: value for key, value in stats.to_dict().items() if not key.startswith("_")},
+                    )
                 )
         results.sort(
             key=lambda r: (
@@ -141,8 +144,9 @@ class BacktestingService:
             f"📈 Short Entry Overbought Threshold = {best_result.signal_parametrization_item.short_entry_overbought_threshold}",  # noqa: E501
             f"🛡️ SL ATR x = {best_result.signal_parametrization_item.atr_sl_mult}",  # noqa: E501
             f"🏁 TP ATR x = {best_result.signal_parametrization_item.atr_tp_mult}",  # noqa: E501
+            "",
             "📊 Stats:",
-            str(best_result.stats),
+            *[f"{key}: {value}" for key, value in best_result.stats.items()],
         ]
         echo("\n".join(message_lines))
 

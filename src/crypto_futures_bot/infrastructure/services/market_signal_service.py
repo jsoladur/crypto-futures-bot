@@ -120,25 +120,21 @@ class MarketSignalService(AbstractEventHandlerService):
     ) -> None:
         position_type = PositionTypeEnum.LONG if is_long else PositionTypeEnum.SHORT
         action_type = MarketActionTypeEnum.ENTRY if is_entry else MarketActionTypeEnum.EXIT
-        last_market_signal = await self.find_last_market_signal(
-            signals.crypto_currency, position_type=position_type, timeframe=signals.timeframe, session=session
+        position_hints = trade_now_hints.long if is_long else trade_now_hints.short
+        market_signal = MarketSignal(
+            crypto_currency=signals.crypto_currency.currency,
+            timeframe=signals.timeframe,
+            position_type=position_type,
+            action_type=action_type,
+            entry_price=position_hints.entry_price if is_entry else None,
+            break_even_price=position_hints.break_even_price if is_entry else None,
+            stop_loss_percent_value=trade_now_hints.stop_loss_percent_value if is_entry else None,
+            take_profit_percent_value=trade_now_hints.take_profit_percent_value if is_entry else None,
+            stop_loss_price=position_hints.stop_loss_price if is_entry else None,
+            take_profit_price=position_hints.take_profit_price if is_entry else None,
         )
-        if last_market_signal is None or last_market_signal.action_type != action_type:
-            position_hints = trade_now_hints.long if is_long else trade_now_hints.short
-            market_signal = MarketSignal(
-                crypto_currency=signals.crypto_currency.currency,
-                timeframe=signals.timeframe,
-                position_type=position_type,
-                action_type=action_type,
-                entry_price=position_hints.entry_price if is_entry else None,
-                break_even_price=position_hints.break_even_price if is_entry else None,
-                stop_loss_percent_value=trade_now_hints.stop_loss_percent_value if is_entry else None,
-                take_profit_percent_value=trade_now_hints.take_profit_percent_value if is_entry else None,
-                stop_loss_price=position_hints.stop_loss_price if is_entry else None,
-                take_profit_price=position_hints.take_profit_price if is_entry else None,
-            )
-            session.add(market_signal)
-            await session.flush()
+        session.add(market_signal)
+        await session.flush()
 
     async def _apply_market_signal_retention_policy(
         self, signals: SignalsEvaluationResult, *, session: AsyncSession

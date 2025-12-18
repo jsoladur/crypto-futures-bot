@@ -14,3 +14,5 @@ class SignalParametrization(Persistable):
     crypto_currency: str = Column(String, nullable=False)
     atr_sl_mult: float = Column(Float, nullable=False)
     atr_tp_mult: float = Column(Float, nullable=False)
+    long_entry_oversold_threshold: float = Column(Float, nullable=False)
+    short_entry_overbought_threshold: float = Column(Float, nullable=False)

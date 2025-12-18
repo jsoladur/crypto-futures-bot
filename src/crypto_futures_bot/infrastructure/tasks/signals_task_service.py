@@ -12,20 +12,15 @@ from pyee.asyncio import AsyncIOEventEmitter
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 from crypto_futures_bot.constants import SIGNALS_EVALUATION_RESULT_EVENT_NAME, SIGNALS_TASK_SERVICE_CRON_PATTERN
-from crypto_futures_bot.domain.enums import (
-    CandleStickEnum,
-    MarketActionTypeEnum,
-    PositionTypeEnum,
-    PushNotificationTypeEnum,
-    TaskTypeEnum,
-)
-from crypto_futures_bot.domain.vo import SignalsEvaluationResult, TrackedCryptoCurrencyItem
+from crypto_futures_bot.domain.enums import CandleStickEnum, PushNotificationTypeEnum, TaskTypeEnum
+from crypto_futures_bot.domain.vo import SignalParametrizationItem, SignalsEvaluationResult, TrackedCryptoCurrencyItem
 from crypto_futures_bot.domain.vo.candlestick_indicators import CandleStickIndicators
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import AccountInfo, SymbolTicker
 from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_service import CryptoTechnicalAnalysisService
 from crypto_futures_bot.infrastructure.services.market_signal_service import MarketSignalService
 from crypto_futures_bot.infrastructure.services.push_notification_service import PushNotificationService
+from crypto_futures_bot.infrastructure.services.signal_parametrization_service import SignalParametrizationService
 from crypto_futures_bot.infrastructure.services.tracked_crypto_currency_service import TrackedCryptoCurrencyService
 from crypto_futures_bot.infrastructure.services.trade_now_service import TradeNowService
 from crypto_futures_bot.infrastructure.tasks.base import AbstractTaskService
@@ -40,6 +35,7 @@ class SignalsTaskService(AbstractTaskService):
         configuration_properties: ConfigurationProperties,
         telegram_service: TelegramService,
         push_notification_service: PushNotificationService,
+        signal_parametrization_service: SignalParametrizationService,
         event_emitter: AsyncIOEventEmitter,
         scheduler: AsyncIOScheduler,
         tracked_crypto_currency_service: TrackedCryptoCurrencyService,
@@ -55,6 +51,7 @@ class SignalsTaskService(AbstractTaskService):
         self._crypto_technical_analysis_service = crypto_technical_analysis_service
         self._trade_now_service = trade_now_service
         self._market_signal_service = market_signal_service
+        self._signal_parametrization_service = signal_parametrization_service
         self._job = self._create_job()
 
     @override
@@ -99,6 +96,9 @@ class SignalsTaskService(AbstractTaskService):
         self, tracked_crypto_currency: TrackedCryptoCurrencyItem, *, account_info: AccountInfo
     ) -> None:
         try:
+            signal_parametrization_item = await self._signal_parametrization_service.find_by_crypto_currency(
+                crypto_currency=tracked_crypto_currency.currency
+            )
             technical_analysis_df = await self._crypto_technical_analysis_service.get_technical_analysis(
                 symbol=tracked_crypto_currency.to_symbol(account_info=account_info)
             )
@@ -106,6 +106,7 @@ class SignalsTaskService(AbstractTaskService):
                 tracked_crypto_currency=tracked_crypto_currency,
                 technical_analysis_df=technical_analysis_df,
                 account_info=account_info,
+                signal_parametrization_item=signal_parametrization_item,
             )
             chat_ids = await self._push_notification_service.get_actived_subscription_by_type(
                 notification_type=PushNotificationTypeEnum.SIGNALS
@@ -116,6 +117,7 @@ class SignalsTaskService(AbstractTaskService):
                     chat_ids=chat_ids,
                     account_info=account_info,
                     last_candle=last_candle,
+                    signal_parametrization_item=signal_parametrization_item,
                 )
         except Exception as e:
             logger.error(f"Error evaluating signals for {tracked_crypto_currency}: {e}", exc_info=True)
@@ -128,6 +130,8 @@ class SignalsTaskService(AbstractTaskService):
         tracked_crypto_currency: TrackedCryptoCurrencyItem,
         technical_analysis_df: pd.DataFrame,
         account_info: AccountInfo,
+        *,
+        signal_parametrization_item: SignalParametrizationItem,
     ) -> tuple[SignalsEvaluationResult, CandleStickIndicators]:
         prev_candle = await self._crypto_technical_analysis_service.get_candlestick_indicators(
             symbol=tracked_crypto_currency.to_symbol(account_info=account_info),
@@ -139,17 +143,17 @@ class SignalsTaskService(AbstractTaskService):
             index=CandleStickEnum.LAST,
             technical_analysis_df=technical_analysis_df,
         )
-        long_entry = self._is_long_entry(prev_candle=prev_candle, last_candle=last_candle)
-        short_entry = self._is_short_entry(prev_candle=prev_candle, last_candle=last_candle)
+        long_entry = self._is_long_entry(
+            prev_candle=prev_candle, last_candle=last_candle, signal_parametrization_item=signal_parametrization_item
+        )
+        short_entry = self._is_short_entry(
+            prev_candle=prev_candle, last_candle=last_candle, signal_parametrization_item=signal_parametrization_item
+        )
         signals_evaluation_result = SignalsEvaluationResult(
             timestamp=last_candle.timestamp,
             crypto_currency=tracked_crypto_currency,
             long_entry=long_entry,
-            long_exit=self._is_long_exit(prev_candle=prev_candle, last_candle=last_candle) if not long_entry else False,
             short_entry=short_entry,
-            short_exit=self._is_short_exit(prev_candle=prev_candle, last_candle=last_candle)
-            if not short_entry
-            else False,
         )
         return signals_evaluation_result, last_candle
 
@@ -159,6 +163,8 @@ class SignalsTaskService(AbstractTaskService):
         chat_ids: list[str],
         account_info: AccountInfo,
         last_candle: CandleStickIndicators,
+        *,
+        signal_parametrization_item: SignalParametrizationItem,
     ) -> None:
         signals_field_names = [field.name for field in fields(signals_evaluation_result) if field.type is bool]
         for signals_field_name in signals_field_names:
@@ -170,6 +176,7 @@ class SignalsTaskService(AbstractTaskService):
                     chat_ids=chat_ids,
                     account_info=account_info,
                     last_candle=last_candle,
+                    signal_parametrization_item=signal_parametrization_item,
                 )
 
     async def _notify_single_signal(
@@ -181,34 +188,29 @@ class SignalsTaskService(AbstractTaskService):
         chat_ids: list[str],
         account_info: AccountInfo,
         last_candle: CandleStickIndicators,
+        signal_parametrization_item: SignalParametrizationItem,
     ) -> None:
-        current_market_action_type = MarketActionTypeEnum.ENTRY if is_entry else MarketActionTypeEnum.EXIT
-        last_market_signal = await self._market_signal_service.find_last_market_signal(
-            signals_evaluation_result.crypto_currency,
-            position_type=PositionTypeEnum.LONG if is_long else PositionTypeEnum.SHORT,
-            timeframe=signals_evaluation_result.timeframe,
+        symbol_ticker = await self._futures_exchange_service.get_symbol_ticker(
+            symbol=signals_evaluation_result.crypto_currency.to_symbol(account_info=account_info)
         )
-        if last_market_signal is None or last_market_signal.action_type != current_market_action_type:
-            symbol_ticker = await self._futures_exchange_service.get_symbol_ticker(
-                symbol=signals_evaluation_result.crypto_currency.to_symbol(account_info=account_info)
+        if is_entry:
+            await self._notify_entry(
+                signals_evaluation_result=signals_evaluation_result,
+                is_long=is_long,
+                chat_ids=chat_ids,
+                account_info=account_info,
+                last_candle=last_candle,
+                symbol_ticker=symbol_ticker,
+                signal_parametrization_item=signal_parametrization_item,
             )
-            if is_entry:
-                await self._notify_entry(
-                    signals_evaluation_result=signals_evaluation_result,
-                    is_long=is_long,
-                    chat_ids=chat_ids,
-                    account_info=account_info,
-                    last_candle=last_candle,
-                    symbol_ticker=symbol_ticker,
-                )
-            else:
-                await self._notify_exit(
-                    signals_evaluation_result=signals_evaluation_result,
-                    is_long=is_long,
-                    chat_ids=chat_ids,
-                    account_info=account_info,
-                    symbol_ticker=symbol_ticker,
-                )
+        else:  # pragma: no cover
+            await self._notify_exit(
+                signals_evaluation_result=signals_evaluation_result,
+                is_long=is_long,
+                chat_ids=chat_ids,
+                account_info=account_info,
+                symbol_ticker=symbol_ticker,
+            )
 
     async def _notify_entry(
         self,
@@ -219,10 +221,13 @@ class SignalsTaskService(AbstractTaskService):
         account_info: AccountInfo,
         last_candle: CandleStickIndicators,
         symbol_ticker: SymbolTicker,
+        signal_parametrization_item: SignalParametrizationItem,
     ) -> None:
         if not self._configuration_properties.notify_entry_signals:
             return
-        trade_now_hints = await self._trade_now_service.get_trade_now_hints(signals_evaluation_result.crypto_currency)
+        trade_now_hints = await self._trade_now_service.get_trade_now_hints(
+            signals_evaluation_result.crypto_currency, signal_parametrization_item=signal_parametrization_item
+        )
         position_hints = trade_now_hints.long if is_long else trade_now_hints.short
         icon = "🟢" if is_long else "🔴"
         signal_type = "LONG" if is_long else "SHORT"
@@ -249,7 +254,7 @@ class SignalsTaskService(AbstractTaskService):
         chat_ids: list[str],
         account_info: AccountInfo,
         symbol_ticker: SymbolTicker,
-    ) -> None:
+    ) -> None:  # pragma: no cover
         if not self._configuration_properties.notify_exit_signals:
             return
         icon = "🟦" if is_long else "🟧"
@@ -264,7 +269,13 @@ class SignalsTaskService(AbstractTaskService):
         message = "\n".join(message_lines)
         await self._notify_alert(telegram_chat_ids=chat_ids, body_message=message)
 
-    def _is_long_entry(self, prev_candle: CandleStickIndicators, last_candle: CandleStickIndicators) -> bool:
+    def _is_long_entry(
+        self,
+        prev_candle: CandleStickIndicators,
+        last_candle: CandleStickIndicators,
+        *,
+        signal_parametrization_item: SignalParametrizationItem,
+    ) -> bool:
         # TREND: Price is above the baseline (Safety)
         trend_ok = last_candle.closing_price > last_candle.ema50
         # TRIGGER: Stoch Cross Up
@@ -272,45 +283,25 @@ class SignalsTaskService(AbstractTaskService):
             prev_candle.stoch_rsi_k <= prev_candle.stoch_rsi_d and last_candle.stoch_rsi_k > last_candle.stoch_rsi_d
         )
         # FILTER: Must be Oversold (Buying the dip)
-        stoch_condition = prev_candle.stoch_rsi_k < self._configuration_properties.long_entry_oversold_threshold
+        stoch_condition = prev_candle.stoch_rsi_k < signal_parametrization_item.long_entry_oversold_threshold
         # MOMENTUM: Histogram must be positive (Recovery started)
         macd_positive = last_candle.macd_hist > 0
         return trend_ok and stoch_cross and stoch_condition and macd_positive
 
-    def _is_long_exit(self, prev_candle: CandleStickIndicators, last_candle: CandleStickIndicators) -> bool:
-        # HARD EXIT: Trend Broken (Price falls below EMA50)
-        trend_broken = last_candle.closing_price < last_candle.ema50
-        # SOFT EXIT: Take Profit on Overbought
-        stoch_take_profit = (
-            prev_candle.stoch_rsi_k >= prev_candle.stoch_rsi_d
-            and last_candle.stoch_rsi_k < last_candle.stoch_rsi_d
-            and prev_candle.stoch_rsi_k > self._configuration_properties.long_exit_overbought_threshold
-        )
-        # MOMENTUM EXIT: Only exit if momentum is failing
-        momentum_failure = last_candle.macd_hist < 0
-        return trend_broken or stoch_take_profit or momentum_failure
-
-    def _is_short_entry(self, prev_candle: CandleStickIndicators, last_candle: CandleStickIndicators) -> bool:
+    def _is_short_entry(
+        self,
+        prev_candle: CandleStickIndicators,
+        last_candle: CandleStickIndicators,
+        *,
+        signal_parametrization_item: SignalParametrizationItem,
+    ) -> bool:
         trend_ok = last_candle.closing_price < last_candle.ema50
         stoch_cross = (
             prev_candle.stoch_rsi_k >= prev_candle.stoch_rsi_d and last_candle.stoch_rsi_k < last_candle.stoch_rsi_d
         )
-        stoch_condition = prev_candle.stoch_rsi_k > self._configuration_properties.short_entry_overbought_threshold
+        stoch_condition = prev_candle.stoch_rsi_k > signal_parametrization_item.short_entry_overbought_threshold
         macd_negative = last_candle.macd_hist < 0
         return trend_ok and stoch_cross and stoch_condition and macd_negative
-
-    def _is_short_exit(self, prev_candle: CandleStickIndicators, last_candle: CandleStickIndicators) -> bool:
-        # HARD EXIT: Price breaks above EMA50
-        trend_broken = last_candle.closing_price > last_candle.ema50
-        # SOFT EXIT: Take Profit on Oversold
-        stoch_take_profit = (
-            prev_candle.stoch_rsi_k <= prev_candle.stoch_rsi_d
-            and last_candle.stoch_rsi_k > last_candle.stoch_rsi_d
-            and prev_candle.stoch_rsi_k < self._configuration_properties.short_exit_oversold_threshold
-        )
-        # MOMENTUM EXIT: Only exit if momentum is failing
-        momentum_failure = last_candle.macd_hist > 0
-        return trend_broken or stoch_take_profit or momentum_failure
 
     async def _notify_alert(self, telegram_chat_ids: list[str], body_message: str) -> None:
         await asyncio.gather(

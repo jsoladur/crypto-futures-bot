@@ -5,12 +5,12 @@ source .venv/bin/activate
 # --- CONFIGURATION ---
 # Define the "" pairs you want to test.
 PAIRS=(
-    "BNB"
     "DOGE"
     "PENGU"
-    "SOL"
-    "XRP"
     "ZEC"
+    "XRP"
+    "SOL"
+    "BNB"
 )
 
 # Define the directory where the result logs will be saved.

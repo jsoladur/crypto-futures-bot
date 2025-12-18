@@ -4,6 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from crypto_futures_bot.constants import (
     DEFAULT_CURRENCY_CODE,
+    DEFAULT_FUTURES_EXCHANGE_TIMEOUT,
     DEFAULT_JOB_INTERVAL_SECONDS,
     DEFAULT_MARKET_SIGNAL_RETENTION_DAYS,
 )
@@ -23,6 +24,7 @@ class ConfigurationProperties(BaseSettings):
     database_url: str
 
     futures_exchange: FuturesExchangeEnum = FuturesExchangeEnum.MEXC
+    futures_exchange_timeout: int = DEFAULT_FUTURES_EXCHANGE_TIMEOUT
     futures_exchange_debug_mode: bool = False
     mexc_api_key: str | None = None
     mexc_api_secret: str | None = None

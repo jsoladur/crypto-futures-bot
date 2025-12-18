@@ -1,9 +1,11 @@
 import asyncio
 import logging
+import os
 import warnings
 from datetime import UTC, datetime, timedelta
 
 import typer
+from faker import Faker
 
 from crypto_futures_bot.constants import (
     DEFAULT_ATR_SL_MULT,
@@ -16,6 +18,17 @@ from crypto_futures_bot.scripts.services import BacktestingService
 
 # Configure basic logging for CLI
 warnings.filterwarnings("ignore")
+# ------------------------------------------------------------------------------------
+# Mock env variables
+# ------------------------------------------------------------------------------------
+
+# .env.backtest
+faker = Faker()
+os.environ["TELEGRAM_BOT_TOKEN"] = f"{faker.pyint()}:{faker.uuid4().replace('-', '_')}"
+os.environ["ROOT_USER"] = faker.user_name()
+os.environ["ROOT_PASSWORD"] = faker.password()
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite://:memory:"
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 application_container = Container()
 application_container.check_dependencies()

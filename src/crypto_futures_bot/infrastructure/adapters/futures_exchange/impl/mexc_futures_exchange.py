@@ -40,6 +40,7 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
         }
         self._spot_client = ccxt.mexc({**commons_options, "options": {"defaultType": "spot"}})
         self._futures_client = ccxt.mexc({**commons_options, "options": {"defaultType": "swap"}})
+        self._futures_markets_cache: dict[str, dict[str, Any]] | None = None
 
     @override
     @backoff.on_exception(
@@ -228,16 +229,17 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
         ),
     )
     async def _load_futures_markets(self) -> dict[str, dict[str, Any]]:
-        account_info = await self.get_account_info()
-        markets = await self._futures_client.fetch_swap_markets()
-        ret = {
-            market["base"]: market
-            for market in markets
-            if market.get("quote") == account_info.currency_code
-            and market.get("active", False)
-            and market.get("swap", False)
-        }
-        return ret
+        if not self._futures_markets_cache:
+            account_info = await self.get_account_info()
+            markets = await self._futures_client.fetch_swap_markets()
+            self._futures_markets_cache = {
+                market["base"]: market
+                for market in markets
+                if market.get("quote") == account_info.currency_code
+                and market.get("active", False)
+                and market.get("swap", False)
+            }
+        return self._futures_markets_cache
 
     @backoff.on_exception(
         backoff.constant,

@@ -167,6 +167,8 @@ class MessagesFormatter:
 
     def format_signal_parametrization_message(self, signal_parametrization: SignalParametrizationItem) -> str:
         message_lines = [
+            f"📉 Long Entry Oversold Threshold = {html.code(signal_parametrization.long_entry_oversold_threshold)}",
+            f"📈 Short Entry Overbought Threshold = {html.code(signal_parametrization.short_entry_overbought_threshold)}",  # noqa: E501
             f"🛡️ SL ATR x = {html.code(signal_parametrization.atr_sl_mult)}",
             f"🏁 TP ATR x = {html.code(signal_parametrization.atr_tp_mult)}",
         ]

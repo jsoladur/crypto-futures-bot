@@ -11,10 +11,7 @@ class SignalsEvaluationResult:
     timeframe: Timeframe = "15m"
 
     long_entry: bool
-    long_exit: bool
-
     short_entry: bool
-    short_exit: bool
 
     @property
     def cache_key(self) -> str:

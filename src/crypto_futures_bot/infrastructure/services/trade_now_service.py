@@ -1,4 +1,9 @@
-from crypto_futures_bot.domain.vo import PositionHints, TrackedCryptoCurrencyItem, TradeNowHints
+from crypto_futures_bot.domain.vo import (
+    PositionHints,
+    SignalParametrizationItem,
+    TrackedCryptoCurrencyItem,
+    TradeNowHints,
+)
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_service import CryptoTechnicalAnalysisService
 from crypto_futures_bot.infrastructure.services.orders_analytics_service import OrdersAnalyticsService
@@ -18,12 +23,20 @@ class TradeNowService:
         self._crypto_technical_analysis_service = crypto_technical_analysis_service
         self._orders_analytics_service = orders_analytics_service
 
-    async def get_trade_now_hints(self, tracked_crypto_currency: TrackedCryptoCurrencyItem) -> TradeNowHints:
+    async def get_trade_now_hints(
+        self,
+        tracked_crypto_currency: TrackedCryptoCurrencyItem,
+        *,
+        signal_parametrization_item: SignalParametrizationItem | None = None,
+    ) -> TradeNowHints:
         account_info = await self._futures_exchange_service.get_account_info()
         symbol = tracked_crypto_currency.to_symbol(account_info)
         ticker = await self._futures_exchange_service.get_symbol_ticker(symbol=symbol)
-        signal_parametrization_item = await self._signal_parametrization_service.find_by_crypto_currency(
-            crypto_currency=tracked_crypto_currency.currency
+        signal_parametrization_item = (
+            signal_parametrization_item
+            or await self._signal_parametrization_service.find_by_crypto_currency(
+                crypto_currency=tracked_crypto_currency.currency
+            )
         )
         symbol_market_config = await self._futures_exchange_service.get_symbol_market_config(
             crypto_currency=tracked_crypto_currency.currency

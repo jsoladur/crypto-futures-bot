@@ -14,7 +14,11 @@ class SignalParametrizationService:
         entity = await self._find_one_or_none(crypto_currency=crypto_currency, session=session)
         if entity:
             ret = SignalParametrizationItem(
-                crypto_currency=entity.crypto_currency, atr_sl_mult=entity.atr_sl_mult, atr_tp_mult=entity.atr_tp_mult
+                crypto_currency=entity.crypto_currency,
+                atr_sl_mult=entity.atr_sl_mult,
+                atr_tp_mult=entity.atr_tp_mult,
+                long_entry_oversold_threshold=entity.long_entry_oversold_threshold,
+                short_entry_overbought_threshold=entity.short_entry_overbought_threshold,
             )
         else:
             ret = SignalParametrizationItem(crypto_currency=crypto_currency)
@@ -26,9 +30,15 @@ class SignalParametrizationService:
         if entity:
             entity.atr_sl_mult = item.atr_sl_mult
             entity.atr_tp_mult = item.atr_tp_mult
+            entity.long_entry_oversold_threshold = item.long_entry_oversold_threshold
+            entity.short_entry_overbought_threshold = item.short_entry_overbought_threshold
         else:
             entity = SignalParametrization(
-                crypto_currency=item.crypto_currency, atr_sl_mult=item.atr_sl_mult, atr_tp_mult=item.atr_tp_mult
+                crypto_currency=item.crypto_currency,
+                atr_sl_mult=item.atr_sl_mult,
+                atr_tp_mult=item.atr_tp_mult,
+                long_entry_oversold_threshold=item.long_entry_oversold_threshold,
+                short_entry_overbought_threshold=item.short_entry_overbought_threshold,
             )
             session.add(entity)
         await session.flush()

@@ -32,7 +32,7 @@ async def trade_now_home_callback_handler(callback_query: CallbackQuery, state: 
         try:
             tracked_crypto_currencies = await tracked_crypto_currency_service.find_all()
             await callback_query.message.answer(
-                "ℹ️ Select a crypto to trade it now!.",
+                "ℹ️ Select a crypto to trade it now!",
                 reply_markup=keyboards_builder.get_trade_now_keyboard(tracked_crypto_currencies),
             )
         except Exception as e:

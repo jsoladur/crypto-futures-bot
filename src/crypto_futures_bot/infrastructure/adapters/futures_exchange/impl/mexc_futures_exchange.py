@@ -2,11 +2,10 @@ import logging
 from typing import Any, override
 
 import backoff
-import cachebox
 import ccxt.async_support as ccxt
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
-from crypto_futures_bot.constants import DEFAULT_IN_MEMORY_CACHE_TTL_IN_SECONDS, MEXC_FUTURES_TAKER_FEES
+from crypto_futures_bot.constants import MEXC_FUTURES_TAKER_FEES
 from crypto_futures_bot.domain.enums import PositionOpenTypeEnum, PositionTypeEnum
 from crypto_futures_bot.domain.types import Timeframe
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
@@ -215,9 +214,6 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
     def get_taker_fee(self) -> float:
         return MEXC_FUTURES_TAKER_FEES
 
-    @cachebox.cachedmethod(
-        cachebox.TTLCache(0, ttl=DEFAULT_IN_MEMORY_CACHE_TTL_IN_SECONDS), key_maker=lambda _, __: "futures_markets"
-    )
     @backoff.on_exception(
         backoff.constant,
         exception=ccxt.BaseError,

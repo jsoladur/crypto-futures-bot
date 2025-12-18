@@ -20,10 +20,9 @@
       "module": "crypto_futures_bot.scripts.cli",
       "console": "integratedTerminal",
       "args": [
-        "backtest",
-        "--currency=LINK",
-        "--atr-sl-mult=3.2",
-        "--atr-tp-mult=4.2"
+        "research",
+        "--currency=DOGE",
+        "--days=2",
       ],
       "justMyCode": false
     },

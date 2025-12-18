@@ -27,6 +27,7 @@ from crypto_futures_bot.infrastructure.services.orders_analytics_service import 
 from crypto_futures_bot.infrastructure.tasks.signals_task_service import SignalsTaskService
 from crypto_futures_bot.scripts.jobs import run_single_backtest_combination
 from crypto_futures_bot.scripts.strategy import BotStrategy
+from crypto_futures_bot.scripts.vo import BacktestingResult
 
 logger = logging.getLogger(__name__)
 
@@ -78,24 +79,47 @@ class BacktestingService:
             bt.plot()
 
     async def research(
-        self, start_date: datetime, end_date: datetime, crypto_currency: str, *, initial_cash: float
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        crypto_currency: str,
+        *,
+        initial_cash: float,
+        apply_paralellism: bool = True,
     ) -> None:
         echo(f"\n--- Research for {crypto_currency} ---\n")
         signal_parametrization_items = self._calculate_signal_parametrization_items(crypto_currency)
         symbol, df = await self._calculate_historical_indicators(
             crypto_currency=crypto_currency, start_date=start_date, end_date=end_date
         )
-
-        parallel_results = Parallel(n_jobs=-1, backend="threading")(
-            delayed(run_single_backtest_combination)(
-                symbol=symbol, df=df, initial_cash=initial_cash, signal_parametrization_item=signal_parametrization_item
+        if apply_paralellism:
+            parallel_results = Parallel(n_jobs=-1, backend="threading")(
+                delayed(run_single_backtest_combination)(
+                    symbol=symbol,
+                    df=df,
+                    initial_cash=initial_cash,
+                    signal_parametrization_item=signal_parametrization_item,
+                )
+                for signal_parametrization_item in tqdm(
+                    signal_parametrization_items, desc="Researching signal parametrizations"
+                )
             )
+            # Filter out any runs that failed (they will return None)
+            results = [res for res in parallel_results if res is not None]
+        else:
+            results = []
             for signal_parametrization_item in tqdm(
                 signal_parametrization_items, desc="Researching signal parametrizations"
-            )
-        )
-        # Filter out any runs that failed (they will return None)
-        results = [res for res in parallel_results if res is not None]
+            ):
+                *_, stats = await self._internal_run(
+                    symbol=symbol,
+                    df=df,
+                    initial_cash=initial_cash,
+                    atr_sl_mult=signal_parametrization_item.atr_sl_mult,
+                    atr_tp_mult=signal_parametrization_item.atr_tp_mult,
+                    show_plot=False,
+                )
+                results.append(BacktestingResult(signal_parametrization_item=signal_parametrization_item, stats=stats))
         results.sort(
             key=lambda r: (
                 r.stats.get("Return [%]", -float("inf")),

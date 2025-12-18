@@ -82,7 +82,6 @@ class BacktestingService:
     ) -> None:
         echo(f"\n--- Research for {crypto_currency} ---\n")
         signal_parametrization_items = self._calculate_signal_parametrization_items(crypto_currency)
-        signal_parametrization_items = signal_parametrization_items[:10]
         symbol, df = await self._calculate_historical_indicators(
             crypto_currency=crypto_currency, start_date=start_date, end_date=end_date
         )

@@ -35,6 +35,8 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
             "secret": self._configuration_properties.mexc_api_secret,
             # switch it to False if you don't want the HTTP log
             "verbose": self._configuration_properties.futures_exchange_debug_mode,
+            "timeout": self._configuration_properties.futures_exchange_timeout,
+            "enableRateLimit": True,
         }
         self._spot_client = ccxt.mexc({**commons_options, "options": {"defaultType": "spot"}})
         self._futures_client = ccxt.mexc({**commons_options, "options": {"defaultType": "swap"}})

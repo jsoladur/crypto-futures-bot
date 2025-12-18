@@ -22,6 +22,7 @@ from crypto_futures_bot.domain.vo import SignalParametrizationItem
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.impl.mexc_futures_exchange import (
     MEXCFuturesExchangeService,
 )
+from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import SymbolMarketConfig
 from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_service import CryptoTechnicalAnalysisService
 from crypto_futures_bot.infrastructure.services.orders_analytics_service import OrdersAnalyticsService
 from crypto_futures_bot.infrastructure.tasks.signals_task_service import SignalsTaskService
@@ -60,6 +61,7 @@ class BacktestingService:
         atr_tp_mult: float,
         show_plot: bool = False,
     ) -> None:
+        symbol_market_config = await self._exchange_service.get_symbol_market_config(crypto_currency)
         symbol, df = await self._calculate_historical_indicators(
             crypto_currency=crypto_currency, start_date=start_date, end_date=end_date
         )
@@ -71,6 +73,7 @@ class BacktestingService:
             short_entry_overbought_threshold=short_entry_overbought_threshold,
             atr_sl_mult=atr_sl_mult,
             atr_tp_mult=atr_tp_mult,
+            symbol_market_config=symbol_market_config,
         )
         echo(f"\n--- Backtest Result for {crypto_currency} ---\n")
         echo(stats)
@@ -87,6 +90,7 @@ class BacktestingService:
         apply_paralellism: bool = True,
     ) -> None:
         echo(f"\n--- Research for {crypto_currency} ---\n")
+        symbol_market_config = await self._exchange_service.get_symbol_market_config(crypto_currency)
         signal_parametrization_items = self._calculate_signal_parametrization_items(crypto_currency)
         symbol, df = await self._calculate_historical_indicators(
             crypto_currency=crypto_currency, start_date=start_date, end_date=end_date
@@ -98,6 +102,7 @@ class BacktestingService:
                     df=df,
                     initial_cash=initial_cash,
                     signal_parametrization_item=signal_parametrization_item,
+                    symbol_market_config=symbol_market_config,
                 )
                 for signal_parametrization_item in tqdm(
                     signal_parametrization_items, desc="Researching signal parametrizations"
@@ -118,6 +123,7 @@ class BacktestingService:
                     short_entry_overbought_threshold=signal_parametrization_item.short_entry_overbought_threshold,
                     atr_sl_mult=signal_parametrization_item.atr_sl_mult,
                     atr_tp_mult=signal_parametrization_item.atr_tp_mult,
+                    symbol_market_config=symbol_market_config,
                     use_tqdm=False,
                 )
                 results.append(
@@ -160,13 +166,13 @@ class BacktestingService:
         short_entry_overbought_threshold: float,
         atr_sl_mult: float,
         atr_tp_mult: float,
+        symbol_market_config: SymbolMarketConfig,
         use_tqdm: bool = True,
     ) -> tuple[Backtest, pd.Series]:
         original_backtesting_tqdm = backtesting._tqdm
         try:
             crypto_currency = symbol.split("/")[0]
             # We need the symbol market config for precision
-            symbol_market_config = await self._exchange_service.get_symbol_market_config(crypto_currency)
             # 4. Run Backtest
             bt = Backtest(df, BotStrategy, cash=initial_cash, commission=self._exchange_service.get_taker_fee())
             if not use_tqdm:
@@ -191,7 +197,6 @@ class BacktestingService:
         self, crypto_currency: str, start_date: datetime, end_date: datetime
     ) -> tuple[str, pd.DataFrame]:
         symbol = f"{crypto_currency}/{DEFAULT_CURRENCY_CODE}:{DEFAULT_CURRENCY_CODE}"
-        await self._exchange_service.post_init()
         echo(f"Starting backtest for {symbol} from {start_date} to {end_date}")
         # 1. Download Data
         df = await self._download_data(symbol, start_date, end_date)

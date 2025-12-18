@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from types import SimpleNamespace
 
 from dependency_injector import containers, providers
 
@@ -15,14 +15,18 @@ from crypto_futures_bot.infrastructure.tasks.signals_task_service import Signals
 from crypto_futures_bot.scripts.services import BacktestingService
 
 
+def _noop_add_job(*args, **kwargs) -> None:
+    pass
+
+
 class Container(containers.DeclarativeContainer):
     configuration_properties = providers.Singleton(ConfigurationProperties)
     # Mocks
-    telegram_service_mock = providers.Object(MagicMock())
-    push_notification_service_mock = providers.Object(MagicMock())
-    event_emitter_mock = providers.Object(MagicMock())
-    scheduler_mock = providers.Object(MagicMock())
-    tracked_crypto_currency_service_mock = providers.Object(MagicMock())
+    telegram_service_mock = providers.Object(SimpleNamespace())
+    push_notification_service_mock = providers.Object(SimpleNamespace())
+    event_emitter_mock = providers.Object(SimpleNamespace())
+    scheduler_mock = providers.Object(SimpleNamespace(add_job=_noop_add_job))
+    tracked_crypto_currency_service_mock = providers.Object(SimpleNamespace())
     # Services
     futures_exchange_service = providers.Singleton(
         MEXCFuturesExchangeService, configuration_properties=configuration_properties

@@ -4,7 +4,8 @@ from datetime import datetime
 from itertools import product
 
 import pandas as pd
-from backtesting import Backtest
+from backtesting import Backtest, backtesting
+from joblib import Parallel, delayed
 from tqdm.asyncio import tqdm
 from typer import echo
 
@@ -24,8 +25,8 @@ from crypto_futures_bot.infrastructure.adapters.futures_exchange.impl.mexc_futur
 from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_service import CryptoTechnicalAnalysisService
 from crypto_futures_bot.infrastructure.services.orders_analytics_service import OrdersAnalyticsService
 from crypto_futures_bot.infrastructure.tasks.signals_task_service import SignalsTaskService
+from crypto_futures_bot.scripts.jobs import run_single_backtest_combination
 from crypto_futures_bot.scripts.strategy import BotStrategy
-from crypto_futures_bot.scripts.vo import BacktestingResult
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +62,7 @@ class BacktestingService:
         symbol, df = await self._calculate_historical_indicators(
             crypto_currency=crypto_currency, start_date=start_date, end_date=end_date
         )
-        bt, stats = await self._internal_run(
+        bt, stats = await self.internal_run(
             symbol=symbol,
             df=df,
             initial_cash=initial_cash,
@@ -84,21 +85,17 @@ class BacktestingService:
         symbol, df = await self._calculate_historical_indicators(
             crypto_currency=crypto_currency, start_date=start_date, end_date=end_date
         )
-        results = []
-        for signal_parametrization_item in tqdm(
-            signal_parametrization_items, desc="Researching signal parametrizations"
-        ):
-            *_, stats = await self._internal_run(
-                symbol=symbol,
-                df=df,
-                initial_cash=initial_cash,
-                long_entry_oversold_threshold=signal_parametrization_item.long_entry_oversold_threshold,
-                short_entry_overbought_threshold=signal_parametrization_item.short_entry_overbought_threshold,
-                atr_sl_mult=signal_parametrization_item.atr_sl_mult,
-                atr_tp_mult=signal_parametrization_item.atr_tp_mult,
-                show_plot=False,
+
+        parallel_results = Parallel(n_jobs=-1, backend="threading")(
+            delayed(run_single_backtest_combination)(
+                symbol=symbol, df=df, initial_cash=initial_cash, signal_parametrization_item=signal_parametrization_item
             )
-            results.append(BacktestingResult(signal_parametrization_item=signal_parametrization_item, stats=stats))
+            for signal_parametrization_item in tqdm(
+                signal_parametrization_items, desc="Researching signal parametrizations"
+            )
+        )
+        # Filter out any runs that failed (they will return None)
+        results = [res for res in parallel_results if res is not None]
         results.sort(
             key=lambda r: (
                 r.stats.get("Return [%]", -float("inf")),
@@ -114,7 +111,7 @@ class BacktestingService:
         echo(f"Signal Parametrization: {best_result.signal_parametrization_item}")
         echo(best_result.stats)
 
-    async def _internal_run(
+    async def internal_run(
         self,
         *,
         symbol: str,
@@ -125,25 +122,32 @@ class BacktestingService:
         atr_sl_mult: float,
         atr_tp_mult: float,
         show_plot: bool = False,
+        use_tqdm: bool = True,
     ) -> tuple[Backtest, pd.Series]:
-        crypto_currency = symbol.split("/")[0]
-        # We need the symbol market config for precision
-        symbol_market_config = await self._exchange_service.get_symbol_market_config(crypto_currency)
-        # 4. Run Backtest
-        bt = Backtest(df, BotStrategy, cash=initial_cash, commission=self._exchange_service.get_taker_fee())
-        stats = bt.run(
-            signals_task_service=self._signals_task_service,
-            orders_analytics_service=self._orders_analytics_service,
-            symbol_market_config=symbol_market_config,
-            signal_parametrization=SignalParametrizationItem(
-                crypto_currency=crypto_currency,
-                atr_sl_mult=atr_sl_mult,
-                atr_tp_mult=atr_tp_mult,
-                long_entry_oversold_threshold=long_entry_oversold_threshold,
-                short_entry_overbought_threshold=short_entry_overbought_threshold,
-            ),
-        )
-        return bt, stats
+        original_backtesting_tqdm = backtesting._tqdm
+        try:
+            crypto_currency = symbol.split("/")[0]
+            # We need the symbol market config for precision
+            symbol_market_config = await self._exchange_service.get_symbol_market_config(crypto_currency)
+            # 4. Run Backtest
+            bt = Backtest(df, BotStrategy, cash=initial_cash, commission=self._exchange_service.get_taker_fee())
+            if not use_tqdm:
+                backtesting._tqdm = lambda iterable=None, *args, **kwargs: iterable
+            stats = bt.run(
+                signals_task_service=self._signals_task_service,
+                orders_analytics_service=self._orders_analytics_service,
+                symbol_market_config=symbol_market_config,
+                signal_parametrization=SignalParametrizationItem(
+                    crypto_currency=crypto_currency,
+                    atr_sl_mult=atr_sl_mult,
+                    atr_tp_mult=atr_tp_mult,
+                    long_entry_oversold_threshold=long_entry_oversold_threshold,
+                    short_entry_overbought_threshold=short_entry_overbought_threshold,
+                ),
+            )
+            return bt, stats
+        finally:
+            backtesting._tqdm = original_backtesting_tqdm
 
     async def _calculate_historical_indicators(
         self, crypto_currency: str, start_date: datetime, end_date: datetime

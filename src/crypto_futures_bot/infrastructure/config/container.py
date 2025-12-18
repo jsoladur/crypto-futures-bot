@@ -36,4 +36,5 @@ class InfrastructureContainer(containers.DeclarativeContainer):
         trade_now_service=services_container.trade_now_service,
         crypto_technical_analysis_service=services_container.crypto_technical_analysis_service,
         market_signal_service=services_container.market_signal_service,
+        signal_parametrization_service=services_container.signal_parametrization_service,
     )

@@ -1,5 +1,4 @@
 import logging
-from asyncio import Lock
 from dataclasses import fields
 from datetime import UTC, datetime, timedelta
 from typing import override
@@ -40,7 +39,6 @@ class MarketSignalService(AbstractEventHandlerService):
         super().__init__(push_notification_service, telegram_service, event_emitter)
         self._configuration_properties = configuration_properties
         self._trade_now_service = trade_now_service
-        self._lock = Lock()
 
     @override
     def configure(self) -> None:
@@ -73,7 +71,7 @@ class MarketSignalService(AbstractEventHandlerService):
         position_type: PositionTypeEnum,
         timeframe: Timeframe = "15m",
         session: AsyncSession | None = None,
-    ) -> MarketSignalItem | None:
+    ) -> MarketSignalItem | None:  # pragma: no cover
         query = (
             select(MarketSignal)
             .where(MarketSignal.crypto_currency == crypto_currency.currency)
@@ -93,23 +91,20 @@ class MarketSignalService(AbstractEventHandlerService):
     async def _handle_signals_evaluation_result(
         self, signals_evaluation_result: SignalsEvaluationResult, *, session: AsyncSession
     ) -> None:
-        async with self._lock:
-            await self._apply_market_signal_retention_policy(signals_evaluation_result, session=session)
-            trade_now_hints = await self._trade_now_service.get_trade_now_hints(
-                signals_evaluation_result.crypto_currency
-            )
-            signals_field_names = [field.name for field in fields(signals_evaluation_result) if field.type is bool]
-            for signals_field_name in signals_field_names:
-                if getattr(signals_evaluation_result, signals_field_name):
-                    await self._store_market_signal_if_needed(
-                        signals_evaluation_result,
-                        trade_now_hints,
-                        is_long=signals_field_name.startswith("long"),
-                        is_entry=signals_field_name.endswith("_entry"),
-                        session=session,
-                    )
+        await self._apply_market_signal_retention_policy(signals_evaluation_result, session=session)
+        trade_now_hints = await self._trade_now_service.get_trade_now_hints(signals_evaluation_result.crypto_currency)
+        signals_field_names = [field.name for field in fields(signals_evaluation_result) if field.type is bool]
+        for signals_field_name in signals_field_names:
+            if getattr(signals_evaluation_result, signals_field_name):
+                await self._store_market_signal(
+                    signals_evaluation_result,
+                    trade_now_hints,
+                    is_long=signals_field_name.startswith("long"),
+                    is_entry=signals_field_name.endswith("_entry"),
+                    session=session,
+                )
 
-    async def _store_market_signal_if_needed(
+    async def _store_market_signal(
         self,
         signals: SignalsEvaluationResult,
         trade_now_hints: TradeNowHints,
@@ -120,25 +115,21 @@ class MarketSignalService(AbstractEventHandlerService):
     ) -> None:
         position_type = PositionTypeEnum.LONG if is_long else PositionTypeEnum.SHORT
         action_type = MarketActionTypeEnum.ENTRY if is_entry else MarketActionTypeEnum.EXIT
-        last_market_signal = await self.find_last_market_signal(
-            signals.crypto_currency, position_type=position_type, timeframe=signals.timeframe, session=session
+        position_hints = trade_now_hints.long if is_long else trade_now_hints.short
+        market_signal = MarketSignal(
+            crypto_currency=signals.crypto_currency.currency,
+            timeframe=signals.timeframe,
+            position_type=position_type,
+            action_type=action_type,
+            entry_price=position_hints.entry_price if is_entry else None,
+            break_even_price=position_hints.break_even_price if is_entry else None,
+            stop_loss_percent_value=trade_now_hints.stop_loss_percent_value if is_entry else None,
+            take_profit_percent_value=trade_now_hints.take_profit_percent_value if is_entry else None,
+            stop_loss_price=position_hints.stop_loss_price if is_entry else None,
+            take_profit_price=position_hints.take_profit_price if is_entry else None,
         )
-        if last_market_signal is None or last_market_signal.action_type != action_type:
-            position_hints = trade_now_hints.long if is_long else trade_now_hints.short
-            market_signal = MarketSignal(
-                crypto_currency=signals.crypto_currency.currency,
-                timeframe=signals.timeframe,
-                position_type=position_type,
-                action_type=action_type,
-                entry_price=position_hints.entry_price if is_entry else None,
-                break_even_price=position_hints.break_even_price if is_entry else None,
-                stop_loss_percent_value=trade_now_hints.stop_loss_percent_value if is_entry else None,
-                take_profit_percent_value=trade_now_hints.take_profit_percent_value if is_entry else None,
-                stop_loss_price=position_hints.stop_loss_price if is_entry else None,
-                take_profit_price=position_hints.take_profit_price if is_entry else None,
-            )
-            session.add(market_signal)
-            await session.flush()
+        session.add(market_signal)
+        await session.flush()
 
     async def _apply_market_signal_retention_policy(
         self, signals: SignalsEvaluationResult, *, session: AsyncSession

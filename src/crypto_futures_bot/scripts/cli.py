@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import warnings
 from datetime import UTC, datetime, timedelta
 
 import typer
@@ -14,6 +15,7 @@ from crypto_futures_bot.scripts.config import Container
 from crypto_futures_bot.scripts.services import BacktestingService
 
 # Configure basic logging for CLI
+warnings.filterwarnings("ignore")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 application_container = Container()
 application_container.check_dependencies()

@@ -106,9 +106,16 @@ class BacktestingService:
             ),
             reverse=True,
         )
-        best_result = results[0]
-        echo("\n--- Best Backtesting Result ---")
-        echo(f"Signal Parametrization: {best_result.signal_parametrization_item}")
+        best_result, *_ = results
+        echo("\n 🎉 --- Best Backtesting Result 🎉")
+        echo("🧩 Parametrization:")
+        echo(
+            f"  📉 Long Entry Oversold Threshold = {best_result.signal_parametrization_item.long_entry_oversold_threshold}",  # noqa: E501
+            f"  📈 Short Entry Overbought Threshold = {best_result.signal_parametrization_item.short_entry_overbought_threshold}",  # noqa: E501
+            f"  🛡️ SL ATR x = {best_result.signal_parametrization_item.atr_sl_mult}",  # noqa: E501
+            f"  🏁 TP ATR x = {best_result.signal_parametrization_item.atr_tp_mult}",  # noqa: E501
+        )
+        echo("📊 Stats:")
         echo(best_result.stats)
 
     async def internal_run(

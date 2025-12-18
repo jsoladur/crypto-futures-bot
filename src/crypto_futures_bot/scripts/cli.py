@@ -25,6 +25,8 @@ warnings.filterwarnings("ignore")
 # .env.backtest
 faker = Faker()
 os.environ["TELEGRAM_BOT_TOKEN"] = f"{faker.pyint()}:{faker.uuid4().replace('-', '_')}"
+os.environ["MEXC_API_KEY"] = ""  # nosec: B105
+os.environ["MEXC_API_SECRET"] = ""  # nosec: B105
 os.environ["ROOT_USER"] = faker.user_name()
 os.environ["ROOT_PASSWORD"] = faker.password()
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite://:memory:"

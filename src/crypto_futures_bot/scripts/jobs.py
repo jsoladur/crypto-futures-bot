@@ -41,7 +41,8 @@ def run_single_backtest_combination(
                 use_tqdm=False,
             )
         )
-        ret = BacktestingResult(signal_parametrization_item=signal_parametrization_item, stats=stats)
+        stats_dict = {key: value for key, value in stats.to_dict().items() if not key.startswith("_")}
+        ret = BacktestingResult(signal_parametrization_item=signal_parametrization_item, stats=stats_dict)
     except Exception as e:
         # We use echo_fn for thread-safe printing if needed
         logger.warning(

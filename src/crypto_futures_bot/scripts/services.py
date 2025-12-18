@@ -92,7 +92,7 @@ class BacktestingService:
             crypto_currency=crypto_currency, start_date=start_date, end_date=end_date
         )
         if apply_paralellism:
-            parallel_results = Parallel(n_jobs=-1, backend="threading")(
+            parallel_results = Parallel(n_jobs=-1)(
                 delayed(run_single_backtest_combination)(
                     symbol=symbol,
                     df=df,
@@ -120,7 +120,9 @@ class BacktestingService:
                     atr_tp_mult=signal_parametrization_item.atr_tp_mult,
                     use_tqdm=False,
                 )
-                results.append(BacktestingResult(signal_parametrization_item=signal_parametrization_item, stats=stats))
+                results.append(
+                    BacktestingResult(signal_parametrization_item=signal_parametrization_item, stats=stats.to_dict())
+                )
         results.sort(
             key=lambda r: (
                 r.stats.get("Return [%]", -float("inf")),

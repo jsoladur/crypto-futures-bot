@@ -25,6 +25,8 @@ warnings.filterwarnings("ignore")
 # .env.backtest
 faker = Faker()
 os.environ["TELEGRAM_BOT_TOKEN"] = f"{faker.pyint()}:{faker.uuid4().replace('-', '_')}"
+os.environ["MEXC_API_KEY"] = ""  # nosec: B105
+os.environ["MEXC_API_SECRET"] = ""  # nosec: B105
 os.environ["ROOT_USER"] = faker.user_name()
 os.environ["ROOT_PASSWORD"] = faker.password()
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite://:memory:"
@@ -77,6 +79,7 @@ def research(
     currency: str = typer.Option("DOGE", help="Crypto currency to backtest"),
     days: int = typer.Option(365, help="Number of days to backtest"),
     initial_cash: float = typer.Option(3_000.0, help="Initial cash in USDT"),
+    apply_paralellism: bool = typer.Option(True, help="Apply parallelism"),
 ):
     """
     Run backtesting strategy for a given symbol.
@@ -85,7 +88,11 @@ def research(
     start_date = end_date - timedelta(days=days)
     asyncio.run(
         backtesting_service.research(
-            start_date=start_date, end_date=end_date, crypto_currency=currency, initial_cash=initial_cash
+            start_date=start_date,
+            end_date=end_date,
+            crypto_currency=currency,
+            initial_cash=initial_cash,
+            apply_paralellism=apply_paralellism,
         )
     )
 

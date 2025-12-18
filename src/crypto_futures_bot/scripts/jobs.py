@@ -4,11 +4,16 @@ import pandas as pd
 from backtesting import Backtest
 
 from crypto_futures_bot.domain.vo import SignalParametrizationItem
+from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import SymbolMarketConfig
 from crypto_futures_bot.scripts.vo import BacktestingResult
 
 
 def run_single_backtest_combination(
-    symbol: str, df: pd.DataFrame, initial_cash: float, signal_parametrization_item: SignalParametrizationItem
+    symbol: str,
+    df: pd.DataFrame,
+    initial_cash: float,
+    signal_parametrization_item: SignalParametrizationItem,
+    symbol_market_config: SymbolMarketConfig,
 ) -> BacktestingResult | None:
     """
     Runs a single backtest for one combination of parameters. Designed to be called in parallel.
@@ -38,11 +43,14 @@ def run_single_backtest_combination(
                 short_entry_overbought_threshold=signal_parametrization_item.short_entry_overbought_threshold,
                 atr_sl_mult=signal_parametrization_item.atr_sl_mult,
                 atr_tp_mult=signal_parametrization_item.atr_tp_mult,
-                show_plot=False,
+                symbol_market_config=symbol_market_config,
                 use_tqdm=False,
             )
         )
-        ret = BacktestingResult(signal_parametrization_item=signal_parametrization_item, stats=stats)
+        ret = BacktestingResult(
+            signal_parametrization_item=signal_parametrization_item,
+            stats={key: value for key, value in stats.to_dict().items() if not key.startswith("_")},
+        )
     except Exception as e:
         # We use echo_fn for thread-safe printing if needed
         logger.warning(

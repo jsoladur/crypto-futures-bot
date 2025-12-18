@@ -38,7 +38,6 @@ def run_single_backtest_combination(
                 short_entry_overbought_threshold=signal_parametrization_item.short_entry_overbought_threshold,
                 atr_sl_mult=signal_parametrization_item.atr_sl_mult,
                 atr_tp_mult=signal_parametrization_item.atr_tp_mult,
-                show_plot=False,
                 use_tqdm=False,
             )
         )

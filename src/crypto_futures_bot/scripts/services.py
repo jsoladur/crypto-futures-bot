@@ -71,7 +71,6 @@ class BacktestingService:
             short_entry_overbought_threshold=short_entry_overbought_threshold,
             atr_sl_mult=atr_sl_mult,
             atr_tp_mult=atr_tp_mult,
-            show_plot=show_plot,
         )
         echo(f"\n--- Backtest Result for {crypto_currency} ---\n")
         echo(stats)
@@ -115,9 +114,10 @@ class BacktestingService:
                     symbol=symbol,
                     df=df,
                     initial_cash=initial_cash,
+                    long_entry_oversold_threshold=signal_parametrization_item.long_entry_oversold_threshold,
+                    short_entry_overbought_threshold=signal_parametrization_item.short_entry_overbought_threshold,
                     atr_sl_mult=signal_parametrization_item.atr_sl_mult,
                     atr_tp_mult=signal_parametrization_item.atr_tp_mult,
-                    show_plot=False,
                 )
                 results.append(BacktestingResult(signal_parametrization_item=signal_parametrization_item, stats=stats))
         results.sort(
@@ -153,7 +153,6 @@ class BacktestingService:
         short_entry_overbought_threshold: float,
         atr_sl_mult: float,
         atr_tp_mult: float,
-        show_plot: bool = False,
         use_tqdm: bool = True,
     ) -> tuple[Backtest, pd.Series]:
         original_backtesting_tqdm = backtesting._tqdm

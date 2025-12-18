@@ -82,6 +82,7 @@ class BacktestingService:
     ) -> None:
         echo(f"\n--- Research for {crypto_currency} ---\n")
         signal_parametrization_items = self._calculate_signal_parametrization_items(crypto_currency)
+        signal_parametrization_items = signal_parametrization_items[:10]
         symbol, df = await self._calculate_historical_indicators(
             crypto_currency=crypto_currency, start_date=start_date, end_date=end_date
         )
@@ -107,16 +108,17 @@ class BacktestingService:
             reverse=True,
         )
         best_result, *_ = results
-        echo("\n 🎉 --- Best Backtesting Result 🎉")
-        echo("🧩 Parametrization:")
-        echo(
-            f"  📉 Long Entry Oversold Threshold = {best_result.signal_parametrization_item.long_entry_oversold_threshold}",  # noqa: E501
-            f"  📈 Short Entry Overbought Threshold = {best_result.signal_parametrization_item.short_entry_overbought_threshold}",  # noqa: E501
-            f"  🛡️ SL ATR x = {best_result.signal_parametrization_item.atr_sl_mult}",  # noqa: E501
-            f"  🏁 TP ATR x = {best_result.signal_parametrization_item.atr_tp_mult}",  # noqa: E501
-        )
-        echo("📊 Stats:")
-        echo(best_result.stats)
+        message_lines = [
+            "\n 🎉 --- Best Backtesting Result 🎉",
+            "🧩 Parametrization:",
+            f"📉 Long Entry Oversold Threshold = {best_result.signal_parametrization_item.long_entry_oversold_threshold}",  # noqa: E501
+            f"📈 Short Entry Overbought Threshold = {best_result.signal_parametrization_item.short_entry_overbought_threshold}",  # noqa: E501
+            f"🛡️ SL ATR x = {best_result.signal_parametrization_item.atr_sl_mult}",  # noqa: E501
+            f"🏁 TP ATR x = {best_result.signal_parametrization_item.atr_tp_mult}",  # noqa: E501
+            "📊 Stats:",
+            str(best_result.stats),
+        ]
+        echo("\n".join(message_lines))
 
     async def internal_run(
         self,

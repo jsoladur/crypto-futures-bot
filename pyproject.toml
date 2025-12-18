@@ -1,6 +1,6 @@
 [project]
 name = "crypto-futures-bot"
-version = "0.5.4"
+version = "0.5.5"
 description = "Crypto futures bot"
 readme = "README.md"
 authors = [

@@ -111,7 +111,7 @@ class BacktestingService:
             for signal_parametrization_item in tqdm(
                 signal_parametrization_items, desc="Researching signal parametrizations"
             ):
-                *_, stats = await self._internal_run(
+                *_, stats = await self.internal_run(
                     symbol=symbol,
                     df=df,
                     initial_cash=initial_cash,

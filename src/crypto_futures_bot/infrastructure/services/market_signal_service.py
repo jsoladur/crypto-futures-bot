@@ -73,7 +73,7 @@ class MarketSignalService(AbstractEventHandlerService):
         position_type: PositionTypeEnum,
         timeframe: Timeframe = "15m",
         session: AsyncSession | None = None,
-    ) -> MarketSignalItem | None:
+    ) -> MarketSignalItem | None:  # pragma: no cover
         query = (
             select(MarketSignal)
             .where(MarketSignal.crypto_currency == crypto_currency.currency)

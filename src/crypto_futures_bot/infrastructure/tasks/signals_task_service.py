@@ -143,17 +143,19 @@ class SignalsTaskService(AbstractTaskService):
             index=CandleStickEnum.LAST,
             technical_analysis_df=technical_analysis_df,
         )
-        long_entry = self._is_long_entry(
-            prev_candle=prev_candle, last_candle=last_candle, signal_parametrization_item=signal_parametrization_item
-        )
-        short_entry = self._is_short_entry(
-            prev_candle=prev_candle, last_candle=last_candle, signal_parametrization_item=signal_parametrization_item
-        )
         signals_evaluation_result = SignalsEvaluationResult(
             timestamp=last_candle.timestamp,
             crypto_currency=tracked_crypto_currency,
-            long_entry=long_entry,
-            short_entry=short_entry,
+            long_entry=self._is_long_entry(
+                prev_candle=prev_candle,
+                last_candle=last_candle,
+                signal_parametrization_item=signal_parametrization_item,
+            ),
+            short_entry=self._is_short_entry(
+                prev_candle=prev_candle,
+                last_candle=last_candle,
+                signal_parametrization_item=signal_parametrization_item,
+            ),
         )
         return signals_evaluation_result, last_candle
 
@@ -286,7 +288,8 @@ class SignalsTaskService(AbstractTaskService):
         stoch_condition = prev_candle.stoch_rsi_k < signal_parametrization_item.long_entry_oversold_threshold
         # MOMENTUM: Histogram must be positive (Recovery started)
         macd_positive = last_candle.macd_hist > 0
-        return trend_ok and stoch_cross and stoch_condition and macd_positive
+        is_long_entry = bool(trend_ok and stoch_cross and stoch_condition and macd_positive)
+        return is_long_entry
 
     def _is_short_entry(
         self,
@@ -301,7 +304,8 @@ class SignalsTaskService(AbstractTaskService):
         )
         stoch_condition = prev_candle.stoch_rsi_k > signal_parametrization_item.short_entry_overbought_threshold
         macd_negative = last_candle.macd_hist < 0
-        return trend_ok and stoch_cross and stoch_condition and macd_negative
+        is_short_entry = bool(trend_ok and stoch_cross and stoch_condition and macd_negative)
+        return is_short_entry
 
     async def _notify_alert(self, telegram_chat_ids: list[str], body_message: str) -> None:
         await asyncio.gather(

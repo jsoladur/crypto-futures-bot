@@ -12,7 +12,7 @@ from pyee.asyncio import AsyncIOEventEmitter
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 from crypto_futures_bot.constants import SIGNALS_EVALUATION_RESULT_EVENT_NAME, SIGNALS_TASK_SERVICE_CRON_PATTERN
-from crypto_futures_bot.domain.enums import CandleStickEnum, PushNotificationTypeEnum, TaskTypeEnum
+from crypto_futures_bot.domain.enums import CandleStickEnum, PositionTypeEnum, PushNotificationTypeEnum, TaskTypeEnum
 from crypto_futures_bot.domain.vo import SignalParametrizationItem, SignalsEvaluationResult, TrackedCryptoCurrencyItem
 from crypto_futures_bot.domain.vo.candlestick_indicators import CandleStickIndicators
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
@@ -192,27 +192,34 @@ class SignalsTaskService(AbstractTaskService):
         last_candle: CandleStickIndicators,
         signal_parametrization_item: SignalParametrizationItem,
     ) -> None:
-        symbol_ticker = await self._futures_exchange_service.get_symbol_ticker(
-            symbol=signals_evaluation_result.crypto_currency.to_symbol(account_info=account_info)
+        exists = await self._market_signal_service.exists_market_signal_by_timestamp(
+            timestamp=int(signals_evaluation_result.timestamp.timestamp() * 1000),
+            crypto_currency=signals_evaluation_result.crypto_currency,
+            position_type=PositionTypeEnum.LONG if is_long else PositionTypeEnum.SHORT,
+            timeframe=signals_evaluation_result.timeframe,
         )
-        if is_entry:
-            await self._notify_entry(
-                signals_evaluation_result=signals_evaluation_result,
-                is_long=is_long,
-                chat_ids=chat_ids,
-                account_info=account_info,
-                last_candle=last_candle,
-                symbol_ticker=symbol_ticker,
-                signal_parametrization_item=signal_parametrization_item,
+        if not exists:
+            symbol_ticker = await self._futures_exchange_service.get_symbol_ticker(
+                symbol=signals_evaluation_result.crypto_currency.to_symbol(account_info=account_info)
             )
-        else:  # pragma: no cover
-            await self._notify_exit(
-                signals_evaluation_result=signals_evaluation_result,
-                is_long=is_long,
-                chat_ids=chat_ids,
-                account_info=account_info,
-                symbol_ticker=symbol_ticker,
-            )
+            if is_entry:
+                await self._notify_entry(
+                    signals_evaluation_result=signals_evaluation_result,
+                    is_long=is_long,
+                    chat_ids=chat_ids,
+                    account_info=account_info,
+                    last_candle=last_candle,
+                    symbol_ticker=symbol_ticker,
+                    signal_parametrization_item=signal_parametrization_item,
+                )
+            else:  # pragma: no cover
+                await self._notify_exit(
+                    signals_evaluation_result=signals_evaluation_result,
+                    is_long=is_long,
+                    chat_ids=chat_ids,
+                    account_info=account_info,
+                    symbol_ticker=symbol_ticker,
+                )
 
     async def _notify_entry(
         self,

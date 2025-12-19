@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 
 from crypto_futures_bot.domain.types import Timeframe
 from crypto_futures_bot.domain.vo.tracked_crypto_currency_item import TrackedCryptoCurrencyItem
@@ -6,7 +7,7 @@ from crypto_futures_bot.domain.vo.tracked_crypto_currency_item import TrackedCry
 
 @dataclass(frozen=True, kw_only=True)
 class SignalsEvaluationResult:
-    timestamp: float | int
+    timestamp: datetime
     crypto_currency: TrackedCryptoCurrencyItem
     timeframe: Timeframe = "15m"
 

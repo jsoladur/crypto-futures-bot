@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 from typing import override
 
 from pyee.asyncio import AsyncIOEventEmitter
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
@@ -58,7 +58,7 @@ class MarketSignalService(AbstractEventHandlerService):
             query = query.where(MarketSignal.position_type == position_type)
         if timeframe is not None:
             query = query.where(MarketSignal.timeframe == timeframe)
-        query = query.order_by(MarketSignal.created_at.desc())
+        query = query.order_by(MarketSignal.timestamp.desc())
         query_result = await session.execute(query)
         ret = [self._convert_model_to_vo(market_signal) for market_signal in query_result.scalars().all()]
         return ret
@@ -77,7 +77,7 @@ class MarketSignalService(AbstractEventHandlerService):
             .where(MarketSignal.crypto_currency == crypto_currency.currency)
             .where(MarketSignal.position_type == position_type)
             .where(MarketSignal.timeframe == timeframe)
-            .order_by(MarketSignal.created_at.desc())
+            .order_by(MarketSignal.timestamp.desc())
             .limit(1)
         )
         query_result = await session.execute(query)
@@ -86,6 +86,27 @@ class MarketSignalService(AbstractEventHandlerService):
         if last_market_signal:
             ret = self._convert_model_to_vo(last_market_signal)
         return ret
+
+    @transactional(read_only=True)
+    async def exists_market_signal_by_timestamp(
+        self,
+        timestamp: int,
+        crypto_currency: TrackedCryptoCurrencyItem,
+        position_type: PositionTypeEnum,
+        timeframe: Timeframe,
+        *,
+        session: AsyncSession | None = None,
+    ) -> bool:
+        query = (
+            select(func.count(MarketSignal.id))
+            .where(MarketSignal.timestamp == timestamp)
+            .where(MarketSignal.crypto_currency == crypto_currency.currency)
+            .where(MarketSignal.position_type == position_type)
+            .where(MarketSignal.timeframe == timeframe)
+        )
+        query_result = await session.execute(query)
+        count = query_result.scalar()
+        return count > 0
 
     @transactional()
     async def _handle_signals_evaluation_result(
@@ -96,7 +117,7 @@ class MarketSignalService(AbstractEventHandlerService):
         signals_field_names = [field.name for field in fields(signals_evaluation_result) if field.type is bool]
         for signals_field_name in signals_field_names:
             if getattr(signals_evaluation_result, signals_field_name):
-                await self._store_market_signal(
+                await self._store_market_signal_if_needed(
                     signals_evaluation_result,
                     trade_now_hints,
                     is_long=signals_field_name.startswith("long"),
@@ -104,7 +125,7 @@ class MarketSignalService(AbstractEventHandlerService):
                     session=session,
                 )
 
-    async def _store_market_signal(
+    async def _store_market_signal_if_needed(
         self,
         signals: SignalsEvaluationResult,
         trade_now_hints: TradeNowHints,
@@ -113,23 +134,33 @@ class MarketSignalService(AbstractEventHandlerService):
         *,
         session: AsyncSession,
     ) -> None:
-        position_type = PositionTypeEnum.LONG if is_long else PositionTypeEnum.SHORT
-        action_type = MarketActionTypeEnum.ENTRY if is_entry else MarketActionTypeEnum.EXIT
-        position_hints = trade_now_hints.long if is_long else trade_now_hints.short
-        market_signal = MarketSignal(
-            crypto_currency=signals.crypto_currency.currency,
+        timestamp = int(signals.timestamp.timestamp() * 1000)
+        exists = await self.exists_market_signal_by_timestamp(
+            timestamp=timestamp,
+            crypto_currency=signals.crypto_currency,
+            position_type=PositionTypeEnum.LONG if is_long else PositionTypeEnum.SHORT,
             timeframe=signals.timeframe,
-            position_type=position_type,
-            action_type=action_type,
-            entry_price=position_hints.entry_price if is_entry else None,
-            break_even_price=position_hints.break_even_price if is_entry else None,
-            stop_loss_percent_value=trade_now_hints.stop_loss_percent_value if is_entry else None,
-            take_profit_percent_value=trade_now_hints.take_profit_percent_value if is_entry else None,
-            stop_loss_price=position_hints.stop_loss_price if is_entry else None,
-            take_profit_price=position_hints.take_profit_price if is_entry else None,
+            session=session,
         )
-        session.add(market_signal)
-        await session.flush()
+        if not exists:
+            position_type = PositionTypeEnum.LONG if is_long else PositionTypeEnum.SHORT
+            action_type = MarketActionTypeEnum.ENTRY if is_entry else MarketActionTypeEnum.EXIT
+            position_hints = trade_now_hints.long if is_long else trade_now_hints.short
+            market_signal = MarketSignal(
+                timestamp=timestamp,
+                crypto_currency=signals.crypto_currency.currency,
+                timeframe=signals.timeframe,
+                position_type=position_type,
+                action_type=action_type,
+                entry_price=position_hints.entry_price if is_entry else None,
+                break_even_price=position_hints.break_even_price if is_entry else None,
+                stop_loss_percent_value=trade_now_hints.stop_loss_percent_value if is_entry else None,
+                take_profit_percent_value=trade_now_hints.take_profit_percent_value if is_entry else None,
+                stop_loss_price=position_hints.stop_loss_price if is_entry else None,
+                take_profit_price=position_hints.take_profit_price if is_entry else None,
+            )
+            session.add(market_signal)
+            await session.flush()
 
     async def _apply_market_signal_retention_policy(
         self, signals: SignalsEvaluationResult, *, session: AsyncSession

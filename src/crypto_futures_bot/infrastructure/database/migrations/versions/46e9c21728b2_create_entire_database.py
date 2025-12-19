@@ -1,8 +1,8 @@
 """Create entire database
 
-Revision ID: 30a90f4f89b8
+Revision ID: 46e9c21728b2
 Revises:
-Create Date: 2025-12-18 20:08:38.896416
+Create Date: 2025-12-19 08:41:38.592157
 
 """
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "30a90f4f89b8"
+revision: str = "46e9c21728b2"
 down_revision: str | Sequence[str] | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
@@ -24,6 +24,7 @@ def upgrade() -> None:
     op.create_table(
         "market_signal",
         sa.Column("id", sa.UUID(), nullable=False),
+        sa.Column("timestamp", sa.BigInteger(), nullable=False),
         sa.Column("crypto_currency", sa.String(), nullable=False),
         sa.Column("timeframe", sa.String(), nullable=False),
         sa.Column("position_type", sa.Enum("LONG", "SHORT", name="positiontypeenum"), nullable=False),

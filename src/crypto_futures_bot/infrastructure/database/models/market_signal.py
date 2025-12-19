@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from sqlalchemy import UUID, Column, Enum, Float, String
+from sqlalchemy import UUID, BigInteger, Column, Enum, Float, String
 
 from crypto_futures_bot.domain.enums import MarketActionTypeEnum, PositionTypeEnum
 from crypto_futures_bot.domain.types import Timeframe
@@ -11,6 +11,7 @@ class MarketSignal(Persistable):
     __tablename__ = "market_signal"
 
     id: UUID = Column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
+    timestamp: int = Column(BigInteger, nullable=False)
     crypto_currency: str = Column(String, nullable=False)
     timeframe: Timeframe = Column(String, nullable=False, default="15m")
     position_type: PositionTypeEnum = Column(Enum(PositionTypeEnum), nullable=False)

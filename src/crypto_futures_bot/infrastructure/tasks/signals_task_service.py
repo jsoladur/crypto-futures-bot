@@ -245,10 +245,10 @@ class SignalsTaskService(AbstractTaskService):
             "================================",
             f"🏷️ {html.bold('Symbol')} = {html.code(signals_evaluation_result.crypto_currency.to_symbol(account_info=account_info))}",  # noqa: E501
             f"🎯 {html.bold('Entry')} = {html.code(position_hints.entry_price)} {account_info.currency_code}",
-            f"⚖️ {html.bold('Break Even')} = {html.code(position_hints.break_even_price)} {account_info.currency_code}",  # noqa: E501
             f"🛑 {html.bold('STOP LOSS')} = {html.code(position_hints.stop_loss_price)} {account_info.currency_code} ({trade_now_hints.stop_loss_percent_value} %)",  # noqa: E501
             f"🏆 {html.bold('TAKE PROFIT')} = {html.code(position_hints.take_profit_price)} {account_info.currency_code} ({trade_now_hints.take_profit_percent_value} %)",  # noqa: E501
             "--------------------------------",
+            f"⚖️ {html.bold('Break Even')} = {html.code(position_hints.break_even_price)} {account_info.currency_code}",  # noqa: E501
             f"✳️ {html.italic('Move SL to Break Even')} = {html.code(position_hints.move_sl_to_break_even_price)} {account_info.currency_code}",  # noqa: E501
             f"☝️ {html.italic('Move SL to First Target Profit')} = {html.code(position_hints.move_sl_to_first_target_profit_price)} {account_info.currency_code}",  # noqa: E501
         ]

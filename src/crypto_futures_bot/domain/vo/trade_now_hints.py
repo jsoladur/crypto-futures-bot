@@ -7,12 +7,19 @@ from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import Symbo
 @dataclass(frozen=True)
 class PositionHints:
     is_long: bool
+    is_safe: bool
+    margin: float
+    leverage: float
+    notional_size: float
+    liquidation_price: float
     entry_price: float
     break_even_price: float
     stop_loss_price: float
     move_sl_to_break_even_price: float
     move_sl_to_first_target_profit_price: float
     take_profit_price: float
+    potential_loss: float
+    potential_profit: float
 
 
 @dataclass(frozen=True)

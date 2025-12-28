@@ -1,13 +1,23 @@
+import math
+
 from crypto_futures_bot.domain.vo import (
+    CandleStickIndicators,
     PositionHints,
     SignalParametrizationItem,
     TrackedCryptoCurrencyItem,
     TradeNowHints,
 )
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
+from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
+    PortfolioBalance,
+    SymbolMarketConfig,
+    SymbolTicker,
+)
 from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_service import CryptoTechnicalAnalysisService
 from crypto_futures_bot.infrastructure.services.orders_analytics_service import OrdersAnalyticsService
+from crypto_futures_bot.infrastructure.services.risk_management_service import RiskManagementService
 from crypto_futures_bot.infrastructure.services.signal_parametrization_service import SignalParametrizationService
+from crypto_futures_bot.infrastructure.services.tracked_crypto_currency_service import TrackedCryptoCurrencyService
 
 
 class TradeNowService:
@@ -17,11 +27,15 @@ class TradeNowService:
         signal_parametrization_service: SignalParametrizationService,
         crypto_technical_analysis_service: CryptoTechnicalAnalysisService,
         orders_analytics_service: OrdersAnalyticsService,
+        risk_management_service: RiskManagementService,
+        tracked_crypto_currency_service: TrackedCryptoCurrencyService,
     ):
         self._futures_exchange_service = futures_exchange_service
         self._signal_parametrization_service = signal_parametrization_service
         self._crypto_technical_analysis_service = crypto_technical_analysis_service
         self._orders_analytics_service = orders_analytics_service
+        self._risk_management_service = risk_management_service
+        self._tracked_crypto_currency_service = tracked_crypto_currency_service
 
     async def get_trade_now_hints(
         self,
@@ -31,6 +45,7 @@ class TradeNowService:
     ) -> TradeNowHints:
         account_info = await self._futures_exchange_service.get_account_info()
         symbol = tracked_crypto_currency.to_symbol(account_info)
+        portfolio_balance = await self._futures_exchange_service.get_portfolio_balance()
         ticker = await self._futures_exchange_service.get_symbol_ticker(symbol=symbol)
         signal_parametrization_item = (
             signal_parametrization_item
@@ -54,59 +69,133 @@ class TradeNowService:
             signal_parametrization_item=signal_parametrization_item,
             symbol_market_config=symbol_market_config,
         )
-        long_move_sl_to_break_even_price, long_move_sl_to_first_target_profit_price, long_take_profit_price = (
-            self._orders_analytics_service.get_take_profit_price_levels(
-                entry_price=ticker.ask_or_close,
-                is_long=True,
-                last_candlestick_indicators=candlestick_indicators,
-                signal_parametrization_item=signal_parametrization_item,
-                symbol_market_config=symbol_market_config,
-            )
+        long = await self._calculate_position_hints(
+            portfolio_balance=portfolio_balance,
+            ticker=ticker,
+            stop_loss_percent_value=stop_loss_percent_value,
+            candlestick_indicators=candlestick_indicators,
+            signal_parametrization_item=signal_parametrization_item,
+            symbol_market_config=symbol_market_config,
+            is_long=True,
         )
-        short_move_sl_to_break_even_price, short_move_sl_to_first_target_profit_price, short_take_profit_price = (
-            self._orders_analytics_service.get_take_profit_price_levels(
-                entry_price=ticker.bid_or_close,
-                is_long=False,
-                last_candlestick_indicators=candlestick_indicators,
-                signal_parametrization_item=signal_parametrization_item,
-                symbol_market_config=symbol_market_config,
-            )
+        short = await self._calculate_position_hints(
+            portfolio_balance=portfolio_balance,
+            ticker=ticker,
+            stop_loss_percent_value=stop_loss_percent_value,
+            candlestick_indicators=candlestick_indicators,
+            signal_parametrization_item=signal_parametrization_item,
+            symbol_market_config=symbol_market_config,
+            is_long=False,
         )
         return TradeNowHints(
             ticker=ticker,
             candlestick_indicators=candlestick_indicators,
             stop_loss_percent_value=stop_loss_percent_value,
             take_profit_percent_value=take_profit_percent_value,
-            long=PositionHints(
-                entry_price=ticker.ask_or_close,
-                break_even_price=self._orders_analytics_service.calculate_break_even_price(
-                    entry_price=ticker.ask_or_close, symbol_market_config=symbol_market_config, is_long=True
-                ),
-                is_long=True,
-                stop_loss_price=self._orders_analytics_service.get_stop_loss_price(
-                    entry_price=ticker.ask_or_close,
-                    stop_loss_percent_value=stop_loss_percent_value,
-                    is_long=True,
-                    symbol_market_config=symbol_market_config,
-                ),
-                move_sl_to_break_even_price=long_move_sl_to_break_even_price,
-                move_sl_to_first_target_profit_price=long_move_sl_to_first_target_profit_price,
-                take_profit_price=long_take_profit_price,
+            long=long,
+            short=short,
+        )
+
+    async def _calculate_position_hints(
+        self,
+        portfolio_balance: PortfolioBalance,
+        ticker: SymbolTicker,
+        stop_loss_percent_value: float,
+        candlestick_indicators: CandleStickIndicators,
+        signal_parametrization_item: SignalParametrizationItem,
+        symbol_market_config: SymbolMarketConfig,
+        *,
+        is_long: bool,
+        maintenance_margin_rate: float = 0.01,
+    ) -> PositionHints:
+        entry_price = ticker.ask_or_close if is_long else ticker.bid_or_close
+
+        # 1. Calculate Stop Loss Price
+        stop_loss_price = self._orders_analytics_service.get_stop_loss_price(
+            entry_price=entry_price,
+            stop_loss_percent_value=stop_loss_percent_value,
+            is_long=is_long,
+            symbol_market_config=symbol_market_config,
+        )
+
+        # 2. Risk & Leverage Calculation
+        num_assets_investing = await self._tracked_crypto_currency_service.count()
+        risk_management = await self._risk_management_service.get()
+
+        # Financial Goal: How much we WANT to risk
+        desired_risk_amount = round(
+            portfolio_balance.total_balance * (risk_management.percent_value / 100),
+            ndigits=symbol_market_config.price_precision,
+        )
+        target_notional_size = round(
+            desired_risk_amount / (stop_loss_percent_value / 100), ndigits=symbol_market_config.price_precision
+        )
+
+        # Margin Availability
+        available_margin = round(
+            portfolio_balance.futures_balance / num_assets_investing, ndigits=symbol_market_config.price_precision
+        )
+
+        # Safety Constraint: Max Leverage < 1 / (SL% + MMR)
+        max_survival_leverage = math.floor(0.95 * (1.0 / ((stop_loss_percent_value / 100) + maintenance_margin_rate)))
+        # Financial Constraint: Leverage needed to hit risk target
+        required_leverage = math.ceil(target_notional_size / available_margin)
+        # Final Decision: Pick the smaller leverage
+        final_leverage = min(required_leverage, max_survival_leverage)
+
+        # 3. Calculate Liquidation Price
+        if is_long:
+            liquidation_price = round(
+                entry_price * (1 - (1 / final_leverage) + maintenance_margin_rate),
+                ndigits=symbol_market_config.price_precision,
+            )
+            is_safe = liquidation_price < stop_loss_price
+        else:
+            liquidation_price = round(
+                ticker.bid_or_close * (1 + (1 / final_leverage) - maintenance_margin_rate),
+                ndigits=symbol_market_config.price_precision,
+            )
+            is_safe = liquidation_price > stop_loss_price
+
+        # 4. Calculate Take Profit Prices
+        move_sl_to_break_even_price, move_sl_to_first_target_profit_price, take_profit_price = (
+            self._orders_analytics_service.get_take_profit_price_levels(
+                entry_price=entry_price,
+                is_long=is_long,
+                last_candlestick_indicators=candlestick_indicators,
+                signal_parametrization_item=signal_parametrization_item,
+                symbol_market_config=symbol_market_config,
+            )
+        )
+
+        # --- NEW: Calculate Final Potential PnL ---
+        # We must use the ACTUAL size (which might be smaller than target if capped)
+        final_notional_size = round(available_margin * final_leverage, ndigits=symbol_market_config.price_precision)
+
+        # Loss: Size * % distance to SL
+        # We use the percent value directly as it's cleaner, but using price diff is also fine.
+        potential_loss = final_notional_size * (stop_loss_percent_value / 100)
+
+        # Profit: Size * % distance to TP
+        # We calculate the distance because we only have the TP Price, not the TP %.
+        price_diff = abs(take_profit_price - entry_price)
+        potential_profit = final_notional_size * (price_diff / entry_price)
+
+        return PositionHints(
+            entry_price=entry_price,
+            break_even_price=self._orders_analytics_service.calculate_break_even_price(
+                entry_price=entry_price, symbol_market_config=symbol_market_config, is_long=is_long
             ),
-            short=PositionHints(
-                entry_price=ticker.bid_or_close,
-                break_even_price=self._orders_analytics_service.calculate_break_even_price(
-                    entry_price=ticker.bid_or_close, symbol_market_config=symbol_market_config, is_long=False
-                ),
-                is_long=False,
-                stop_loss_price=self._orders_analytics_service.get_stop_loss_price(
-                    entry_price=ticker.bid_or_close,
-                    stop_loss_percent_value=stop_loss_percent_value,
-                    is_long=False,
-                    symbol_market_config=symbol_market_config,
-                ),
-                move_sl_to_break_even_price=short_move_sl_to_break_even_price,
-                move_sl_to_first_target_profit_price=short_move_sl_to_first_target_profit_price,
-                take_profit_price=short_take_profit_price,
-            ),
+            is_long=is_long,
+            is_safe=is_safe,
+            margin=available_margin,
+            leverage=final_leverage,
+            notional_size=final_notional_size,
+            liquidation_price=liquidation_price,
+            stop_loss_price=stop_loss_price,
+            move_sl_to_break_even_price=move_sl_to_break_even_price,
+            move_sl_to_first_target_profit_price=move_sl_to_first_target_profit_price,
+            take_profit_price=take_profit_price,
+            potential_loss=round(potential_loss, ndigits=symbol_market_config.price_precision),
+            potential_profit=round(potential_profit, ndigits=symbol_market_config.price_precision),
         )

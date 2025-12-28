@@ -57,7 +57,7 @@ class MessagesFormatter:
         ]
         params_lines = [
             html.bold("⚙️ SL/TP Parameters:"),
-            f"    🔥 {html.italic('Last Price')} = {html.code(f'{ticker.close:.4f} {fiat_currency}')}",
+            f"    🔥 {html.italic('Last Price')} = {html.code(ticker.close)} {fiat_currency}",
             f"    🚏 {html.bold('Stop Loss')} = {hints.stop_loss_percent_value}%",
             f"    🏆 {html.bold('Take Profit')} = {hints.take_profit_percent_value}%",
             "",
@@ -167,7 +167,7 @@ class MessagesFormatter:
             f"    🛡️ Safe Trade? {self._get_safety_icon_and_message(position_hints.is_safe)}",
             "     --------------------------------",
             f"    🎯 {html.bold('Entry')} = {html.code(position_hints.entry_price)} {fiat_currency}",
-            f"    💰 {html.bold('Margin')} = {html.code(f'{position_hints.margin:.2f} {fiat_currency}')}",  # noqa: E501
+            f"    💰 {html.bold('Margin')} = {html.code(position_hints.margin)} {fiat_currency}",  # noqa: E501
             f"    ⚡ {html.bold('Leverage')} = x{html.code(f'{position_hints.leverage}')}",
             f"    🛑 {html.bold('STOP LOSS')} = {html.code(position_hints.stop_loss_price)} {fiat_currency}",
             f"    🏆 {html.bold('TAKE PROFIT')} = {html.code(position_hints.take_profit_price)} {fiat_currency}",
@@ -176,10 +176,10 @@ class MessagesFormatter:
             f"    ✳️ {html.italic('Move SL to Break Even')} = {html.code(position_hints.move_sl_to_break_even_price)} {fiat_currency}",  # noqa: E501
             f"    ☝️ {html.italic('Move SL to First Target Profit')} = {html.code(position_hints.move_sl_to_first_target_profit_price)} {fiat_currency}",  # noqa: E501
             "     --------------------------------",
-            f"    📦 {html.bold('Notional Size')} = {html.bold(f'{position_hints.notional_size} {fiat_currency}')}",
-            f"    ☠️ {html.bold('LIQUIDATION PRICE')} = {html.code(f'{position_hints.liquidation_price} {fiat_currency}')}",  # noqa: E501
-            f"    🟢 {html.bold('Profit at TP')} = {html.code(f'+{position_hints.potential_profit} {fiat_currency}')}",  # noqa: E501
-            f"    🔴 {html.bold('Losses at SL')} = {html.code(f'-{position_hints.potential_loss} {fiat_currency}')}",  # noqa: E501
+            f"    📦 {html.bold('Notional Size')} = {html.bold(position_hints.notional_size)} {fiat_currency}",
+            f"    ☠️ {html.bold('LIQUIDATION PRICE')} = {html.code(position_hints.liquidation_price)} {fiat_currency}",  # noqa: E501
+            f"    🟢 {html.bold('Profit at TP')} = {html.code(f'+{position_hints.potential_profit}')} {fiat_currency}",  # noqa: E501
+            f"    🔴 {html.bold('Losses at SL')} = {html.code(f'-{position_hints.potential_loss}')} {fiat_currency}",  # noqa: E501
         ]
 
     def _get_safety_icon_and_message(self, is_safe: bool) -> str:

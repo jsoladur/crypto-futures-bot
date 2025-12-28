@@ -166,9 +166,9 @@ class MessagesFormatter:
         return [
             f"    🛡️ Safe Trade? {self._get_safety_icon_and_message(position_hints.is_safe)}",
             "     --------------------------------",
-            f"    🎯 {html.italic('ENTRY')} = {html.code(position_hints.entry_price)} {fiat_currency}",
-            f"    💰 Margin: {html.code(f'{position_hints.margin:.2f} {fiat_currency}')}",  # noqa: E501
-            f"    ⚡ Leverage: x{html.code(f'{position_hints.leverage}')}",
+            f"    🎯 {html.bold('Entry')} = {html.code(position_hints.entry_price)} {fiat_currency}",
+            f"    💰 {html.bold('Margin')} = {html.code(f'{position_hints.margin:.2f} {fiat_currency}')}",  # noqa: E501
+            f"    ⚡ {html.bold('Leverage')} = x{html.code(f'{position_hints.leverage}')}",
             f"    🛑 {html.bold('STOP LOSS')} = {html.code(position_hints.stop_loss_price)} {fiat_currency}",
             f"    🏆 {html.bold('TAKE PROFIT')} = {html.code(position_hints.take_profit_price)} {fiat_currency}",
             "     --------------------------------",

@@ -1,9 +1,12 @@
+import pydash
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
+from crypto_futures_bot.constants import RISK_MANAGEMENT_ALLOWED_VALUES_LIST
 from crypto_futures_bot.domain.vo import TrackedCryptoCurrencyItem
 from crypto_futures_bot.domain.vo.push_notification_item import PushNotificationItem
+from crypto_futures_bot.domain.vo.risk_management_item import RiskManagementItem
 
 
 class KeyboardsBuilder:
@@ -23,9 +26,12 @@ class KeyboardsBuilder:
         )
         builder.row(
             InlineKeyboardButton(text="🚀 Trade Now", callback_data="trade_now_home"),
-            InlineKeyboardButton(text="🚦 Market Signals", callback_data="market_signals_home"),
+            InlineKeyboardButton(text="🛡️ Risk", callback_data="risk_management_home"),
         )
-        builder.row(InlineKeyboardButton(text="🔔 Notifications", callback_data="push_notifications_home"))
+        builder.row(
+            InlineKeyboardButton(text="🚦 Market Signals", callback_data="market_signals_home"),
+            InlineKeyboardButton(text="🔔 Notifications", callback_data="push_notifications_home"),
+        )
         builder.row(InlineKeyboardButton(text="🚪 Logout", callback_data="logout"))
         return builder.as_markup()
 
@@ -107,6 +113,29 @@ class KeyboardsBuilder:
                     callback_data=f"toggle_push_notification_$_{item.notification_type.value}",
                 )
             )
+        builder.row(InlineKeyboardButton(text="🔙 Back", callback_data="go_back_home"))
+        return builder.as_markup()
+
+    def get_risk_management_home_keyboard(self, risk_management_item: RiskManagementItem) -> InlineKeyboardMarkup:
+        builder = InlineKeyboardBuilder()
+        builder.row(
+            InlineKeyboardButton(
+                text=f"🛡️ Current Risk :: {risk_management_item.percent_value} %", callback_data="set_risk_management"
+            )
+        )
+        builder.row(InlineKeyboardButton(text="🔙 Back", callback_data="go_back_home"))
+        return builder.as_markup()
+
+    def get_risk_percent_values(self) -> InlineKeyboardMarkup:
+        builder = InlineKeyboardBuilder()
+        buttons = [
+            InlineKeyboardButton(text=f"{percent_value}%", callback_data=f"persist_risk_management_$_{percent_value}")
+            for percent_value in RISK_MANAGEMENT_ALLOWED_VALUES_LIST
+            if percent_value >= 1.0
+        ]
+        # Add buttons in rows of 5
+        for buttons_chunk in pydash.chunk(buttons, size=4):
+            builder.row(*buttons_chunk)
         builder.row(InlineKeyboardButton(text="🔙 Back", callback_data="go_back_home"))
         return builder.as_markup()
 

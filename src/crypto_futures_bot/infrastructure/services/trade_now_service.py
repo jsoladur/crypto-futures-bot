@@ -7,6 +7,7 @@ from crypto_futures_bot.domain.vo import (
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_service import CryptoTechnicalAnalysisService
 from crypto_futures_bot.infrastructure.services.orders_analytics_service import OrdersAnalyticsService
+from crypto_futures_bot.infrastructure.services.risk_management_service import RiskManagementService
 from crypto_futures_bot.infrastructure.services.signal_parametrization_service import SignalParametrizationService
 
 
@@ -17,11 +18,13 @@ class TradeNowService:
         signal_parametrization_service: SignalParametrizationService,
         crypto_technical_analysis_service: CryptoTechnicalAnalysisService,
         orders_analytics_service: OrdersAnalyticsService,
+        risk_management_service: RiskManagementService,
     ):
         self._futures_exchange_service = futures_exchange_service
         self._signal_parametrization_service = signal_parametrization_service
         self._crypto_technical_analysis_service = crypto_technical_analysis_service
         self._orders_analytics_service = orders_analytics_service
+        self._risk_management_service = risk_management_service
 
     async def get_trade_now_hints(
         self,

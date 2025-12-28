@@ -21,6 +21,12 @@ class TrackedCryptoCurrencyService:
         entities = result.scalars().all()
         return [TrackedCryptoCurrencyItem(currency=entity.currency) for entity in entities]
 
+    @transactional(read_only=True)
+    async def count(self, *, session: AsyncSession | None = None) -> int:
+        query = select(func.count(TrackedCryptoCurrency.id))
+        result = await session.execute(query)
+        return result.scalar()
+
     @transactional()
     async def add(self, currency: str, *, session: AsyncSession | None = None) -> None:
         currency = currency.upper()

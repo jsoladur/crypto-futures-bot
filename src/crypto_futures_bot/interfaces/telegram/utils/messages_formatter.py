@@ -6,7 +6,13 @@ from aiogram import html
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 from crypto_futures_bot.domain.enums import MarketActionTypeEnum, PositionOpenTypeEnum, PositionTypeEnum
-from crypto_futures_bot.domain.vo import MarketSignalItem, PositionMetrics, SignalParametrizationItem, TradeNowHints
+from crypto_futures_bot.domain.vo import (
+    MarketSignalItem,
+    PositionHints,
+    PositionMetrics,
+    SignalParametrizationItem,
+    TradeNowHints,
+)
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
     AccountInfo,
     PortfolioBalance,
@@ -56,27 +62,8 @@ class MessagesFormatter:
             f"    🏆 {html.bold('Take Profit')} = {hints.take_profit_percent_value}%",
             "",
         ]
-        long_lines = [
-            html.bold("📈 LONG Position:"),
-            f"    🎯 {html.italic('Entry')} = {html.code(hints.long.entry_price)} {fiat_currency}",
-            f"    ⚖️ {html.italic('Break Even')} = {html.code(hints.long.break_even_price)} {fiat_currency}",
-            f"    🛑 {html.bold('STOP LOSS')} = {html.code(hints.long.stop_loss_price)} {fiat_currency}",
-            f"    🏆 {html.bold('TAKE PROFIT')} = {html.code(hints.long.take_profit_price)} {fiat_currency}",
-            "     --------------------------------",
-            f"    ✳️ {html.italic('Move SL to Break Even')} = {html.code(hints.long.move_sl_to_break_even_price)} {fiat_currency}",  # noqa: E501
-            f"    ☝️ {html.italic('Move SL to First Target Profit')} = {html.code(hints.long.move_sl_to_first_target_profit_price)} {fiat_currency}",  # noqa: E501
-            "",
-        ]
-        short_lines = [
-            html.bold("📉 SHORT Position:"),
-            f"    🎯 {html.italic('Entry')} = {html.code(hints.short.entry_price)} {fiat_currency}",
-            f"    🛑 {html.bold('STOP LOSS')} = {html.code(hints.short.stop_loss_price)} {fiat_currency}",
-            f"    🏆 {html.bold('TAKE PROFIT')} = {html.code(hints.short.take_profit_price)} {fiat_currency}",
-            "     --------------------------------",
-            f"    ⚖️ {html.italic('Break Even')} = {html.code(hints.short.break_even_price)} {fiat_currency}",
-            f"    ✳️ {html.italic('Move SL to Break Even')} = {html.code(hints.short.move_sl_to_break_even_price)} {fiat_currency}",  # noqa: E501
-            f"    ☝️ {html.italic('Move SL to First Target Profit')} = {html.code(hints.short.move_sl_to_first_target_profit_price)} {fiat_currency}",  # noqa: E501
-        ]
+        long_lines = [html.bold("📈 LONG Position:"), *self._format_position_hints(hints.long, fiat_currency), ""]
+        short_lines = [html.bold("📉 SHORT Position:"), *self._format_position_hints(hints.short, fiat_currency)]
         message = "\n".join(header + params_lines + long_lines + short_lines)
         return message
 
@@ -174,6 +161,29 @@ class MessagesFormatter:
         ]
         ret = "\n".join(message_lines)
         return ret
+
+    def _format_position_hints(self, position_hints: PositionHints, fiat_currency: str) -> list[str]:
+        return [
+            f"    🛡️ Safe Trade? {self._get_safety_icon_and_message(position_hints.is_safe)}",
+            "     --------------------------------",
+            f"    🎯 {html.italic('ENTRY')} = {html.code(position_hints.entry_price)} {fiat_currency}",
+            f"    💰 Margin: {html.code(f'{position_hints.margin:.2f} {fiat_currency}')}",  # noqa: E501
+            f"    ⚡ Leverage: x{html.code(f'{position_hints.leverage}')}",
+            f"    🛑 {html.bold('STOP LOSS')} = {html.code(position_hints.stop_loss_price)} {fiat_currency}",
+            f"    🏆 {html.bold('TAKE PROFIT')} = {html.code(position_hints.take_profit_price)} {fiat_currency}",
+            "     --------------------------------",
+            f"    ⚖️ {html.italic('Break Even')} = {html.code(position_hints.break_even_price)} {fiat_currency}",
+            f"    ✳️ {html.italic('Move SL to Break Even')} = {html.code(position_hints.move_sl_to_break_even_price)} {fiat_currency}",  # noqa: E501
+            f"    ☝️ {html.italic('Move SL to First Target Profit')} = {html.code(position_hints.move_sl_to_first_target_profit_price)} {fiat_currency}",  # noqa: E501
+            "     --------------------------------",
+            f"    📦 {html.bold('Notional Size')} = {html.bold(f'{position_hints.notional_size} {fiat_currency}')}",
+            f"    ☠️ {html.bold('LIQUIDATION PRICE')} = {html.code(f'{position_hints.liquidation_price} {fiat_currency}')}",  # noqa: E501
+            f"    🟢 {html.bold('Profit at TP')} = {html.code(f'+{position_hints.potential_profit} {fiat_currency}')}",  # noqa: E501
+            f"    🔴 {html.bold('Losses at SL')} = {html.code(f'-{position_hints.potential_loss} {fiat_currency}')}",  # noqa: E501
+        ]
+
+    def _get_safety_icon_and_message(self, is_safe: bool) -> str:
+        return "✅ YES" if is_safe else "❌ NO (Liquidation Risk!)"
 
     def _format_timestamp_with_timezone(self, timestamp: datetime, *, zoneinfo: str = "Europe/Madrid") -> str:
         return timestamp.astimezone(ZoneInfo(zoneinfo)).strftime("%d-%m-%Y %H:%M")

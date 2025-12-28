@@ -44,6 +44,7 @@ class ServicesContainer(containers.DeclarativeContainer):
         orders_analytics_service=orders_analytics_service,
         signal_parametrization_service=signal_parametrization_service,
         risk_management_service=risk_management_service,
+        tracked_crypto_currency_service=tracked_crypto_currency_service,
     )
     market_signal_service = providers.Singleton(
         MarketSignalService,

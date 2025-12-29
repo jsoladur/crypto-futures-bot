@@ -167,8 +167,9 @@ class MessagesFormatter:
             f"    🛡️ Safe Trade? {self._get_safety_icon_and_message(position_hints.is_safe)}",
             "     --------------------------------",
             f"    🎯 {html.bold('Entry')} = {html.code(position_hints.entry_price)} {fiat_currency}",
-            f"    💰 {html.bold('Margin')} = {html.code(position_hints.margin)} {fiat_currency}",  # noqa: E501
             f"    ⚡ {html.bold('Leverage')} = x{html.code(f'{position_hints.leverage}')}",
+            f"    📦 {html.bold('Notional Size')} = {html.code(position_hints.notional_size)} {fiat_currency}",
+            f"    💰 {html.bold('Margin (Cost)')} = {html.code(position_hints.margin)} {fiat_currency}",  # noqa: E501
             f"    🛑 {html.bold('STOP LOSS')} = {html.code(position_hints.stop_loss_price)} {fiat_currency}",
             f"    🏆 {html.bold('TAKE PROFIT')} = {html.code(position_hints.take_profit_price)} {fiat_currency}",
             "     --------------------------------",
@@ -176,10 +177,9 @@ class MessagesFormatter:
             f"    ✳️ {html.italic('Move SL to Break Even')} = {html.code(position_hints.move_sl_to_break_even_price)} {fiat_currency}",  # noqa: E501
             f"    ☝️ {html.italic('Move SL to First Target Profit')} = {html.code(position_hints.move_sl_to_first_target_profit_price)} {fiat_currency}",  # noqa: E501
             "     --------------------------------",
-            f"    📦 {html.bold('Notional Size')} = {html.bold(position_hints.notional_size)} {fiat_currency}",
-            f"    ☠️ {html.bold('LIQUIDATION PRICE')} = {html.code(position_hints.liquidation_price)} {fiat_currency}",  # noqa: E501
-            f"    🟢 {html.bold('Profit at TP')} = {html.code(f'+{position_hints.potential_profit}')} {fiat_currency}",  # noqa: E501
-            f"    🔴 {html.bold('Losses at SL')} = {html.code(f'-{position_hints.potential_loss}')} {fiat_currency}",  # noqa: E501
+            f"    ☠️ {html.bold('LIQUIDATION PRICE')} = {html.bold(position_hints.liquidation_price)} {fiat_currency}",  # noqa: E501
+            f"    🟢 {html.bold('Profit at TP')} = {html.bold(f'+{position_hints.potential_profit}')} {fiat_currency}",  # noqa: E501
+            f"    🔴 {html.bold('Losses at SL')} = {html.bold(f'-{position_hints.potential_loss}')} {fiat_currency}",  # noqa: E501
         ]
 
     def _get_safety_icon_and_message(self, is_safe: bool) -> str:

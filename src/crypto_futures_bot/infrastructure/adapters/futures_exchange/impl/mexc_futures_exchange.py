@@ -11,6 +11,7 @@ from crypto_futures_bot.domain.types import Timeframe
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
     AccountInfo,
+    CreateMarketPositionOrder,
     PortfolioBalance,
     Position,
     SymbolMarketConfig,
@@ -231,6 +232,23 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
                 )
             )
         return ret
+
+    @override
+    async def create_market_position_order(self, position: CreateMarketPositionOrder) -> Position:
+        response = await self._futures_client.request(
+            "/order/create", api=["contract", "private"], method="GET", body={}
+        )
+        is_success = response.get("success", False)
+        if not is_success:
+            raise ValueError(f"Failed to create market position order: {response}")
+        order_id = response.get("data", {}).get("orderId", {})
+        logger.info(f"Market position order created successfully, order_id: {order_id}")
+        # Fetch and return the newly created position
+        open_positions = await self.get_open_positions()
+        opened_position = next((pos for pos in open_positions if pos.position_id == str(order_id)), None)
+        if not opened_position:
+            raise ValueError(f"Created position not found for order_id: {order_id}")
+        return opened_position
 
     @override
     def get_taker_fee(self) -> float:

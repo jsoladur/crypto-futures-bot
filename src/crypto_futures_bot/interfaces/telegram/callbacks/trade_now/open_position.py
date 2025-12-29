@@ -6,6 +6,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
 from crypto_futures_bot.config.dependencies import get_application_container
+from crypto_futures_bot.domain.enums import PositionTypeEnum
 from crypto_futures_bot.domain.vo import TrackedCryptoCurrencyItem
 from crypto_futures_bot.infrastructure.services.trade_now_service import TradeNowService
 from crypto_futures_bot.interfaces.telegram.services.session_storage_service import SessionStorageService
@@ -30,30 +31,28 @@ trade_now_service: TradeNowService = (
     application_container.infrastructure_container().services_container().trade_now_service()
 )
 
-REGEX = r"^trade_now_result_\$_(.+)$"
+REGEX = r"^open_position_\$_(.+)_\$_(.+)$"
 
 
 @dp.callback_query(F.data.regexp(REGEX))
-async def trade_now_result_callback_handler(callback_query: CallbackQuery, state: FSMContext) -> None:
+async def open_position_callback_handler(callback_query: CallbackQuery, state: FSMContext) -> None:
     is_user_logged = await session_storage_service.is_user_logged(state)
     if is_user_logged:
         try:
             match = re.match(REGEX, callback_query.data)
-            crypto_currency = match.group(1).strip().upper()
-            trade_now_hints = await trade_now_service.get_trade_now_hints(
-                TrackedCryptoCurrencyItem.from_currency(crypto_currency)
-            )
-            message = messages_formatter.format_trade_now_hints(trade_now_hints)
-            message += "\n\n" + "Would you like to open a trade based on these hints?"
+            crypto_currency = TrackedCryptoCurrencyItem.from_currency(match.group(1))
+            position_type = PositionTypeEnum(match.group(2).upper())
             await callback_query.message.answer(
-                message, reply_markup=keyboards_builder.get_open_new_position_keyboard(crypto_currency)
+                f"ℹ️ Opening a {position_type.value.lower()} position for {crypto_currency.currency}..."
             )
+            await trade_now_service.open_position(crypto_currency, position_type)
         except Exception as e:
-            logger.error(f"Error calculating trade now hints: {str(e)}", exc_info=True)
+            logger.error(f"Error removing the selected crypto currency: {str(e)}", exc_info=True)
             await callback_query.message.answer(
-                f"⚠️ An error occurred while calculating trade now hints. Please try again later:\n\n{html.code(format_exception(e))}"  # noqa: E501
+                f"⚠️ An error occurred while removing the selected crypto currency. Please try again later:\n\n{html.code(format_exception(e))}"  # noqa: E501
             )
     else:
         await callback_query.message.answer(
-            "⚠️ Please log in to use trade now hints features.", reply_markup=keyboards_builder.get_login_keyboard(state)
+            "⚠️ Please log in to operate with tracked crypto currencies.",
+            reply_markup=keyboards_builder.get_login_keyboard(state),
         )

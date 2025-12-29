@@ -4,6 +4,7 @@ from typing import Any
 from crypto_futures_bot.domain.types import Timeframe
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
     AccountInfo,
+    CreateMarketPositionOrder,
     FuturesWallet,
     PortfolioBalance,
     Position,
@@ -105,6 +106,16 @@ class AbstractFuturesExchangeService(ABC):
 
         Returns:
             list[Position]: The list of open positions.
+        """
+
+    @abstractmethod
+    async def create_market_position_order(self, position: CreateMarketPositionOrder) -> Position:
+        """Create a market position order on the futures exchange.
+
+        Args:
+            position (CreateMarketPositionOrder): The position to create.
+        Returns:
+            Position: The created position.
         """
 
     @abstractmethod

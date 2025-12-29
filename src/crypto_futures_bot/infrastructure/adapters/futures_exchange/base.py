@@ -4,6 +4,7 @@ from typing import Any
 from crypto_futures_bot.domain.types import Timeframe
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
     AccountInfo,
+    FuturesWallet,
     PortfolioBalance,
     Position,
     SymbolMarketConfig,
@@ -20,7 +21,7 @@ class AbstractFuturesExchangeService(ABC):
         """Post initialization method."""
 
     @abstractmethod
-    async def get_account_info(self, *, client: Any | None = None) -> AccountInfo:
+    async def get_account_info(self) -> AccountInfo:
         """Get the account info from the futures exchange.
 
         Returns:
@@ -32,6 +33,14 @@ class AbstractFuturesExchangeService(ABC):
 
         Returns:
             PortfolioBalance: The portfolio balance.
+        """
+
+    @abstractmethod
+    async def get_futures_wallet(self) -> FuturesWallet:
+        """Get the futures wallet from the futures exchange.
+
+        Returns:
+            FuturesWallet: The futures wallet.
         """
 
     @abstractmethod

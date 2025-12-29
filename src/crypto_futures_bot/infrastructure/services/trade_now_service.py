@@ -163,7 +163,7 @@ class TradeNowService:
         # Safety Constraint: Max Leverage < 1 / (SL% + MMR)
         max_survival_leverage = math.floor(0.95 * (1.0 / ((stop_loss_percent_value / 100) + maintenance_margin_rate)))
         # Financial Constraint: Leverage needed to hit risk target
-        required_leverage = math.ceil(target_notional_size / available_margin)
+        required_leverage = math.ceil(target_notional_size / available_margin) if available_margin > 0 else 1
         # Final Decision: Pick the smaller leverage
         final_leverage = min(required_leverage, max_survival_leverage)
 

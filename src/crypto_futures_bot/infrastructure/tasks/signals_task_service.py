@@ -242,8 +242,9 @@ class SignalsTaskService(AbstractTaskService):
             f"🏷️ {html.bold('Symbol')} = {html.code(signals_evaluation_result.crypto_currency.to_symbol(account_info=account_info))}",  # noqa: E501
             "--------------------------------",
             f"🎯 {html.bold('Entry')} = {html.code(position_hints.entry_price)} {account_info.currency_code}",
-            f"💰 {html.bold('Margin')} = {html.code(position_hints.margin)} {account_info.currency_code}",
             f"⚡ {html.bold('Leverage')} = x{html.code(f'{position_hints.leverage}')}",
+            f"📦 {html.bold('Notional Size')} = {html.code(position_hints.notional_size)} {account_info.currency_code}",  # noqa: E501
+            f"💰 {html.bold('Margin (Cost)')} = {html.code(position_hints.margin)} {account_info.currency_code}",
             f"🛑 {html.bold('STOP LOSS')} = {html.code(position_hints.stop_loss_price)} {account_info.currency_code} ({trade_now_hints.stop_loss_percent_value} %)",  # noqa: E501
             f"🏆 {html.bold('TAKE PROFIT')} = {html.code(position_hints.take_profit_price)} {account_info.currency_code} ({trade_now_hints.take_profit_percent_value} %)",  # noqa: E501
             "--------------------------------",
@@ -251,10 +252,9 @@ class SignalsTaskService(AbstractTaskService):
             f"✳️ {html.italic('Move SL to Break Even')} = {html.code(position_hints.move_sl_to_break_even_price)} {account_info.currency_code}",  # noqa: E501
             f"☝️ {html.italic('Move SL to First Target Profit')} = {html.code(position_hints.move_sl_to_first_target_profit_price)} {account_info.currency_code}",  # noqa: E501
             "--------------------------------",
-            f"📦 {html.bold('Notional Size')} = {html.bold(position_hints.notional_size)} {account_info.currency_code}",  # noqa: E501
-            f"☠️ {html.bold('LIQUIDATION PRICE')} = {html.code(position_hints.liquidation_price)} {account_info.currency_code}",  # noqa: E501
-            f"🟢 {html.bold('Profit at TP')} = {html.code(f'+{position_hints.potential_profit}')} {account_info.currency_code}",  # noqa: E501
-            f"🔴 {html.bold('Losses at SL')} = {html.code(f'-{position_hints.potential_loss}')} {account_info.currency_code}",  # noqa: E501
+            f"☠️ {html.bold('LIQUIDATION PRICE')} = {html.bold(position_hints.liquidation_price)} {account_info.currency_code}",  # noqa: E501
+            f"🟢 {html.bold('Profit at TP')} = {html.bold(f'+{position_hints.potential_profit}')} {account_info.currency_code}",  # noqa: E501
+            f"🔴 {html.bold('Losses at SL')} = {html.bold(f'-{position_hints.potential_loss}')} {account_info.currency_code}",  # noqa: E501
         ]
         message = "\n".join(message_lines)
         await self._notify_alert(telegram_chat_ids=chat_ids, body_message=message)

@@ -16,6 +16,7 @@ from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
     SymbolMarketConfig,
     SymbolTicker,
 )
+from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo.futures_wallet import FuturesWallet
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,7 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
         await self._futures_client.load_markets()
 
     @override
-    async def get_account_info(self, *, client: Any | None = None) -> AccountInfo:
+    async def get_account_info(self) -> AccountInfo:
         return AccountInfo(currency_code=self._configuration_properties.currency_code)
 
     @override
@@ -72,6 +73,24 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
             futures_balance=round(swap_balance, ndigits=2),
             currency_code=account_info.currency_code,
         )
+
+    @override
+    async def get_futures_wallet(self) -> FuturesWallet:
+        account_info = await self.get_account_info()
+        raw_data = await self._get_futures_wallet_fiat_currency_raw_balances(account_info)
+        ret = FuturesWallet(
+            currency=raw_data["currency"],
+            # Total Net Worth (Cash + PnL)
+            equity=round(float(raw_data.get("equity", 0.0)), ndigits=2),
+            # Collateral currently locked in trades
+            position_margin=round(float(raw_data.get("positionMargin", 0.0)), ndigits=2),
+            # Liquidity available for new trades
+            available_balance=round(float(raw_data.get("availableBalance", 0.0)), ndigits=2),
+            # Components of Equity (useful for debugging/display)
+            cash_balance=round(float(raw_data.get("cashBalance", 0.0)), ndigits=2),
+            unrealized_pnl=round(float(raw_data.get("unrealized", 0.0)), ndigits=2),
+        )
+        return ret
 
     @override
     @backoff.on_exception(
@@ -262,30 +281,11 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
                 ret += amount * spot_prices[f"{currency}/{account_info.currency_code}"]
         return ret
 
-    @backoff.on_exception(
-        backoff.constant,
-        exception=ccxt.BaseError,
-        interval=2,
-        max_tries=5,
-        jitter=backoff.full_jitter,
-        giveup=lambda e: isinstance(e, ccxt.BadRequest) or isinstance(e, ccxt.AuthenticationError),
-        on_backoff=lambda details: logger.warning(
-            f"[Retry {details['tries']}] " + f"Waiting {details['wait']:.2f}s due to {str(details['exception'])}"
-        ),
-    )
     async def _get_futures_total_balance(self, account_info: AccountInfo) -> float:
-        futures_balances = await self._futures_client.fetch_balance()
-        account_currency_balance = next(
-            (
-                balance
-                for balance in futures_balances["info"]["data"]
-                if balance["currency"].upper() == account_info.currency_code.upper()
-            ),
-            None,
-        )
         ret = 0.0
-        if account_currency_balance is not None:
-            ret += float(account_currency_balance.get("equity", 0.0))
+        account_currency_balances = await self._get_futures_wallet_fiat_currency_raw_balances(account_info)
+        if account_currency_balances is not None:
+            ret += float(account_currency_balances.get("equity", 0.0))
         return ret
 
     @backoff.on_exception(
@@ -302,6 +302,29 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
     async def _get_spot_prices(self) -> dict[str, float]:
         spot_tickers = await self._spot_client.fetch_tickers()
         return {symbol: ticker["last"] for symbol, ticker in spot_tickers.items()}
+
+    @backoff.on_exception(
+        backoff.constant,
+        exception=ccxt.BaseError,
+        interval=2,
+        max_tries=5,
+        jitter=backoff.full_jitter,
+        giveup=lambda e: isinstance(e, ccxt.BadRequest) or isinstance(e, ccxt.AuthenticationError),
+        on_backoff=lambda details: logger.warning(
+            f"[Retry {details['tries']}] " + f"Waiting {details['wait']:.2f}s due to {str(details['exception'])}"
+        ),
+    )
+    async def _get_futures_wallet_fiat_currency_raw_balances(self, account_info: AccountInfo) -> dict[str, Any] | None:
+        futures_balances = await self._futures_client.fetch_balance()
+        account_currency_balance = next(
+            (
+                balance
+                for balance in futures_balances["info"]["data"]
+                if balance["currency"].upper() == account_info.currency_code.upper()
+            ),
+            None,
+        )
+        return account_currency_balance
 
     def _convert_raw_ticker_to_symbol_ticker(self, raw_ticker: dict[str, Any]) -> SymbolTicker:
         return SymbolTicker(

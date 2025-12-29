@@ -9,6 +9,7 @@ from crypto_futures_bot.domain.vo import (
 )
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
+    FuturesWallet,
     PortfolioBalance,
     SymbolMarketConfig,
     SymbolTicker,
@@ -46,6 +47,7 @@ class TradeNowService:
         account_info = await self._futures_exchange_service.get_account_info()
         symbol = tracked_crypto_currency.to_symbol(account_info)
         portfolio_balance = await self._futures_exchange_service.get_portfolio_balance()
+        futures_wallet = await self._futures_exchange_service.get_futures_wallet()
         ticker = await self._futures_exchange_service.get_symbol_ticker(symbol=symbol)
         signal_parametrization_item = (
             signal_parametrization_item
@@ -71,6 +73,7 @@ class TradeNowService:
         )
         long = await self._calculate_position_hints(
             portfolio_balance=portfolio_balance,
+            futures_wallet=futures_wallet,
             ticker=ticker,
             stop_loss_percent_value=stop_loss_percent_value,
             candlestick_indicators=candlestick_indicators,
@@ -80,6 +83,7 @@ class TradeNowService:
         )
         short = await self._calculate_position_hints(
             portfolio_balance=portfolio_balance,
+            futures_wallet=futures_wallet,
             ticker=ticker,
             stop_loss_percent_value=stop_loss_percent_value,
             candlestick_indicators=candlestick_indicators,
@@ -99,6 +103,7 @@ class TradeNowService:
     async def _calculate_position_hints(
         self,
         portfolio_balance: PortfolioBalance,
+        futures_wallet: FuturesWallet,
         ticker: SymbolTicker,
         stop_loss_percent_value: float,
         candlestick_indicators: CandleStickIndicators,
@@ -130,12 +135,11 @@ class TradeNowService:
         target_notional_size = round(
             desired_risk_amount / (stop_loss_percent_value / 100), ndigits=symbol_market_config.price_precision
         )
-
         # Margin Availability
         available_margin = round(
-            portfolio_balance.futures_balance / num_assets_investing, ndigits=symbol_market_config.price_precision
+            min(portfolio_balance.futures_balance / num_assets_investing, futures_wallet.available_balance),
+            ndigits=symbol_market_config.price_precision,
         )
-
         # Safety Constraint: Max Leverage < 1 / (SL% + MMR)
         max_survival_leverage = math.floor(0.95 * (1.0 / ((stop_loss_percent_value / 100) + maintenance_margin_rate)))
         # Financial Constraint: Leverage needed to hit risk target

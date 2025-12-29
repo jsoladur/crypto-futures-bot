@@ -17,6 +17,7 @@ RISK_MANAGEMENT_ALLOWED_VALUES_LIST = np.concatenate(
     (np.arange(0.25, 5.25, 0.25), np.arange(5.50, 10.50, 0.50), np.arange(11, 21, 1))
 ).tolist()
 
+MEXC_WEB_API_BASE_URL = "https://www.mexc.com/api/platform/futures/api"
 MEXC_FUTURES_TAKER_FEES = 0.0004
 DEFAULT_MARKET_SIGNAL_RETENTION_DAYS = 5
 

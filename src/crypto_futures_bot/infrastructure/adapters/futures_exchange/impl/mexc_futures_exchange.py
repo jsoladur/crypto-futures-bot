@@ -18,14 +18,24 @@ from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
     SymbolTicker,
 )
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo.futures_wallet import FuturesWallet
+from crypto_futures_bot.infrastructure.adapters.remote.dtos import MEXCPlaceOrderRequestDto
+from crypto_futures_bot.infrastructure.adapters.remote.enums import (
+    MEXCPlaceOrderOpenTypeEnum,
+    MEXCPlaceOrderSideEnum,
+    MEXCPlaceOrderTypeEnum,
+)
+from crypto_futures_bot.infrastructure.adapters.remote.mexc_remote_service import MEXCRemoteService
 
 logger = logging.getLogger(__name__)
 
 
 class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
-    def __init__(self, configuration_properties: ConfigurationProperties):
+    def __init__(
+        self, configuration_properties: ConfigurationProperties, mexc_remote_service: MEXCRemoteService
+    ) -> None:
         super().__init__()
         self._configuration_properties = configuration_properties
+        self._mexc_remote_service = mexc_remote_service
         if (
             self._configuration_properties.mexc_api_key is None
             or self._configuration_properties.mexc_api_secret is None
@@ -180,6 +190,7 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
             symbol=raw_future_market["symbol"],
             price_precision=int(raw_future_market["info"]["priceScale"]),
             amount_precision=int(raw_future_market["info"]["amountScale"]),
+            contract_size=float(raw_future_market["info"]["contractSize"]),
         )
 
     @override
@@ -197,7 +208,7 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
     async def get_open_positions(self) -> list[Position]:
         raw_open_positions = await self._futures_client.fetch_positions()
         raw_stop_orders = await self._futures_client.request(
-            "/stoporder/open_orders", api=["contract", "private"], method="GET"
+            "stoporder/open_orders", api=["contract", "private"], method="GET"
         )
         ret = []
         for raw_position in raw_open_positions:
@@ -241,19 +252,39 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
 
     @override
     async def create_market_position_order(self, position: CreateMarketPositionOrder) -> Position:
-        response = await self._futures_client.request(
-            "/order/create", api=["contract", "private"], method="GET", body={}
+        mexc_symbol = position.symbol.split(":")[0].replace("/", "_")
+        crypto_currency = mexc_symbol.split("_")[0]
+        symbol_market_config = await self.get_symbol_market_config(crypto_currency=crypto_currency)
+        symbol_ticker = await self.get_symbol_ticker(symbol=position.symbol)
+        raw_vol = int(
+            position.initial_margin
+            * position.leverage
+            / (symbol_ticker.mark_price * symbol_market_config.contract_size)
         )
-        is_success = response.get("success", False)
-        if not is_success:
-            raise ValueError(f"Failed to create market position order: {response}")
-        order_id = response.get("data", {}).get("orderId", {})
-        logger.info(f"Market position order created successfully, order_id: {order_id}")
+        request_body = MEXCPlaceOrderRequestDto(
+            symbol=mexc_symbol,
+            price=symbol_ticker.ask_or_close
+            if position.position_type == PositionTypeEnum.LONG
+            else symbol_ticker.bid_or_close,
+            vol=raw_vol,
+            leverage=position.leverage,
+            side=MEXCPlaceOrderSideEnum.OPEN_LONG
+            if position.position_type == PositionTypeEnum.LONG
+            else MEXCPlaceOrderSideEnum.OPEN_SHORT,
+            type=MEXCPlaceOrderTypeEnum.MARKET,
+            open_type=MEXCPlaceOrderOpenTypeEnum.ISOLATED
+            if position.open_type == PositionOpenTypeEnum.ISOLATED
+            else MEXCPlaceOrderOpenTypeEnum.CROSS,
+            stop_loss_price=position.stop_loss_price,
+            take_profit_price=position.take_profit_price,
+        )
+        response = await self._mexc_remote_service.place_order(request_body=request_body)
+        logger.info(f"Market position order created successfully, order_id: {response.order_id}")
         # Fetch and return the newly created position
         open_positions = await self.get_open_positions()
-        opened_position = next((pos for pos in open_positions if pos.position_id == str(order_id)), None)
+        opened_position = next((pos for pos in open_positions if pos.position_id == str(response.order_id)), None)
         if not opened_position:
-            raise ValueError(f"Created position not found for order_id: {order_id}")
+            raise ValueError(f"Created position not found for order_id: {response.order_id}")
         return opened_position
 
     @override

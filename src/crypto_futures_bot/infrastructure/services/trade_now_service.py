@@ -56,7 +56,7 @@ class TradeNowService:
             stop_loss_price=position_hints.stop_loss_price,
             take_profit_price=position_hints.take_profit_price,
         )
-        await self._futures_exchange_service.create_market_position_order(market_position_order=market_position_order)
+        await self._futures_exchange_service.create_market_position_order(position=market_position_order)
 
     async def get_trade_now_hints(
         self,

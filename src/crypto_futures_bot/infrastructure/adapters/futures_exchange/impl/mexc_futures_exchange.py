@@ -200,6 +200,9 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
         )
         ret = []
         for raw_position in raw_open_positions:
+            symbol_market_config = await self.get_symbol_market_config(
+                crypto_currency=raw_position["symbol"].split("/")[0]
+            )
             position_id = str(raw_position["info"]["positionId"])
             stop_order = next(
                 (
@@ -221,7 +224,10 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
                     entry_price=float(raw_position["entryPrice"]),
                     contracts=float(raw_position["contracts"]),
                     contract_size=float(raw_position["contractSize"]),
-                    fee=float(raw_position["info"]["totalFee"]),
+                    fee=round(
+                        float(raw_position["info"]["totalFee"]) + abs(float(raw_position["info"]["holdFee"])),
+                        ndigits=symbol_market_config.price_precision,
+                    ),
                     stop_loss_price=float(stop_order.get("stopLossPrice"))
                     if stop_order and "stopLossPrice" in stop_order
                     else None,

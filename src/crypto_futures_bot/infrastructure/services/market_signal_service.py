@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from dataclasses import fields
 from datetime import UTC, datetime, timedelta
@@ -39,6 +40,7 @@ class MarketSignalService(AbstractEventHandlerService):
         super().__init__(push_notification_service, telegram_service, event_emitter)
         self._configuration_properties = configuration_properties
         self._trade_now_service = trade_now_service
+        self._lock = asyncio.Lock()
 
     @override
     def configure(self) -> None:
@@ -108,8 +110,12 @@ class MarketSignalService(AbstractEventHandlerService):
         count = query_result.scalar()
         return count > 0
 
+    async def _handle_signals_evaluation_result(self, signals_evaluation_result: SignalsEvaluationResult) -> None:
+        async with self._lock:
+            await self._internal_handle_signals_evaluation_result(signals_evaluation_result)
+
     @transactional()
-    async def _handle_signals_evaluation_result(
+    async def _internal_handle_signals_evaluation_result(
         self, signals_evaluation_result: SignalsEvaluationResult, *, session: AsyncSession
     ) -> None:
         await self._apply_market_signal_retention_policy(signals_evaluation_result, session=session)

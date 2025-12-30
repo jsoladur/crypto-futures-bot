@@ -196,7 +196,7 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
     async def get_open_positions(self) -> list[Position]:
         raw_open_positions = await self._futures_client.fetch_positions()
         raw_stop_orders = await self._futures_client.request(
-            "/stoporder/open_orders", api=["contract", "private"], method="GET"
+            "stoporder/open_orders", api=["contract", "private"], method="GET"
         )
         ret = []
         for raw_position in raw_open_positions:

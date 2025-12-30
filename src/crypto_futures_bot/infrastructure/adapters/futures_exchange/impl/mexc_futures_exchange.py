@@ -278,7 +278,7 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
             stop_loss_price=position.stop_loss_price,
             take_profit_price=position.take_profit_price,
         )
-        response = await self._mexc_remote_service.place_order(request_body=request_body)
+        response = await self._mexc_remote_service.place_order(payload=request_body)
         logger.info(f"Market position order created successfully, order_id: {response.order_id}")
         # Fetch and return the newly created position
         open_positions = await self.get_open_positions()

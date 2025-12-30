@@ -48,7 +48,7 @@ class OrdersAnalyticsService(AbstractService):
             ndigits=symbol_market_config.price_precision,
         )
         stop_loss_percent_value = abs(self._ceil_round((1 - (stop_price / entry_price)) * 100, ndigits=2))
-        return stop_loss_percent_value
+        return float(stop_loss_percent_value)
 
     def get_stop_loss_price(
         self,
@@ -64,7 +64,7 @@ class OrdersAnalyticsService(AbstractService):
             else entry_price * (1 + stop_loss_percent_value / 100),
             ndigits=symbol_market_config.price_precision,
         )
-        return stop_loss_price
+        return float(stop_loss_price)
 
     def get_take_profit_percent_value(
         self,
@@ -79,7 +79,7 @@ class OrdersAnalyticsService(AbstractService):
             ndigits=symbol_market_config.price_precision,
         )
         take_profit_percent_value = abs(self._floor_round((1 - (take_profit_price / entry_price)) * 100, ndigits=2))
-        return take_profit_percent_value
+        return float(take_profit_percent_value)
 
     def get_take_profit_price_levels(
         self,
@@ -103,7 +103,7 @@ class OrdersAnalyticsService(AbstractService):
         take_profit_price = round(
             entry_price + atr_tp3 if is_long else entry_price - atr_tp3, ndigits=symbol_market_config.price_precision
         )
-        return move_sl_to_break_even_price, move_sl_to_first_target_profit_price, take_profit_price
+        return float(move_sl_to_break_even_price), float(move_sl_to_first_target_profit_price), float(take_profit_price)
 
     def calculate_break_even_price(
         self, entry_price: float, *, symbol_market_config: SymbolMarketConfig, is_long: bool
@@ -118,7 +118,7 @@ class OrdersAnalyticsService(AbstractService):
             # Formula: Entry * (1 - fee) / (1 + fee)
             fee_multiplier = (1.0 - taker_fees) / (1.0 + taker_fees)
         break_even_price = round(entry_price * fee_multiplier, ndigits=symbol_market_config.price_precision)
-        return break_even_price
+        return float(break_even_price)
 
     def _ceil_round(self, value: float, *, ndigits: int) -> float:
         factor = 10**ndigits

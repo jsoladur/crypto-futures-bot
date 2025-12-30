@@ -25,10 +25,12 @@ class transactional:
 
                 application_container = get_application_container()
                 sessionmaker = application_container.infrastructure_container().database_container().sessionmaker()
-                if not self._read_only:
-                    sessionmaker = sessionmaker.begin
                 async with sessionmaker() as session:
-                    result = await func(*args, **{**kwargs, self._session_kwarg_name: session})
+                    if self._read_only:
+                        result = await func(*args, **{**kwargs, self._session_kwarg_name: session})
+                    else:
+                        async with session.begin():
+                            result = await func(*args, **{**kwargs, self._session_kwarg_name: session})
             return result
 
         return wrapper

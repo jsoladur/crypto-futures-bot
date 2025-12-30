@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from crypto_futures_bot.infrastructure.adapters.remote.enums import (
     MEXCPlaceOrderOpenTypeEnum,
@@ -8,6 +8,8 @@ from crypto_futures_bot.infrastructure.adapters.remote.enums import (
 
 
 class MEXCPlaceOrderRequestDto(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
     symbol: str
     price: float
     vol: float

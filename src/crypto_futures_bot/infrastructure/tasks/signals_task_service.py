@@ -11,7 +11,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from pyee.asyncio import AsyncIOEventEmitter
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
-from crypto_futures_bot.constants import SIGNALS_EVALUATION_RESULT_EVENT_NAME, SIGNALS_TASK_SERVICE_CRON_PATTERN
+from crypto_futures_bot.constants import SIGNALS_EVALUATION_RESULT_EVENT_NAME
 from crypto_futures_bot.domain.enums import CandleStickEnum, PositionTypeEnum, PushNotificationTypeEnum, TaskTypeEnum
 from crypto_futures_bot.domain.vo import SignalParametrizationItem, SignalsEvaluationResult, TrackedCryptoCurrencyItem
 from crypto_futures_bot.domain.vo.candlestick_indicators import CandleStickIndicators
@@ -85,9 +85,7 @@ class SignalsTaskService(AbstractTaskService):
     @override
     def _get_job_trigger(self) -> CronTrigger | IntervalTrigger:  # pragma: no cover
         if self._configuration_properties.signals_run_via_cron_pattern:
-            trigger = CronTrigger(
-                minute=",".join([str(minute) for minute in SIGNALS_TASK_SERVICE_CRON_PATTERN]), hour="*"
-            )
+            trigger = CronTrigger(minute="*")  # Every minute
         else:
             trigger = IntervalTrigger(seconds=self._configuration_properties.job_interval_seconds)
         return trigger

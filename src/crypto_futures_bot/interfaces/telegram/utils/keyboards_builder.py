@@ -103,8 +103,8 @@ class KeyboardsBuilder:
     def get_open_new_position_keyboard(self, crypto_currency: str) -> InlineKeyboardMarkup:
         builder = InlineKeyboardBuilder()
         builder.row(
-            InlineKeyboardButton(text="🟩 Open LONG", callback_data=f"open_position_$_{crypto_currency}_$_long"),
-            InlineKeyboardButton(text="🟥 Open SHORT", callback_data=f"open_position_$_{crypto_currency}_$_short"),
+            InlineKeyboardButton(text="🟩 Open LONG", callback_data=f"confirm_position_$_{crypto_currency}_$_long"),
+            InlineKeyboardButton(text="🟥 Open SHORT", callback_data=f"confirm_position_$_{crypto_currency}_$_short"),
         )
         builder.row(InlineKeyboardButton(text="🔙 Back", callback_data="go_back_home"))
         return builder.as_markup()

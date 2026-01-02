@@ -35,7 +35,7 @@ class MEXCRemoteService(AbstractHttpRemoteAsyncService):
 
     async def get_http_client(self) -> AsyncClient:
         return AsyncClient(
-            base_url=self._base_url, headers={"X-MEXC-APIKEY": self._api_key}, timeout=Timeout(10, connect=5, read=30)
+            base_url=self._base_url, headers={"ApiKey": self._api_key}, timeout=Timeout(10, connect=5, read=30)
         )
 
     @override
@@ -51,11 +51,12 @@ class MEXCRemoteService(AbstractHttpRemoteAsyncService):
         params, headers = await super()._apply_request_interceptor(
             method=method, url=url, params=params, headers=headers, body=body
         )
-        params = {
-            name: value for name, value in params.items() if name not in ("signature", "timestamp") and bool(value)
-        }
-        params["timestamp"] = str(int(time.time() * 1000))  # UTC timestamp in milliseconds
-        params["signature"] = await self._generate_signature_query_param(params, body)
+        headers = headers or {}
+        timestamp = str(int(time.time() * 1000))  # UTC timestamp in milliseconds
+        signature = self._sign(
+            timestamp=timestamp, method=method, params=params if method in ["GET", "DELETE"] else body
+        )
+        headers.update({"Request-Time": timestamp, "Content-Type": "application/json", "Signature": signature})
         return params, headers
 
     @override
@@ -83,24 +84,29 @@ class MEXCRemoteService(AbstractHttpRemoteAsyncService):
                 response,
             ) from e
 
-    async def _generate_signature_query_param(
-        self, params: dict[str, Any] | None, body: dict[str, Any] | str | None
-    ) -> str:
-        if body:  # pragma: no cover
-            params = params.copy() if params else {}
-            body_dict = json.loads(body) if isinstance(body, str) else body
-            params.update({key: value for key, value in body_dict.items() if bool(value)})
-        query_string = urlencode(params, doseq=True)
-        signature = hmac.new(self._api_secret.encode("utf-8"), query_string.encode("utf-8"), hashlib.sha256).hexdigest()
-        return signature
-
-    async def _generate_signature_query_param(
-        self, params: dict[str, Any] | None, body: dict[str, Any] | str | None
-    ) -> str:
-        if body:  # pragma: no cover
-            params = params.copy() if params else {}
-            body_dict = json.loads(body) if isinstance(body, str) else body
-            params.update({key: value for key, value in body_dict.items() if bool(value)})
-        query_string = urlencode(params, doseq=True)
-        signature = hmac.new(self._api_secret.encode("utf-8"), query_string.encode("utf-8"), hashlib.sha256).hexdigest()
+    def _sign(self, *, timestamp: str, method: str, params: dict[str, Any] | None = None) -> str:
+        """
+        Generates the signature based on the documentation rules.
+        """
+        # Step 1: Obtain the request parameter string
+        if method in ["GET", "DELETE"]:
+            # Sort business parameters in dictionary order
+            # Exclude None (null) values as per docs
+            if not params:
+                param_string = ""
+            else:
+                sorted_params = sorted([(k, v) for k, v in params.items() if v is not None])
+                # Concatenate with & and URL-encode
+                param_string = urlencode(sorted_params)
+        else:
+            # For POST, parameters are the JSON string (no sorting)
+            # separators=(',', ':') removes whitespace to ensure hash consistency
+            param_string = json.dumps(params, separators=(",", ":")) if params else ""
+        # Step 2: Build the target string for signing
+        # Format: accessKey + timestamp + parameterString
+        target_string = f"{self._api_key}{timestamp}{param_string}"
+        # Step 3: HMAC-SHA256
+        signature = hmac.new(
+            self._api_secret.encode("utf-8"), target_string.encode("utf-8"), hashlib.sha256
+        ).hexdigest()
         return signature

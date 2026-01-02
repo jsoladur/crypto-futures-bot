@@ -9,7 +9,11 @@ from httpx import AsyncClient, HTTPStatusError, Response, Timeout
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 from crypto_futures_bot.infrastructure.adapters.remote.base import AbstractHttpRemoteAsyncService
-from crypto_futures_bot.infrastructure.adapters.remote.dtos import MEXCPlaceOrderRequestDto, MEXCPlaceOrderResponseDto
+from crypto_futures_bot.infrastructure.adapters.remote.dtos import (
+    MEXCContractResponseDto,
+    MEXCPlaceOrderRequestDto,
+    MEXCPlaceOrderResponseDto,
+)
 
 
 class MEXCRemoteService(AbstractHttpRemoteAsyncService):
@@ -74,6 +78,14 @@ class MEXCRemoteService(AbstractHttpRemoteAsyncService):
         headers = headers or {}
         try:
             response.raise_for_status()
+            contract_response = MEXCContractResponseDto[Any].model_validate_json(response.content)
+            if not contract_response.success:
+                error_code = str(contract_response.code)
+                raise ValueError(
+                    f"MEXC Contract API error: HTTP {method} {self._build_full_url(url, {})} "
+                    + f"- Error code: {error_code} - {json.dumps(contract_response.data)}",
+                    response,
+                )
             return await super()._apply_response_interceptor(
                 method=method, url=url, params=params, headers=headers, body=body, response=response
             )

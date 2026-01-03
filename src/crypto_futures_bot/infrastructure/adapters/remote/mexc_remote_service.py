@@ -26,16 +26,12 @@ class MEXCRemoteService(AbstractHttpRemoteAsyncService):
     async def place_order(
         self, payload: MEXCPlaceOrderRequestDto, *, client: AsyncClient | None = None
     ) -> MEXCPlaceOrderResponseDto:
-        body = payload.model_dump(mode="json", by_alias=True)
+        body = payload.model_dump(mode="json", by_alias=True, exclude_none=True, exclude_unset=True)
         response = await self._perform_http_request(
-            method="POST",
-            url="/v1/private/order/create",
-            headers={"Content-Type": "application/json"},
-            body=body,
-            client=client,
+            method="POST", url="/v1/private/order/create", params={"type": "linear_swap"}, body=body, client=client
         )
-        ret = MEXCPlaceOrderResponseDto.model_validate_json(response.content)
-        return ret
+        ret = MEXCContractResponseDto[MEXCPlaceOrderResponseDto].model_validate_json(response.content)
+        return ret.data
 
     async def get_http_client(self) -> AsyncClient:
         return AsyncClient(
@@ -81,10 +77,12 @@ class MEXCRemoteService(AbstractHttpRemoteAsyncService):
             contract_response = MEXCContractResponseDto[Any].model_validate_json(response.content)
             if not contract_response.success:
                 error_code = str(contract_response.code)
+                error_message = contract_response.message or (
+                    json.dumps(contract_response.data) if contract_response.data else "No error message provided"
+                )
                 raise ValueError(
                     f"MEXC Contract API error: HTTP {method} {self._build_full_url(url, {})} "
-                    + f"- Error code: {error_code} - {json.dumps(contract_response.data)}",
-                    response,
+                    + f"- Error code: {error_code} - {error_message}"
                 )
             return await super()._apply_response_interceptor(
                 method=method, url=url, params=params, headers=headers, body=body, response=response
@@ -92,8 +90,7 @@ class MEXCRemoteService(AbstractHttpRemoteAsyncService):
         except HTTPStatusError as e:
             raise ValueError(
                 f"MEXC API error: HTTP {method} {self._build_full_url(url, params)} "
-                + f"- Status code: {response.status_code} - {response.text}",
-                response,
+                + f"- Status code: {response.status_code} - {response.text}"
             ) from e
 
     def _sign(self, *, timestamp: str, method: str, params: dict[str, Any] | None = None) -> str:

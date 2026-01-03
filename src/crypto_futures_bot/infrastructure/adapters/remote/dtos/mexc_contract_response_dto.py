@@ -8,4 +8,5 @@ class MEXCContractResponseDto[T: BaseModel | dict[str, Any] | Any](BaseModel):
 
     success: bool = False
     code: int = 0
-    data: T
+    data: T | None = None
+    message: str | None = None

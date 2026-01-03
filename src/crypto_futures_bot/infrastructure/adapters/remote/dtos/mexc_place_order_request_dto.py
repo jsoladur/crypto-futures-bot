@@ -17,6 +17,9 @@ class MEXCPlaceOrderRequestDto(BaseModel):
     side: MEXCPlaceOrderSideEnum
     order_type: MEXCPlaceOrderTypeEnum = Field(alias="type", default=MEXCPlaceOrderTypeEnum.MARKET)
     open_type: MEXCPlaceOrderOpenTypeEnum = Field(alias="openType", default=MEXCPlaceOrderOpenTypeEnum.ISOLATED)
-    external_oid: str | None = Field(alias="externalOid", default=None)
+    market_ceiling: bool = Field(alias="marketCeiling", default=False)
     stop_loss_price: float | None = Field(alias="stopLossPrice", default=None)
     take_profit_price: float | None = Field(alias="takeProfitPrice", default=None)
+    loss_trend: int = Field(alias="lossTrend", default=1)  # 1: fixed price, 2: trailing stop
+    profit_trend: int = Field(alias="profitTrend", default=1)  # 1: fixed price, 2: trailing stop
+    price_protection: int = Field(alias="priceProtection", default=0)  # 0: disabled, 1: enabled

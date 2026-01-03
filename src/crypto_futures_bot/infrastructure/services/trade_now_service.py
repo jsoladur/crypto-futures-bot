@@ -4,6 +4,7 @@ from crypto_futures_bot.domain.enums import PositionOpenTypeEnum, PositionTypeEn
 from crypto_futures_bot.domain.vo import (
     CandleStickIndicators,
     PositionHints,
+    PositionMetrics,
     SignalParametrizationItem,
     TrackedCryptoCurrencyItem,
     TradeNowHints,
@@ -13,7 +14,6 @@ from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
     CreateMarketPositionOrder,
     FuturesWallet,
     PortfolioBalance,
-    Position,
     SymbolMarketConfig,
     SymbolTicker,
 )
@@ -43,8 +43,12 @@ class TradeNowService:
 
     async def open_position(
         self, crypto_currency: TrackedCryptoCurrencyItem, position_type: PositionTypeEnum
-    ) -> Position:
+    ) -> PositionMetrics:
         account_info = await self._futures_exchange_service.get_account_info()
+        open_positions = await self._orders_analytics_service.get_open_position_metrics()
+        symbols = set(p.position.symbol for p in open_positions)
+        if crypto_currency.to_symbol(account_info) in symbols:
+            raise ValueError(f"Position already open for {crypto_currency.currency}")
         trade_now_hints = await self.get_trade_now_hints(tracked_crypto_currency=crypto_currency)
         position_hints = trade_now_hints.long if position_type == PositionTypeEnum.LONG else trade_now_hints.short
         market_position_order = CreateMarketPositionOrder(
@@ -56,7 +60,13 @@ class TradeNowService:
             stop_loss_price=position_hints.stop_loss_price,
             take_profit_price=position_hints.take_profit_price,
         )
-        await self._futures_exchange_service.create_market_position_order(position=market_position_order)
+        opened_position = await self._futures_exchange_service.create_market_position_order(
+            position=market_position_order
+        )
+        position_metrics = await self._orders_analytics_service.get_metrics_by_position_id(
+            position_id=opened_position.position_id
+        )
+        return position_metrics
 
     async def get_trade_now_hints(
         self,

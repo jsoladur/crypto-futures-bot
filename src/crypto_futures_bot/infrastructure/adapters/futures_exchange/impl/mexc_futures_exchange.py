@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Any, override
 
@@ -39,8 +40,9 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
         if (
             self._configuration_properties.mexc_api_key is None
             or self._configuration_properties.mexc_api_secret is None
+            or self._configuration_properties.mexc_web_auth_token is None
         ):
-            raise ValueError("MEXC API key and secret are required")
+            raise ValueError("MEXC API key and secret and web token are required")
         # XXX:For more info about: https://docs.ccxt.com/exchanges/mexc
         commons_options = {
             "apiKey": self._configuration_properties.mexc_api_key,
@@ -207,55 +209,34 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
     )
     async def get_open_positions(self) -> list[Position]:
         raw_open_positions = await self._futures_client.fetch_positions()
-        raw_stop_orders = await self._futures_client.request(
-            "stoporder/open_orders", api=["contract", "private"], method="GET"
-        )
-        ret = []
-        for raw_position in raw_open_positions:
-            symbol_market_config = await self.get_symbol_market_config(
-                crypto_currency=raw_position["symbol"].split("/")[0]
-            )
-            position_id = str(raw_position["info"]["positionId"])
-            stop_order = next(
-                (
-                    stop_order
-                    for stop_order in raw_stop_orders.get("data", [])
-                    if stop_order.get("positionId") == position_id
-                ),
-                None,
-            )
-            ret.append(
-                Position(
-                    position_id=position_id,
-                    symbol=raw_position["symbol"],
-                    initial_margin=float(raw_position["initialMargin"]),
-                    leverage=int(raw_position["leverage"]),
-                    liquidation_price=float(raw_position["liquidationPrice"]),
-                    open_type=self._map_open_type(int(raw_position["info"]["openType"])),
-                    position_type=self._map_position_type(raw_position["side"]),
-                    entry_price=float(raw_position["entryPrice"]),
-                    contracts=float(raw_position["contracts"]),
-                    contract_size=float(raw_position["contractSize"]),
-                    fee=round(
-                        float(raw_position["info"]["totalFee"]) + abs(float(raw_position["info"]["holdFee"])),
-                        ndigits=symbol_market_config.price_precision,
-                    ),
-                    stop_loss_price=float(stop_order.get("stopLossPrice"))
-                    if stop_order and "stopLossPrice" in stop_order
-                    else None,
-                    take_profit_price=float(stop_order.get("takeProfitPrice"))
-                    if stop_order and "takeProfitPrice" in stop_order
-                    else None,
-                )
-            )
+        raw_stop_orders = await self._get_raw_stop_orders()
+        ret = [
+            await self._map_raw_position(raw_position, raw_stop_orders=raw_stop_orders)
+            for raw_position in raw_open_positions
+        ]
         return ret
+
+    @override
+    @backoff.on_exception(
+        backoff.constant,
+        exception=ccxt.BaseError,
+        interval=2,
+        max_tries=5,
+        jitter=backoff.full_jitter,
+        giveup=lambda e: isinstance(e, ccxt.BadRequest) or isinstance(e, ccxt.AuthenticationError),
+        on_backoff=lambda details: logger.warning(
+            f"[Retry {details['tries']}] " + f"Waiting {details['wait']:.2f}s due to {str(details['exception'])}"
+        ),
+    )
+    async def get_position_by_id(self, position_id: str) -> Position:
+        raise NotImplementedError("Operation not supported in MEXC exchange")
 
     @override
     async def create_market_position_order(self, position: CreateMarketPositionOrder) -> Position:
         mexc_symbol = position.symbol.split(":")[0].replace("/", "_")
+        symbol_ticker = await self.get_symbol_ticker(symbol=position.symbol)
         crypto_currency = mexc_symbol.split("_")[0]
         symbol_market_config = await self.get_symbol_market_config(crypto_currency=crypto_currency)
-        symbol_ticker = await self.get_symbol_ticker(symbol=position.symbol)
         raw_vol = int(
             position.initial_margin
             * position.leverage
@@ -278,14 +259,26 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
             stop_loss_price=position.stop_loss_price,
             take_profit_price=position.take_profit_price,
         )
-        response = await self._mexc_remote_service.place_order(payload=request_body)
-        logger.info(f"Market position order created successfully, order_id: {response.order_id}")
+        place_order_response = await self._mexc_remote_service.place_order(payload=request_body)
+        logger.info(f"Market position order created successfully, order_id: {place_order_response.order_id}")
+        position_id = await self._get_position_id_by_order_id(place_order_response.order_id, position=position)
         # Fetch and return the newly created position
         open_positions = await self.get_open_positions()
-        opened_position = next((pos for pos in open_positions if pos.position_id == str(response.order_id)), None)
+        opened_position = next((pos for pos in open_positions if pos.position_id == position_id), None)
         if not opened_position:
-            raise ValueError(f"Created position not found for order_id: {response.order_id}")
+            raise ValueError(f"Created position not found for position id: {position_id}")
         return opened_position
+
+    async def _get_position_id_by_order_id(self, order_id: str, *, position: Position) -> str:
+        fetched_order = await self._futures_client.fetch_order(order_id, symbol=position.symbol)
+        while fetched_order.get("status", "pending") not in ["closed", "canceled"]:
+            await asyncio.sleep(delay=2.0)
+            fetched_order = await self._futures_client.fetch_order(order_id, symbol=position.symbol)
+        if last_order_status := fetched_order.get("status") != "closed":
+            raise ValueError(
+                f"Recent order created for {position.symbol} :: {position.position_type}, status is {last_order_status}"
+            )  # noqa: 501
+        return fetched_order["info"]["positionId"]
 
     @override
     def get_taker_fee(self) -> float:
@@ -380,6 +373,49 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
             None,
         )
         return account_currency_balance
+
+    async def _map_raw_position(
+        self, raw_position: dict[str, Any], *, raw_stop_orders: list[dict[str, Any]]
+    ) -> Position:
+        symbol_market_config = await self.get_symbol_market_config(crypto_currency=raw_position["symbol"].split("/")[0])
+        position_id = str(raw_position["info"]["positionId"])
+        stop_order = next(
+            (
+                stop_order
+                for stop_order in raw_stop_orders.get("data", [])
+                if stop_order.get("positionId") == position_id
+            ),
+            None,
+        )
+        current_position = Position(
+            position_id=position_id,
+            symbol=raw_position["symbol"],
+            initial_margin=float(raw_position["initialMargin"]),
+            leverage=int(raw_position["leverage"]),
+            liquidation_price=float(raw_position["liquidationPrice"]),
+            open_type=self._map_open_type(int(raw_position["info"]["openType"])),
+            position_type=self._map_position_type(raw_position["side"]),
+            entry_price=float(raw_position["entryPrice"]),
+            contracts=float(raw_position["contracts"]),
+            contract_size=float(raw_position["contractSize"]),
+            fee=round(
+                float(raw_position["info"]["totalFee"]) + abs(float(raw_position["info"]["holdFee"])),
+                ndigits=symbol_market_config.price_precision,
+            ),
+            stop_loss_price=float(stop_order.get("stopLossPrice"))
+            if stop_order and "stopLossPrice" in stop_order
+            else None,
+            take_profit_price=float(stop_order.get("takeProfitPrice"))
+            if stop_order and "takeProfitPrice" in stop_order
+            else None,
+        )
+        return current_position
+
+    async def _get_raw_stop_orders(self) -> list[dict[str, Any]]:
+        raw_stop_orders = await self._futures_client.request(
+            "stoporder/open_orders", api=["contract", "private"], method="GET"
+        )
+        return raw_stop_orders
 
     def _convert_raw_ticker_to_symbol_ticker(self, raw_ticker: dict[str, Any]) -> SymbolTicker:
         return SymbolTicker(

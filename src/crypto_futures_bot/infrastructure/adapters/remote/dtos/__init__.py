@@ -4,4 +4,4 @@ from crypto_futures_bot.infrastructure.adapters.remote.dtos.mexc_place_order_res
     MEXCPlaceOrderResponseDto,
 )
 
-__all__ = ["MEXCPlaceOrderRequestDto", "MEXCPlaceOrderResponseDto", "MEXCContractResponseDto"]
+__all__ = ["MEXCContractResponseDto", "MEXCPlaceOrderRequestDto", "MEXCPlaceOrderResponseDto"]

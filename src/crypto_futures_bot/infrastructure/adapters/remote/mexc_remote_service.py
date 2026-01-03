@@ -1,9 +1,7 @@
 import hashlib
-import hmac
 import json
 import time
 from typing import Any, override
-from urllib.parse import urlencode
 
 from httpx import AsyncClient, HTTPStatusError, Response, Timeout
 
@@ -22,20 +20,47 @@ class MEXCRemoteService(AbstractHttpRemoteAsyncService):
         self._base_url = self._configuration_properties.mexc_web_api_base_url
         self._api_key = self._configuration_properties.mexc_api_key
         self._api_secret = self._configuration_properties.mexc_api_secret
+        self._web_auth_token = self._configuration_properties.mexc_web_auth_token
 
     async def place_order(
         self, payload: MEXCPlaceOrderRequestDto, *, client: AsyncClient | None = None
     ) -> MEXCPlaceOrderResponseDto:
         body = payload.model_dump(mode="json", by_alias=True, exclude_none=True, exclude_unset=True)
         response = await self._perform_http_request(
-            method="POST", url="/v1/private/order/create", params={"type": "linear_swap"}, body=body, client=client
+            method="POST", url="/v1/private/order/create", body=body, client=client
         )
         ret = MEXCContractResponseDto[MEXCPlaceOrderResponseDto].model_validate_json(response.content)
         return ret.data
 
     async def get_http_client(self) -> AsyncClient:
         return AsyncClient(
-            base_url=self._base_url, headers={"ApiKey": self._api_key}, timeout=Timeout(10, connect=5, read=30)
+            base_url=self._base_url,
+            headers={
+                "Authorization": self._web_auth_token,
+                "accept": "*/*",
+                "accept-language": "en-US,en;q=0.9,ru;q=0.8,it;q=0.7,la;q=0.6,vi;q=0.5,lb;q=0.4",
+                "cache-control": "no-cache",
+                "content-type": "application/json",
+                "dnt": "1",
+                "language": "English",
+                "origin": "https://www.mexc.com",
+                "pragma": "no-cache",
+                "priority": "u=1, i",
+                "referer": "https://www.mexc.com/",
+                "sec-ch-ua": '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": '"macOS"',
+                "sec-fetch-dest": "empty",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-site": "same-site",
+                "user-agent": (
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/136.0.0.0 Safari/537.36"
+                ),
+                "x-language": "en-US",
+            },
+            timeout=Timeout(10, connect=5, read=30),
         )
 
     @override
@@ -52,11 +77,8 @@ class MEXCRemoteService(AbstractHttpRemoteAsyncService):
             method=method, url=url, params=params, headers=headers, body=body
         )
         headers = headers or {}
-        timestamp = str(int(time.time() * 1000))  # UTC timestamp in milliseconds
-        signature = self._sign(
-            timestamp=timestamp, method=method, params=params if method in ["GET", "DELETE"] else body
-        )
-        headers.update({"Request-Time": timestamp, "Content-Type": "application/json", "Signature": signature})
+        timestamp, signature = self._sign(auth_token=self._web_auth_token, params=body if body is not None else {})
+        headers.update({"x-mxc-nonce": timestamp, "x-mxc-sign": signature})
         return params, headers
 
     @override
@@ -93,29 +115,15 @@ class MEXCRemoteService(AbstractHttpRemoteAsyncService):
                 + f"- Status code: {response.status_code} - {response.text}"
             ) from e
 
-    def _sign(self, *, timestamp: str, method: str, params: dict[str, Any] | None = None) -> str:
+    def _sign(self, *, auth_token: str, params: dict[str, Any] | None = None) -> tuple[str, str]:
         """
         Generates the signature based on the documentation rules.
         """
-        # Step 1: Obtain the request parameter string
-        if method in ["GET", "DELETE"]:
-            # Sort business parameters in dictionary order
-            # Exclude None (null) values as per docs
-            if not params:
-                param_string = ""
-            else:
-                sorted_params = sorted([(k, v) for k, v in params.items() if v is not None])
-                # Concatenate with & and URL-encode
-                param_string = urlencode(sorted_params)
-        else:
-            # For POST, parameters are the JSON string (no sorting)
-            # separators=(',', ':') removes whitespace to ensure hash consistency
-            param_string = json.dumps(params, separators=(",", ":")) if params else ""
-        # Step 2: Build the target string for signing
-        # Format: accessKey + timestamp + parameterString
-        target_string = f"{self._api_key}{timestamp}{param_string}"
-        # Step 3: HMAC-SHA256
-        signature = hmac.new(
-            self._api_secret.encode("utf-8"), target_string.encode("utf-8"), hashlib.sha256
-        ).hexdigest()
-        return signature
+        timestamp = str(int(time.time() * 1000))  # UTC timestamp in milliseconds
+        g = self._calculate_md5(auth_token + timestamp)[7:]
+        s = json.dumps(params, separators=(",", ":"), ensure_ascii=False)
+        sign = self._calculate_md5(timestamp + s + g)
+        return timestamp, sign
+
+    def _calculate_md5(self, value: str) -> str:
+        return hashlib.md5(value.encode("utf-8")).hexdigest()  # nosec: B324

@@ -109,6 +109,17 @@ class AbstractFuturesExchangeService(ABC):
         """
 
     @abstractmethod
+    async def get_position_by_id(self, position_id: str) -> Position:
+        """Get the position by id from the futures exchange.
+
+        Args:
+            position_id (str): The position id.
+
+        Returns:
+            Position: The position.
+        """
+
+    @abstractmethod
     async def create_market_position_order(self, position: CreateMarketPositionOrder) -> Position:
         """Create a market position order on the futures exchange.
 

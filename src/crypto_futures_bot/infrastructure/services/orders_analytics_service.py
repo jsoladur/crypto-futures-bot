@@ -35,6 +35,15 @@ class OrdersAnalyticsService(AbstractService):
                 ret.append(PositionMetrics(position=position, symbol_market_config=symbol_market_config, ticker=ticker))
         return ret
 
+    async def get_metrics_by_position_id(self, position_id: str) -> PositionMetrics:
+        positions = await self._futures_exchange_service.get_open_positions()
+        position = next((p for p in positions if p.position_id == position_id), None)
+        if not position:
+            raise ValueError(f"Position with id {position_id} not found")
+        ticker = await self._futures_exchange_service.get_symbol_ticker(position.symbol)
+        symbol_market_config = await self._futures_exchange_service.get_symbol_market_config(ticker.base_asset)
+        return PositionMetrics(position=position, symbol_market_config=symbol_market_config, ticker=ticker)
+
     def get_stop_loss_percent_value(
         self,
         entry_price: float,

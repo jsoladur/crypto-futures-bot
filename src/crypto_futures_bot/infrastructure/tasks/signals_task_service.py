@@ -6,6 +6,7 @@ from typing import override
 import pandas as pd
 from aiogram import html
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.combining import OrTrigger
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from pyee.asyncio import AsyncIOEventEmitter
@@ -85,7 +86,20 @@ class SignalsTaskService(AbstractTaskService):
     @override
     def _get_job_trigger(self) -> CronTrigger | IntervalTrigger:  # pragma: no cover
         if self._configuration_properties.signals_run_via_cron_pattern:
-            trigger = CronTrigger(minute="*")  # Every minute
+            trigger = OrTrigger(
+                [
+                    # 00, 15, 30, 45 every hour
+                    CronTrigger(minute="0,15,30,45"),
+                    # Every 2 minutes between 00 and 14
+                    CronTrigger(minute="0-14/2"),
+                    # Every 2 minutes between 15 and 29
+                    CronTrigger(minute="15-29/2"),
+                    # Every 2 minutes between 30 and 44
+                    CronTrigger(minute="30-44/2"),
+                    # Every 2 minutes between 45 and 59
+                    CronTrigger(minute="45-59/2"),
+                ]
+            )
         else:
             trigger = IntervalTrigger(seconds=self._configuration_properties.job_interval_seconds)
         return trigger

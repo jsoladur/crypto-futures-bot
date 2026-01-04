@@ -18,6 +18,7 @@ class ServicesContainer(containers.DeclarativeContainer):
     configuration_properties = providers.Dependency()
     event_emitter = providers.Dependency()
     telegram_service = providers.Dependency()
+    messages_formatter = providers.Dependency()
     database_sessionmaker = providers.Dependency()
     futures_exchange_service = providers.Dependency()
 
@@ -67,5 +68,6 @@ class ServicesContainer(containers.DeclarativeContainer):
         event_emitter=event_emitter,
         push_notification_service=push_notification_service,
         telegram_service=telegram_service,
+        messages_formatter=messages_formatter,
         trade_now_service=trade_now_service,
     )

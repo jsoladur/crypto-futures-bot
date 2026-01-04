@@ -27,4 +27,5 @@ class ApplicationContainer(containers.DeclarativeContainer):
         InfrastructureContainer,
         configuration_properties=configuration_properties,
         telegram_service=interfaces_container.telegram_container.telegram_service,
+        messages_formatter=interfaces_container.telegram_container.messages_formatter,
     )

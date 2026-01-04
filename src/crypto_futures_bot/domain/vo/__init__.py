@@ -1,3 +1,4 @@
+from crypto_futures_bot.domain.vo.auto_trader_crypto_currency_item import AutoTraderCryptoCurrencyItem
 from crypto_futures_bot.domain.vo.candlestick_indicators import CandleStickIndicators
 from crypto_futures_bot.domain.vo.market_signal_item import MarketSignalItem
 from crypto_futures_bot.domain.vo.open_position_result import OpenPositionResult
@@ -14,6 +15,7 @@ __all__ = [
     "MarketSignalItem",
     "SignalsEvaluationResult",
     "TrackedCryptoCurrencyItem",
+    "AutoTraderCryptoCurrencyItem",
     "PushNotificationItem",
     "PositionHints",
     "TradeNowHints",

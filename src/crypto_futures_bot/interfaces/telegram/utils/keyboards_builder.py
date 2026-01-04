@@ -18,20 +18,22 @@ class KeyboardsBuilder:
         builder.row(InlineKeyboardButton(text="💰 Portfolio Balance", callback_data="portfolio_balance"))
         builder.row(
             InlineKeyboardButton(text="🔍 Tracker", callback_data="tracked_crypto_currencies_home"),
-            InlineKeyboardButton(text="💹 Prices", callback_data="prices"),
+            InlineKeyboardButton(text="🎯 Auto-Trader", callback_data="auto_trader_home"),
         )
         builder.row(
-            InlineKeyboardButton(text="🧩 Parametrization", callback_data="signal_parametrization_home"),
+            InlineKeyboardButton(text="💹 Prices", callback_data="prices"),
             InlineKeyboardButton(text="🔥 Positions", callback_data="positions"),
         )
         builder.row(
-            InlineKeyboardButton(text="🚀 Trade Now", callback_data="trade_now_home"),
+            InlineKeyboardButton(text="🧩 Parametrization", callback_data="signal_parametrization_home"),
             InlineKeyboardButton(text="🛡️ Risk", callback_data="risk_management_home"),
         )
         builder.row(
             InlineKeyboardButton(text="🚦 Market Signals", callback_data="market_signals_home"),
-            InlineKeyboardButton(text="🔔 Notifications", callback_data="push_notifications_home"),
+            InlineKeyboardButton(text="🚀 Trade Now", callback_data="trade_now_home"),
         )
+        builder.row(InlineKeyboardButton(text="🔔 Notifications", callback_data="push_notifications_home"))
+
         builder.row(InlineKeyboardButton(text="🚪 Logout", callback_data="logout"))
         return builder.as_markup()
 

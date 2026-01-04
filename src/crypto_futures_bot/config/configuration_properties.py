@@ -7,6 +7,7 @@ from crypto_futures_bot.constants import (
     DEFAULT_FUTURES_EXCHANGE_TIMEOUT,
     DEFAULT_JOB_INTERVAL_SECONDS,
     DEFAULT_MARKET_SIGNAL_RETENTION_DAYS,
+    DEFAULT_SQLITE_BUSY_TIMEOUT,
     MEXC_WEB_API_BASE_URL,
 )
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.enums import FuturesExchangeEnum
@@ -23,6 +24,7 @@ class ConfigurationProperties(BaseSettings):
     telegram_bot_token: str
 
     database_url: str
+    database_busy_timeout: int = DEFAULT_SQLITE_BUSY_TIMEOUT
 
     futures_exchange: FuturesExchangeEnum = FuturesExchangeEnum.MEXC
     futures_exchange_timeout: int = DEFAULT_FUTURES_EXCHANGE_TIMEOUT

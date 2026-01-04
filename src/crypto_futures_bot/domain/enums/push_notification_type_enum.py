@@ -6,6 +6,7 @@ from typing import Any
 
 class PushNotificationTypeEnum(str, Enum):
     SIGNALS = ("SIGNALS", "Market signals")
+    TRADES = ("TRADES", "Trade alerts")
     FATAL_ERRORS = ("FATAL_ERRORS", "Fatal errors")
 
     @classmethod

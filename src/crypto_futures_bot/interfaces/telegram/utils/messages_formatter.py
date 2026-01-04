@@ -5,9 +5,15 @@ import pydash
 from aiogram import html
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
-from crypto_futures_bot.domain.enums import MarketActionTypeEnum, PositionOpenTypeEnum, PositionTypeEnum
+from crypto_futures_bot.domain.enums import (
+    MarketActionTypeEnum,
+    OpenPositionResultTypeEnum,
+    PositionOpenTypeEnum,
+    PositionTypeEnum,
+)
 from crypto_futures_bot.domain.vo import (
     MarketSignalItem,
+    OpenPositionResult,
     PositionHints,
     PositionMetrics,
     SignalParametrizationItem,
@@ -108,6 +114,32 @@ class MessagesFormatter:
             if idx + 1 < len(market_signals):
                 signals_lines.append("")
         message = "\n".join(header + signals_lines)
+        return message
+
+    def format_open_position_result(self, open_position_result: OpenPositionResult) -> str:
+        match open_position_result.result_type:
+            case OpenPositionResultTypeEnum.SUCCESS:
+                message = "🎉 SUCCESS 🎉 :: Position opened successfully!"
+                message += "\n\n" + self.format_position_metrics(open_position_result.position_metrics)
+            case OpenPositionResultTypeEnum.ALREADY_OPENED:
+                message = (
+                    "⚠️ WARNING ⚠️ :: There is already a position open for "
+                    f"{html.bold(open_position_result.crypto_currency.currency)}!!"
+                )
+            case OpenPositionResultTypeEnum.NO_FUNDS:
+                message = (
+                    f"❗ ATTENTION ❗ :: There are not enough funds to open a "
+                    f"{html.bold(open_position_result.position_type.value.upper())} "
+                    f"position for {html.bold(open_position_result.crypto_currency.currency)}!!"
+                )
+            case OpenPositionResultTypeEnum.ERROR:
+                message = (
+                    "🚨 ERROR 🚨 :: An error occurred while opening a "
+                    f"{html.bold(open_position_result.position_type.value.upper())} "
+                    f"position for {html.bold(open_position_result.crypto_currency.currency)}"
+                )
+            case _:
+                raise ValueError(f"Unknown open position result type: {open_position_result.result_type}")
         return message
 
     def format_position_metrics(self, position_metrics: PositionMetrics) -> str:

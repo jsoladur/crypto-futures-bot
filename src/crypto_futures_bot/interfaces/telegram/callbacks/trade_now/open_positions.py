@@ -46,9 +46,8 @@ async def open_position_callback_handler(callback_query: CallbackQuery, state: F
             await callback_query.message.answer(
                 f"ℹ️ Opening a {position_type_icon} {html.bold(position_type.value.upper())} position for {html.bold(crypto_currency.currency)}..."  # noqa: E501
             )
-            open_position_metrics = await trade_now_service.open_position(crypto_currency, position_type)
-            answer_text = "🎉🎉 The following position has been opened successfully 🎉🎉"
-            answer_text += "\n\n" + messages_formatter.format_position_metrics(open_position_metrics)
+            open_position_result = await trade_now_service.open_position(crypto_currency, position_type)
+            answer_text = messages_formatter.format_open_position_result(open_position_result)
             await callback_query.message.answer(answer_text, reply_markup=keyboards_builder.get_go_back_home_keyboard())
         except Exception as e:
             logger.error(f"Error removing the selected crypto currency: {str(e)}", exc_info=True)

@@ -242,24 +242,25 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
             * position.leverage
             / (symbol_ticker.mark_price * symbol_market_config.contract_size)
         )
-        request_body = MEXCPlaceOrderRequestDto(
-            symbol=mexc_symbol,
-            price=symbol_ticker.ask_or_close
-            if position.position_type == PositionTypeEnum.LONG
-            else symbol_ticker.bid_or_close,
-            vol=raw_vol,
-            leverage=position.leverage,
-            side=MEXCPlaceOrderSideEnum.OPEN_LONG
-            if position.position_type == PositionTypeEnum.LONG
-            else MEXCPlaceOrderSideEnum.OPEN_SHORT,
-            type=MEXCPlaceOrderTypeEnum.MARKET,
-            open_type=MEXCPlaceOrderOpenTypeEnum.ISOLATED
-            if position.open_type == PositionOpenTypeEnum.ISOLATED
-            else MEXCPlaceOrderOpenTypeEnum.CROSS,
-            stop_loss_price=position.stop_loss_price,
-            take_profit_price=position.take_profit_price,
+        place_order_response = await self._mexc_remote_service.place_order(
+            payload=MEXCPlaceOrderRequestDto(
+                symbol=mexc_symbol,
+                price=symbol_ticker.ask_or_close
+                if position.position_type == PositionTypeEnum.LONG
+                else symbol_ticker.bid_or_close,
+                vol=raw_vol,
+                leverage=position.leverage,
+                side=MEXCPlaceOrderSideEnum.OPEN_LONG
+                if position.position_type == PositionTypeEnum.LONG
+                else MEXCPlaceOrderSideEnum.OPEN_SHORT,
+                type=MEXCPlaceOrderTypeEnum.MARKET,
+                open_type=MEXCPlaceOrderOpenTypeEnum.ISOLATED
+                if position.open_type == PositionOpenTypeEnum.ISOLATED
+                else MEXCPlaceOrderOpenTypeEnum.CROSS,
+                stop_loss_price=position.stop_loss_price,
+                take_profit_price=position.take_profit_price,
+            )
         )
-        place_order_response = await self._mexc_remote_service.place_order(payload=request_body)
         logger.info(f"Market position order created successfully, order_id: {place_order_response.order_id}")
         position_id = await self._get_position_id_by_order_id(place_order_response.order_id, position=position)
         # Fetch and return the newly created position

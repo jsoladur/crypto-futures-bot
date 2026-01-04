@@ -15,5 +15,9 @@ class SignalsEvaluationResult:
     short_entry: bool
 
     @property
+    def is_entry(self) -> bool:
+        return self.long_entry or self.short_entry
+
+    @property
     def cache_key(self) -> str:
         return f"{self.crypto_currency.currency}_$_{self.timeframe}"

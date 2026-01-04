@@ -121,14 +121,14 @@ class MessagesFormatter:
             case OpenPositionResultTypeEnum.SUCCESS:
                 message = "🎉 SUCCESS 🎉 :: Position opened successfully!"
                 message += "\n\n" + self.format_position_metrics(open_position_result.position_metrics)
-            case OpenPositionResultTypeEnum.ALREADY_OPENED:
+            case OpenPositionResultTypeEnum.ALREADY_OPEN:
                 message = (
                     "⚠️ WARNING ⚠️ :: There is already a position open for "
                     f"{html.bold(open_position_result.crypto_currency.currency)}!!"
                 )
             case OpenPositionResultTypeEnum.NO_FUNDS:
                 message = (
-                    f"❗ ATTENTION ❗ :: There are not enough funds to open a "
+                    f"❗ ATTENTION ❗:: There are not enough funds to open a "
                     f"{html.bold(open_position_result.position_type.value.upper())} "
                     f"position for {html.bold(open_position_result.crypto_currency.currency)}!!"
                 )
@@ -151,8 +151,8 @@ class MessagesFormatter:
             f"{icon} {html.bold(position.position_type.value.upper())} {html.code(position.symbol)} || {margin_icon} {html.bold(pydash.start_case(position.open_type.value))} {html.bold(position.leverage)}x",  # noqa: E501
             "====================================================",
             f"🔥 {html.bold('Current Price')} ({html.bold('Bid' if position.position_type == PositionTypeEnum.LONG else 'Ask')}) = {ticker.bid_or_close if position.position_type == PositionTypeEnum.LONG else ticker.ask_or_close} {ticker.quote_asset}",  # noqa: E501
-            f"🏦 {html.bold('Unrealized PnL')} = {'+' if position_metrics.unrealised_pnl > 0 else '-'}{abs(position_metrics.unrealised_pnl)} {ticker.quote_asset} [{position_metrics.unrealised_pnl_ratio}%]",  # noqa: E501
-            f"🤑 {html.bold('Unrealized Net Revenue')} = {'+' if position_metrics.unrealised_net_revenue > 0 else '-'}{abs(position_metrics.unrealised_net_revenue)} {ticker.quote_asset}",  # noqa: E501
+            f"🏦 {html.bold('Unrealized PnL')} = {'+' if position_metrics.unrealised_pnl >= 0 else '-'}{abs(position_metrics.unrealised_pnl)} {ticker.quote_asset} [{position_metrics.unrealised_pnl_ratio}%]",  # noqa: E501
+            f"🤑 {html.bold('Unrealized Net Revenue')} = {'+' if position_metrics.unrealised_net_revenue >= 0 else '-'}{abs(position_metrics.unrealised_net_revenue)} {ticker.quote_asset}",  # noqa: E501
             "----------------------------------------------------",
             f"💰 {html.bold('Notional')} = {position_metrics.notional} {ticker.quote_asset}",
             f"🧱 {html.bold('Initial Margin')} = {position_metrics.initial_margin} {ticker.quote_asset}",

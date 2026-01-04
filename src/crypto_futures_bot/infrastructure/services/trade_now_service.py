@@ -49,12 +49,12 @@ class TradeNowService:
         symbols = set(p.position.symbol for p in open_positions)
         if crypto_currency.to_symbol(account_info) in symbols:
             ret = OpenPositionResult(
-                result_type=OpenPositionResultTypeEnum.ALREADY_OPENED,
+                result_type=OpenPositionResultTypeEnum.ALREADY_OPEN,
                 crypto_currency=crypto_currency,
                 position_type=position_type,
             )
         else:
-            trade_now_hints = await self.get_trade_now_hints(trxacked_crypto_currency=crypto_currency)
+            trade_now_hints = await self.get_trade_now_hints(crypto_currency)
             position_hints = trade_now_hints.long if position_type == PositionTypeEnum.LONG else trade_now_hints.short
             if position_hints.margin <= 0:
                 ret = OpenPositionResult(

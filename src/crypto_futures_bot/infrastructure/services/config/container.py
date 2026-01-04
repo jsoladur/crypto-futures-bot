@@ -3,6 +3,7 @@ from dependency_injector import containers, providers
 from crypto_futures_bot.infrastructure.services.auto_trader_crypto_currency_service import (
     AutoTraderCryptoCurrencyService,
 )
+from crypto_futures_bot.infrastructure.services.auto_trader_event_handler_service import AutoTraderEventHandlerService
 from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_service import CryptoTechnicalAnalysisService
 from crypto_futures_bot.infrastructure.services.market_signal_service import MarketSignalService
 from crypto_futures_bot.infrastructure.services.orders_analytics_service import OrdersAnalyticsService
@@ -54,6 +55,14 @@ class ServicesContainer(containers.DeclarativeContainer):
     )
     market_signal_service = providers.Singleton(
         MarketSignalService,
+        configuration_properties=configuration_properties,
+        event_emitter=event_emitter,
+        push_notification_service=push_notification_service,
+        telegram_service=telegram_service,
+        trade_now_service=trade_now_service,
+    )
+    auto_trader_event_handler_service = providers.Singleton(
+        AutoTraderEventHandlerService,
         configuration_properties=configuration_properties,
         event_emitter=event_emitter,
         push_notification_service=push_notification_service,

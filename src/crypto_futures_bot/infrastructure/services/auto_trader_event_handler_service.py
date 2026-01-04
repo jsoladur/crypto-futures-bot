@@ -15,7 +15,7 @@ from crypto_futures_bot.interfaces.telegram.services.telegram_service import Tel
 logger = logging.getLogger(__name__)
 
 
-class MarketSignalService(AbstractEventHandlerService):
+class AutoTraderEventHandlerService(AbstractEventHandlerService):
     def __init__(
         self,
         configuration_properties: ConfigurationProperties,
@@ -31,15 +31,15 @@ class MarketSignalService(AbstractEventHandlerService):
 
     @override
     def configure(self) -> None:
-        self._event_emitter.add_listener(MARKET_SIGNAL_EVENT_NAME, self._handle_signals_evaluation_result)
+        self._event_emitter.add_listener(MARKET_SIGNAL_EVENT_NAME, self._handle_market_signal)
 
-    async def on_open_position_from_market_signal(self, market_signal_item: MarketSignalItem) -> None:
+    async def _handle_market_signal(self, market_signal_item: MarketSignalItem) -> None:
         async with self._lock:
             try:
-                await self._internal_on_open_position_from_market_signal(market_signal_item)
+                await self._internal_handle_market_signal(market_signal_item)
             except Exception as e:  # pragma: no cover
                 logger.error(str(e), exc_info=True)
                 await self._notify_fatal_error_via_telegram(e)
 
-    async def _internal_on_open_position_from_market_signal(self, market_signal_item: MarketSignalItem) -> None:
+    async def _internal_handle_market_signal(self, market_signal_item: MarketSignalItem) -> None:
         raise NotImplementedError("To be implemented!")

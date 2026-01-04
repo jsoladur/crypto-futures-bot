@@ -6,3 +6,4 @@ class SymbolMarketConfig:
     symbol: str
     price_precision: int
     amount_precision: int
+    contract_size: float

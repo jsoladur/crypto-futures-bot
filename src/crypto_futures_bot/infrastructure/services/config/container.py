@@ -1,5 +1,9 @@
 from dependency_injector import containers, providers
 
+from crypto_futures_bot.infrastructure.services.auto_trader_crypto_currency_service import (
+    AutoTraderCryptoCurrencyService,
+)
+from crypto_futures_bot.infrastructure.services.auto_trader_event_handler_service import AutoTraderEventHandlerService
 from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_service import CryptoTechnicalAnalysisService
 from crypto_futures_bot.infrastructure.services.market_signal_service import MarketSignalService
 from crypto_futures_bot.infrastructure.services.orders_analytics_service import OrdersAnalyticsService
@@ -14,11 +18,15 @@ class ServicesContainer(containers.DeclarativeContainer):
     configuration_properties = providers.Dependency()
     event_emitter = providers.Dependency()
     telegram_service = providers.Dependency()
+    messages_formatter = providers.Dependency()
     database_sessionmaker = providers.Dependency()
     futures_exchange_service = providers.Dependency()
 
     tracked_crypto_currency_service = providers.Singleton(
         TrackedCryptoCurrencyService, futures_exchange_service=futures_exchange_service
+    )
+    auto_trader_crypto_currency_service = providers.Singleton(
+        AutoTraderCryptoCurrencyService, tracked_crypto_currency_service=tracked_crypto_currency_service
     )
     crypto_technical_analysis_service = providers.Singleton(
         CryptoTechnicalAnalysisService,
@@ -52,5 +60,15 @@ class ServicesContainer(containers.DeclarativeContainer):
         event_emitter=event_emitter,
         push_notification_service=push_notification_service,
         telegram_service=telegram_service,
+        trade_now_service=trade_now_service,
+    )
+    auto_trader_event_handler_service = providers.Singleton(
+        AutoTraderEventHandlerService,
+        configuration_properties=configuration_properties,
+        event_emitter=event_emitter,
+        push_notification_service=push_notification_service,
+        telegram_service=telegram_service,
+        messages_formatter=messages_formatter,
+        auto_trader_crypto_currency_service=auto_trader_crypto_currency_service,
         trade_now_service=trade_now_service,
     )

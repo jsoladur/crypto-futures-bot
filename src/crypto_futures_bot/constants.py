@@ -11,6 +11,7 @@ DEFAULT_ATR_SL_MULT = 2.8
 DEFAULT_ATR_TP_MULT = 3.5
 # Event Emitter - Event names
 SIGNALS_EVALUATION_RESULT_EVENT_NAME = "signals_evaluation_result"
+MARKET_SIGNAL_EVENT_NAME = "market_signal"
 TRIGGER_BUY_ACTION_EVENT_NAME = "trigger_buy_action"
 
 RISK_MANAGEMENT_ALLOWED_VALUES_LIST = np.concatenate(

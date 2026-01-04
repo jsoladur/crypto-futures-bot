@@ -114,7 +114,7 @@ class SignalsTaskService(AbstractTaskService):
             technical_analysis_df = await self._crypto_technical_analysis_service.get_technical_analysis(
                 symbol=tracked_crypto_currency.to_symbol(account_info=account_info)
             )
-            signals_evaluation_result, last_candle = await self._check_signals(
+            signals_evaluation_result, *_ = await self._check_signals(
                 tracked_crypto_currency=tracked_crypto_currency,
                 technical_analysis_df=technical_analysis_df,
                 account_info=account_info,
@@ -128,7 +128,6 @@ class SignalsTaskService(AbstractTaskService):
                     signals_evaluation_result=signals_evaluation_result,
                     chat_ids=chat_ids,
                     account_info=account_info,
-                    last_candle=last_candle,
                     signal_parametrization_item=signal_parametrization_item,
                 )
         except Exception as e:
@@ -177,7 +176,6 @@ class SignalsTaskService(AbstractTaskService):
         signals_evaluation_result: SignalsEvaluationResult,
         chat_ids: list[str],
         account_info: AccountInfo,
-        last_candle: CandleStickIndicators,
         *,
         signal_parametrization_item: SignalParametrizationItem,
     ) -> None:

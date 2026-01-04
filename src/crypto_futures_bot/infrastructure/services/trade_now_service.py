@@ -1,7 +1,9 @@
 import math
 
+from crypto_futures_bot.domain.enums import OpenPositionResultTypeEnum, PositionOpenTypeEnum, PositionTypeEnum
 from crypto_futures_bot.domain.vo import (
     CandleStickIndicators,
+    OpenPositionResult,
     PositionHints,
     SignalParametrizationItem,
     TrackedCryptoCurrencyItem,
@@ -9,6 +11,7 @@ from crypto_futures_bot.domain.vo import (
 )
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
+    CreateMarketPositionOrder,
     FuturesWallet,
     PortfolioBalance,
     SymbolMarketConfig,
@@ -37,6 +40,51 @@ class TradeNowService:
         self._orders_analytics_service = orders_analytics_service
         self._risk_management_service = risk_management_service
         self._tracked_crypto_currency_service = tracked_crypto_currency_service
+
+    async def open_position(
+        self, crypto_currency: TrackedCryptoCurrencyItem, position_type: PositionTypeEnum
+    ) -> OpenPositionResult:
+        account_info = await self._futures_exchange_service.get_account_info()
+        open_positions = await self._orders_analytics_service.get_open_position_metrics()
+        symbols = set(p.position.symbol for p in open_positions)
+        if crypto_currency.to_symbol(account_info) in symbols:
+            ret = OpenPositionResult(
+                result_type=OpenPositionResultTypeEnum.ALREADY_OPEN,
+                crypto_currency=crypto_currency,
+                position_type=position_type,
+            )
+        else:
+            trade_now_hints = await self.get_trade_now_hints(crypto_currency)
+            position_hints = trade_now_hints.long if position_type == PositionTypeEnum.LONG else trade_now_hints.short
+            if position_hints.margin <= 0:
+                ret = OpenPositionResult(
+                    result_type=OpenPositionResultTypeEnum.NO_FUNDS,
+                    crypto_currency=crypto_currency,
+                    position_type=position_type,
+                )
+            else:
+                market_position_order = CreateMarketPositionOrder(
+                    symbol=crypto_currency.to_symbol(account_info=account_info),
+                    initial_margin=position_hints.margin,
+                    leverage=position_hints.leverage,
+                    open_type=PositionOpenTypeEnum.ISOLATED,
+                    position_type=position_type,
+                    stop_loss_price=position_hints.stop_loss_price,
+                    take_profit_price=position_hints.take_profit_price,
+                )
+                opened_position = await self._futures_exchange_service.create_market_position_order(
+                    position=market_position_order
+                )
+                position_metrics = await self._orders_analytics_service.get_metrics_by_position_id(
+                    position_id=opened_position.position_id
+                )
+                ret = OpenPositionResult(
+                    result_type=OpenPositionResultTypeEnum.SUCCESS,
+                    crypto_currency=crypto_currency,
+                    position_type=position_type,
+                    position_metrics=position_metrics,
+                )
+        return ret
 
     async def get_trade_now_hints(
         self,

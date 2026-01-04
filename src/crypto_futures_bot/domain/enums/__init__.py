@@ -1,5 +1,6 @@
 from crypto_futures_bot.domain.enums.candlestick_enum import CandleStickEnum
 from crypto_futures_bot.domain.enums.market_action_type_enum import MarketActionTypeEnum
+from crypto_futures_bot.domain.enums.open_position_result_type_enum import OpenPositionResultTypeEnum
 from crypto_futures_bot.domain.enums.position_open_type_enum import PositionOpenTypeEnum
 from crypto_futures_bot.domain.enums.position_type_enum import PositionTypeEnum
 from crypto_futures_bot.domain.enums.push_notification_type_enum import PushNotificationTypeEnum
@@ -12,4 +13,5 @@ __all__ = [
     "PositionTypeEnum",
     "MarketActionTypeEnum",
     "PositionOpenTypeEnum",
+    "OpenPositionResultTypeEnum",
 ]

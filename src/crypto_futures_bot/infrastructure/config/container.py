@@ -10,6 +10,7 @@ from crypto_futures_bot.infrastructure.tasks.config.container import TasksContai
 class InfrastructureContainer(containers.DeclarativeContainer):
     configuration_properties = providers.Dependency()
     telegram_service = providers.Dependency()
+    messages_formatter = providers.Dependency()
 
     event_emitter = providers.Singleton(AsyncIOEventEmitter)
 
@@ -24,6 +25,7 @@ class InfrastructureContainer(containers.DeclarativeContainer):
         database_sessionmaker=database_container.sessionmaker,
         event_emitter=event_emitter,
         telegram_service=telegram_service,
+        messages_formatter=messages_formatter,
     )
     tasks_container = providers.Container(
         TasksContainer,

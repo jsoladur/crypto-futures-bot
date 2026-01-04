@@ -9,7 +9,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
-from crypto_futures_bot.constants import SIGNALS_EVALUATION_RESULT_EVENT_NAME
+from crypto_futures_bot.constants import MARKET_SIGNAL_EVENT_NAME, SIGNALS_EVALUATION_RESULT_EVENT_NAME
 from crypto_futures_bot.domain.enums import MarketActionTypeEnum, PositionTypeEnum
 from crypto_futures_bot.domain.types import Timeframe
 from crypto_futures_bot.domain.vo import (
@@ -112,24 +112,37 @@ class MarketSignalService(AbstractEventHandlerService):
 
     async def _handle_signals_evaluation_result(self, signals_evaluation_result: SignalsEvaluationResult) -> None:
         async with self._lock:
-            await self._internal_handle_signals_evaluation_result(signals_evaluation_result)
+            try:
+                await self._internal_handle_signals_evaluation_result(signals_evaluation_result)
+            except Exception as e:  # pragma: no cover
+                logger.error(str(e), exc_info=True)
+                await self._notify_fatal_error_via_telegram(e)
 
     @transactional()
     async def _internal_handle_signals_evaluation_result(
         self, signals_evaluation_result: SignalsEvaluationResult, *, session: AsyncSession
     ) -> None:
-        await self._apply_market_signal_retention_policy(signals_evaluation_result, session=session)
-        trade_now_hints = await self._trade_now_service.get_trade_now_hints(signals_evaluation_result.crypto_currency)
-        signals_field_names = [field.name for field in fields(signals_evaluation_result) if field.type is bool]
-        for signals_field_name in signals_field_names:
-            if getattr(signals_evaluation_result, signals_field_name):
-                await self._store_market_signal_if_needed(
-                    signals_evaluation_result,
-                    trade_now_hints,
-                    is_long=signals_field_name.startswith("long"),
-                    is_entry=signals_field_name.endswith("_entry"),
-                    session=session,
-                )
+        market_signal_items = []
+        try:
+            await self._apply_market_signal_retention_policy(signals_evaluation_result, session=session)
+            trade_now_hints = await self._trade_now_service.get_trade_now_hints(
+                signals_evaluation_result.crypto_currency
+            )
+            signals_field_names = [field.name for field in fields(signals_evaluation_result) if field.type is bool]
+            for signals_field_name in signals_field_names:
+                if getattr(signals_evaluation_result, signals_field_name):
+                    new_item = await self._store_market_signal_if_needed(
+                        signals_evaluation_result,
+                        trade_now_hints,
+                        is_long=signals_field_name.startswith("long"),
+                        is_entry=signals_field_name.endswith("_entry"),
+                        session=session,
+                    )
+                    if new_item:
+                        market_signal_items.append(new_item)
+        finally:
+            for item in market_signal_items:
+                self._event_emitter.emit(MARKET_SIGNAL_EVENT_NAME, item)
 
     async def _store_market_signal_if_needed(
         self,
@@ -139,7 +152,7 @@ class MarketSignalService(AbstractEventHandlerService):
         is_entry: bool,
         *,
         session: AsyncSession,
-    ) -> None:
+    ) -> MarketSignalItem | None:
         timestamp = int(signals.timestamp.timestamp() * 1000)
         exists = await self.exists_market_signal_by_timestamp(
             timestamp=timestamp,
@@ -148,6 +161,7 @@ class MarketSignalService(AbstractEventHandlerService):
             timeframe=signals.timeframe,
             session=session,
         )
+        ret: MarketSignalItem | None = None
         if not exists:
             position_type = PositionTypeEnum.LONG if is_long else PositionTypeEnum.SHORT
             action_type = MarketActionTypeEnum.ENTRY if is_entry else MarketActionTypeEnum.EXIT
@@ -167,6 +181,8 @@ class MarketSignalService(AbstractEventHandlerService):
             )
             session.add(market_signal)
             await session.flush()
+            ret = self._convert_model_to_vo(market_signal)
+        return ret
 
     async def _apply_market_signal_retention_policy(
         self, signals: SignalsEvaluationResult, *, session: AsyncSession

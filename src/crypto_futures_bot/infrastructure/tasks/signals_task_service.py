@@ -135,7 +135,8 @@ class SignalsTaskService(AbstractTaskService):
             logger.error(f"Error evaluating signals for {tracked_crypto_currency}: {e}", exc_info=True)
             await self._notify_fatal_error_via_telegram(e)
         finally:
-            self._event_emitter.emit(SIGNALS_EVALUATION_RESULT_EVENT_NAME, signals_evaluation_result)
+            if signals_evaluation_result.is_entry:
+                self._event_emitter.emit(SIGNALS_EVALUATION_RESULT_EVENT_NAME, signals_evaluation_result)
 
     async def _check_signals(
         self,
@@ -189,7 +190,6 @@ class SignalsTaskService(AbstractTaskService):
                     is_entry=signals_field_name.endswith("_entry"),
                     chat_ids=chat_ids,
                     account_info=account_info,
-                    last_candle=last_candle,
                     signal_parametrization_item=signal_parametrization_item,
                 )
 
@@ -201,7 +201,6 @@ class SignalsTaskService(AbstractTaskService):
         is_entry: bool,
         chat_ids: list[str],
         account_info: AccountInfo,
-        last_candle: CandleStickIndicators,
         signal_parametrization_item: SignalParametrizationItem,
     ) -> None:
         exists = await self._market_signal_service.exists_market_signal_by_timestamp(

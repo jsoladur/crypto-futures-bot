@@ -2,6 +2,7 @@ import logging
 from collections.abc import Generator
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 
@@ -15,8 +16,7 @@ def init_sessionmaker(configuration_properties: ConfigurationProperties) -> Gene
     engine = create_async_engine(
         str(configuration_properties.database_url),
         echo=False,
-        pool_size=1,
-        max_overflow=0,
+        poolclass=NullPool,  # ← disables pooling
         connect_args={"check_same_thread": False, "timeout": configuration_properties.database_busy_timeout},
     )
     sessionmaker = async_sessionmaker(bind=engine)

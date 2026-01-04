@@ -4,7 +4,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 from crypto_futures_bot.constants import RISK_MANAGEMENT_ALLOWED_VALUES_LIST
-from crypto_futures_bot.domain.vo import TrackedCryptoCurrencyItem
+from crypto_futures_bot.domain.vo import AutoTraderCryptoCurrencyItem, TrackedCryptoCurrencyItem
 from crypto_futures_bot.domain.vo.push_notification_item import PushNotificationItem
 from crypto_futures_bot.domain.vo.risk_management_item import RiskManagementItem
 
@@ -85,6 +85,20 @@ class KeyboardsBuilder:
                 )
             )
         builder.row(InlineKeyboardButton(text="➕ Add", callback_data="add_tracker_crypto_currency"))
+        builder.row(InlineKeyboardButton(text="🔙 Back", callback_data="go_back_home"))
+        return builder.as_markup()
+
+    def get_auto_trader_currencies_keyboard(self, items: list[AutoTraderCryptoCurrencyItem]) -> InlineKeyboardMarkup:
+        builder = InlineKeyboardBuilder()
+        for item in items:
+            state_icon = "🟢" if item.activated else "🟥"
+            action_icon = "⏸️" if item.activated else "▶️"
+            builder.row(
+                InlineKeyboardButton(
+                    text=f"🎯 :: {state_icon} {action_icon} {item.currency}",
+                    callback_data=f"toggle_auto_trader_for_$_{item.currency}",
+                )
+            )
         builder.row(InlineKeyboardButton(text="🔙 Back", callback_data="go_back_home"))
         return builder.as_markup()
 

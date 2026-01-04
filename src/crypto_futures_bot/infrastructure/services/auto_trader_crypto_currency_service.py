@@ -11,7 +11,7 @@ from crypto_futures_bot.infrastructure.services.tracked_crypto_currency_service 
 logger = logging.getLogger(__name__)
 
 
-class TrackedCryptoCurrencyService:
+class AutoTraderCryptoCurrencyService:
     def __init__(self, tracked_crypto_currency_service: TrackedCryptoCurrencyService) -> None:
         self._tracked_crypto_currency_service = tracked_crypto_currency_service
 
@@ -29,22 +29,24 @@ class TrackedCryptoCurrencyService:
         for tracked_crypto_currency in tracked_crypto_currencies:
             if not any(item.currency == tracked_crypto_currency for item in ret):
                 ret.append(AutoTraderCryptoCurrencyItem(currency=tracked_crypto_currency, activated=False))
+        ret = sorted(ret, key=lambda x: x.currency)
         return ret
 
     @transactional(read_only=True)
     async def is_enable_for(self, crypto_currency: str, *, session: AsyncSession | None = None) -> int:
-        entity = await self._find_one_or_none(crypto_currency=crypto_currency, session=session)
+        entity = await self._find_one_or_none(crypto_currency, session=session)
         return entity.activated if entity else False
 
     @transactional()
-    async def save_or_update(self, item: AutoTraderCryptoCurrencyItem, *, session: AsyncSession) -> None:
-        entity = await self._find_one_or_none(crypto_currency=item.currency, session=session)
+    async def toggle_for(self, crypto_currency: str, *, session: AsyncSession) -> AutoTraderCryptoCurrencyItem:
+        entity = await self._find_one_or_none(crypto_currency, session=session)
         if entity:
-            entity.activated = item.activated
+            entity.activated = not entity.activated
         else:
-            entity = AutoTraderCryptoCurrencyItem(crypto_currency=item.currency, activated=item.activated)
+            entity = AutoTraderCryptoCurrency(currency=crypto_currency, activated=True)
             session.add(entity)
         await session.flush()
+        return AutoTraderCryptoCurrencyItem(currency=entity.currency, activated=entity.activated)
 
     async def _find_one_or_none(self, currency: str, *, session: AsyncSession) -> AutoTraderCryptoCurrency | None:
         query = select(AutoTraderCryptoCurrency).where(AutoTraderCryptoCurrency.currency == currency)

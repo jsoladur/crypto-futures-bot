@@ -33,7 +33,7 @@ class AutoTraderCryptoCurrencyService:
         return ret
 
     @transactional(read_only=True)
-    async def is_enable_for(self, crypto_currency: str, *, session: AsyncSession | None = None) -> int:
+    async def is_enabled_for(self, crypto_currency: str, *, session: AsyncSession | None = None) -> int:
         entity = await self._find_one_or_none(crypto_currency, session=session)
         return entity.activated if entity else False
 

@@ -69,5 +69,6 @@ class ServicesContainer(containers.DeclarativeContainer):
         push_notification_service=push_notification_service,
         telegram_service=telegram_service,
         messages_formatter=messages_formatter,
+        auto_trader_crypto_currency_service=auto_trader_crypto_currency_service,
         trade_now_service=trade_now_service,
     )

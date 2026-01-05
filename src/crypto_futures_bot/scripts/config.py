@@ -9,8 +9,6 @@ from crypto_futures_bot.infrastructure.adapters.futures_exchange.impl.mexc_futur
 from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_service import CryptoTechnicalAnalysisService
 from crypto_futures_bot.infrastructure.services.market_signal_service import MarketSignalService
 from crypto_futures_bot.infrastructure.services.orders_analytics_service import OrdersAnalyticsService
-from crypto_futures_bot.infrastructure.services.risk_management_service import RiskManagementService
-from crypto_futures_bot.infrastructure.services.signal_parametrization_service import SignalParametrizationService
 from crypto_futures_bot.infrastructure.services.trade_now_service import TradeNowService
 from crypto_futures_bot.infrastructure.tasks.signals_task_service import SignalsTaskService
 from crypto_futures_bot.scripts.services import BacktestingService
@@ -28,9 +26,14 @@ class Container(containers.DeclarativeContainer):
     event_emitter_mock = providers.Object(SimpleNamespace())
     scheduler_mock = providers.Object(SimpleNamespace(add_job=_noop_add_job))
     tracked_crypto_currency_service_mock = providers.Object(SimpleNamespace())
+    signal_parametrization_service_mock = providers.Object(SimpleNamespace())
+    risk_management_service_mock = providers.Object(SimpleNamespace())
+    mexc_remote_service_mock = providers.Object(SimpleNamespace())
     # Services
     futures_exchange_service = providers.Singleton(
-        MEXCFuturesExchangeService, configuration_properties=configuration_properties
+        MEXCFuturesExchangeService,
+        configuration_properties=configuration_properties,
+        mexc_remote_service=mexc_remote_service_mock,
     )
 
     crypto_technical_analysis_service = providers.Singleton(
@@ -46,15 +49,13 @@ class Container(containers.DeclarativeContainer):
         push_notification_service=push_notification_service_mock,
         telegram_service=telegram_service_mock,
     )
-    signal_parametrization_service = providers.Singleton(SignalParametrizationService)
-    risk_management_service = providers.Singleton(RiskManagementService)
     trade_now_service = providers.Singleton(
         TradeNowService,
         futures_exchange_service=futures_exchange_service,
         crypto_technical_analysis_service=crypto_technical_analysis_service,
         orders_analytics_service=orders_analytics_service,
-        signal_parametrization_service=signal_parametrization_service,
-        risk_management_service=risk_management_service,
+        signal_parametrization_service=signal_parametrization_service_mock,
+        risk_management_service=risk_management_service_mock,
         tracked_crypto_currency_service=tracked_crypto_currency_service_mock,
     )
 
@@ -79,7 +80,7 @@ class Container(containers.DeclarativeContainer):
         crypto_technical_analysis_service=crypto_technical_analysis_service,
         market_signal_service=market_signal_service,
         trade_now_service=trade_now_service,
-        signal_parametrization_service=signal_parametrization_service,
+        signal_parametrization_service=signal_parametrization_service_mock,
     )
 
     backtesting_service = providers.Singleton(

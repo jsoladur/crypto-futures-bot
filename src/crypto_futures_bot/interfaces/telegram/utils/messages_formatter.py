@@ -119,11 +119,11 @@ class MessagesFormatter:
     def format_open_position_result(self, open_position_result: OpenPositionResult) -> str:
         match open_position_result.result_type:
             case OpenPositionResultTypeEnum.SUCCESS:
-                message = "🎉 SUCCESS 🎉 :: Position opened successfully!"
+                message = "🎯 SUCCESS 🎯:: Position opened successfully!"
                 message += "\n\n" + self.format_position_metrics(open_position_result.position_metrics)
             case OpenPositionResultTypeEnum.ALREADY_OPEN:
                 message = (
-                    "⚠️ WARNING ⚠️ :: There is already a position open for "
+                    "⚠️ WARNING ⚠️:: There is already a position open for "
                     f"{html.bold(open_position_result.crypto_currency.currency)}!!"
                 )
             case OpenPositionResultTypeEnum.NO_FUNDS:
@@ -134,7 +134,7 @@ class MessagesFormatter:
                 )
             case OpenPositionResultTypeEnum.ERROR:
                 message = (
-                    "🚨 ERROR 🚨 :: An error occurred while opening a "
+                    "🚨 ERROR 🚨:: An error occurred while opening a "
                     f"{html.bold(open_position_result.position_type.value.upper())} "
                     f"position for {html.bold(open_position_result.crypto_currency.currency)}"
                 )

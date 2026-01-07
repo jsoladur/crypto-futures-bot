@@ -14,6 +14,7 @@ class BotStrategy(Strategy):
     orders_analytics_service: OrdersAnalyticsService | None = None
     symbol_market_config: SymbolMarketConfig | None = None
     signal_parametrization: SignalParametrizationItem | None = None
+    risk: float | None = None
 
     def init(self):
         # Indicators are already computed in the dataframe passed to Backtest
@@ -68,7 +69,13 @@ class BotStrategy(Strategy):
                 symbol_market_config=self.symbol_market_config,
             )
 
+            desired_risk_amount = self.equity * (self.risk / 100)
+            risk_per_unit = abs(current_price - sl_price)
+            target_units = desired_risk_amount / risk_per_unit
+            size_pct = (target_units * current_price) / self.equity
+            size_pct = min(size_pct, 0.95)
+
             if is_long_entry:
-                self.buy(sl=sl_price, tp=tp_price)
+                self.buy(sl=sl_price, tp=tp_price, size=size_pct)
             else:
-                self.sell(sl=sl_price, tp=tp_price)
+                self.sell(sl=sl_price, tp=tp_price, size=size_pct)

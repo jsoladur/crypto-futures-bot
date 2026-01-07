@@ -35,6 +35,15 @@
       "args": ["-x", "--log-cli-level=INFO"],
       "envFile": "${workspaceFolder}/.env.pytest",
       "justMyCode": false
+    },
+    {
+      "name": "Pytest: Specific test",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["-x", "--log-cli-level=INFO", "-k", "should_get_trade_now_hints_properly"],
+      "envFile": "${workspaceFolder}/.env.pytest",
+      "justMyCode": false
     }
   ]
 }

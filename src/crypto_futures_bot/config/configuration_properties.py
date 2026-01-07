@@ -21,6 +21,7 @@ class ConfigurationProperties(BaseSettings):
     root_user: str
     root_password: str
 
+    telegram_bot_enabled: bool = True
     telegram_bot_token: str
 
     database_url: str

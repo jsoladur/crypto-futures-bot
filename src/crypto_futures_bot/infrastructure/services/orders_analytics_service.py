@@ -52,9 +52,12 @@ class OrdersAnalyticsService(AbstractService):
         signal_parametrization_item: SignalParametrizationItem,
         symbol_market_config: SymbolMarketConfig,
     ) -> float:
-        stop_loss_from_atr = last_candlestick_indicators.atr * signal_parametrization_item.atr_sl_mult
-        stop_loss_percent_value = (stop_loss_from_atr / entry_price) * 100
-        return abs(round(stop_loss_percent_value, 2))
+        stop_price = round(
+            entry_price - (last_candlestick_indicators.atr * signal_parametrization_item.atr_sl_mult),
+            ndigits=symbol_market_config.price_precision,
+        )
+        stop_loss_percent_value = abs(self._ceil_round((1 - (stop_price / entry_price)) * 100, ndigits=2))
+        return float(stop_loss_percent_value)
 
     def get_stop_loss_price(
         self,
@@ -80,9 +83,12 @@ class OrdersAnalyticsService(AbstractService):
         signal_parametrization_item: SignalParametrizationItem,
         symbol_market_config: SymbolMarketConfig,
     ) -> float:
-        take_profit_from_atr = last_candlestick_indicators.atr * signal_parametrization_item.atr_tp_mult
-        take_profit_percent_value = (take_profit_from_atr / entry_price) * 100
-        return abs(round(take_profit_percent_value, 2))
+        take_profit_price = round(
+            entry_price + (last_candlestick_indicators.atr * signal_parametrization_item.atr_tp_mult),
+            ndigits=symbol_market_config.price_precision,
+        )
+        take_profit_percent_value = abs(self._floor_round((1 - (take_profit_price / entry_price)) * 100, ndigits=2))
+        return float(take_profit_percent_value)
 
     def get_take_profit_price_levels(
         self,

@@ -196,7 +196,7 @@ class TradeNowService:
         final_leverage = min(
             required_leverage if required_leverage > 0 else 1, max_survival_leverage if max_survival_leverage > 0 else 1
         )
-
+        final_leverage = final_leverage if final_leverage > 0 else 1
         # 3. Calculate Liquidation Price
         if is_long:
             liquidation_price = round(

@@ -22,8 +22,8 @@
       "args": [
         "research",
         "--currency=DOGE",
-        "--days=2",
-        // "--no-apply-paralellism",
+        "--days=90",
+        "--no-apply-paralellism",
       ],
       "justMyCode": false
     },

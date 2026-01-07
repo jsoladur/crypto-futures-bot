@@ -59,6 +59,7 @@ class BacktestingService:
         short_entry_overbought_threshold: float,
         atr_sl_mult: float,
         atr_tp_mult: float,
+        risk: float,
         show_plot: bool = False,
     ) -> None:
         symbol_market_config = await self._exchange_service.get_symbol_market_config(crypto_currency)
@@ -73,6 +74,7 @@ class BacktestingService:
             short_entry_overbought_threshold=short_entry_overbought_threshold,
             atr_sl_mult=atr_sl_mult,
             atr_tp_mult=atr_tp_mult,
+            risk=risk,
             symbol_market_config=symbol_market_config,
         )
         echo(f"\n--- Backtest Result for {crypto_currency} ---\n")
@@ -87,6 +89,7 @@ class BacktestingService:
         crypto_currency: str,
         *,
         initial_cash: float,
+        risk: float,
         apply_paralellism: bool = True,
     ) -> None:
         echo(f"\n--- Research for {crypto_currency} ---\n")
@@ -101,6 +104,7 @@ class BacktestingService:
                     symbol=symbol,
                     df=df,
                     initial_cash=initial_cash,
+                    risk=risk,
                     signal_parametrization_item=signal_parametrization_item,
                     symbol_market_config=symbol_market_config,
                 )
@@ -123,6 +127,7 @@ class BacktestingService:
                     short_entry_overbought_threshold=signal_parametrization_item.short_entry_overbought_threshold,
                     atr_sl_mult=signal_parametrization_item.atr_sl_mult,
                     atr_tp_mult=signal_parametrization_item.atr_tp_mult,
+                    risk=risk,
                     symbol_market_config=symbol_market_config,
                     use_tqdm=False,
                 )
@@ -166,6 +171,7 @@ class BacktestingService:
         short_entry_overbought_threshold: float,
         atr_sl_mult: float,
         atr_tp_mult: float,
+        risk: float,
         symbol_market_config: SymbolMarketConfig,
         use_tqdm: bool = True,
     ) -> tuple[Backtest, pd.Series]:
@@ -181,6 +187,7 @@ class BacktestingService:
                 signals_task_service=self._signals_task_service,
                 orders_analytics_service=self._orders_analytics_service,
                 symbol_market_config=symbol_market_config,
+                risk=risk,
                 signal_parametrization=SignalParametrizationItem(
                     crypto_currency=crypto_currency,
                     atr_sl_mult=atr_sl_mult,

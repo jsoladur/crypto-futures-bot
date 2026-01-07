@@ -12,6 +12,7 @@ def run_single_backtest_combination(
     symbol: str,
     df: pd.DataFrame,
     initial_cash: float,
+    risk: float,
     signal_parametrization_item: SignalParametrizationItem,
     symbol_market_config: SymbolMarketConfig,
 ) -> BacktestingResult | None:
@@ -43,6 +44,7 @@ def run_single_backtest_combination(
                 short_entry_overbought_threshold=signal_parametrization_item.short_entry_overbought_threshold,
                 atr_sl_mult=signal_parametrization_item.atr_sl_mult,
                 atr_tp_mult=signal_parametrization_item.atr_tp_mult,
+                risk=risk,
                 symbol_market_config=symbol_market_config,
                 use_tqdm=False,
             )

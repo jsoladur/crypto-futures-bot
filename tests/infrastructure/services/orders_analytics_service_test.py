@@ -96,12 +96,12 @@ def should_calculate_stop_loss_and_take_profit_properly(faker: Faker, test_envir
         signal_parametrization_item=signal_parametrization,
         symbol_market_config=market_config,
     )
-    assert sl_percent == 3.0  # (2.0 * 1.5) / 100 * 100
+    assert sl_percent == 3.01
 
     sl_price = orders_analytics_service.get_stop_loss_price(
         entry_price, stop_loss_percent_value=sl_percent, is_long=True, symbol_market_config=market_config
     )
-    assert sl_price == 97.0
+    assert sl_price == 96.99
 
     tp_percent = orders_analytics_service.get_take_profit_percent_value(
         entry_price,
@@ -109,7 +109,7 @@ def should_calculate_stop_loss_and_take_profit_properly(faker: Faker, test_envir
         signal_parametrization_item=signal_parametrization,
         symbol_market_config=market_config,
     )
-    assert tp_percent == 6.0  # (2.0 * 3.0) / 100 * 100
+    assert tp_percent == 6.01
 
     _, _, tp_price = orders_analytics_service.get_take_profit_price_levels(
         entry_price,

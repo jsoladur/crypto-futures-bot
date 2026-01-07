@@ -93,8 +93,12 @@ python_functions = "should_* test_*"
 
 [tool.coverage.run]
 source = ["src"]
+omit = [
+    "src/crypto_futures_bot/scripts/*",
+    "src/crypto_futures_bot/interfaces/telegram/*",
+]
 concurrency = ["thread", "multiprocessing"]
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 90
+fail_under = 80

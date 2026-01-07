@@ -193,7 +193,9 @@ class TradeNowService:
         # Financial Constraint: Leverage needed to hit risk target
         required_leverage = math.ceil(target_notional_size / available_margin) if available_margin > 0 else 1
         # Final Decision: Pick the smaller leverage
-        final_leverage = min(required_leverage, max_survival_leverage if max_survival_leverage > 0 else 1)
+        final_leverage = min(
+            required_leverage if required_leverage > 0 else 1, max_survival_leverage if max_survival_leverage > 0 else 1
+        )
 
         # 3. Calculate Liquidation Price
         if is_long:

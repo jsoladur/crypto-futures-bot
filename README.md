@@ -1,5 +1,6 @@
 <p align="center">
   <a href="https://github.com/jsoladur/crypto-futures-bot/actions"><img alt="Build Status" src="https://github.com/jsoladur/crypto-futures-bot/actions/workflows/main.yml/badge.svg"></a>
+  <a href="https://coveralls.io/github/jsoladur/crypto-futures-bot"><img alt="Coverage Status" src="https://coveralls.io/repos/github/jsoladur/crypto-futures-bot/badge.svg?branch=main"></a>
   <a href="https://opensource.org/licenses/MIT"><img alt="License" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
   <br>
   <a href="https://www.python.org/downloads/release/python-3130/"><img alt="Python Version" src="https://img.shields.io/badge/python-3.13%2B-blue.svg"></a>

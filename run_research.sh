@@ -8,9 +8,9 @@ PAIRS=(
     "DOGE"
     "PENGU"
     "XRP"
-    # "ZEC"
-    # "SOL"
-    # "BNB"
+    "ZEC"
+    "SOL"
+    "BNB"
 )
 
 # Define the directory where the result logs will be saved.

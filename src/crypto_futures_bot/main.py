@@ -39,6 +39,7 @@ async def main() -> None:
     configuration_properties: ConfigurationProperties = application_container.configuration_properties()
     version = application_container.application_version()
     dp: Dispatcher = application_container.interfaces_container().telegram_container().dispatcher()
+    telegram_bot: Bot = application_container.interfaces_container().telegram_container().telegram_bot()
     scheduler: BaseScheduler = application_container.infrastructure_container().tasks_container().scheduler()
     futures_exchange_service: AbstractFuturesExchangeService = (
         application_container.infrastructure_container().adapters_container().futures_exchange_service()
@@ -51,7 +52,6 @@ async def main() -> None:
     task_manager = await application_container.infrastructure_container().tasks_container().task_manager().load_tasks()
     logger.info(f"{len(task_manager.get_tasks())} jobs have been loaded!")
     # And the run events dispatching
-    telegram_bot: Bot = application_container.interfaces_container().telegram_container().telegram_bot()
     if configuration_properties.background_tasks_enabled:
         scheduler.start()
     # Configure pyee listeners
@@ -62,7 +62,9 @@ async def main() -> None:
     logger.info("Futures exchange service initialization...")
     await futures_exchange_service.post_init()
     logger.info("Futures exchange service initialized...")
-    await dp.start_polling(telegram_bot)
+    if configuration_properties.telegram_bot_enabled:
+        logger.info("Starting Telegram bot...")
+        await dp.start_polling(telegram_bot)
 
 
 if __name__ == "__main__":

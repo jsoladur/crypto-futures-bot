@@ -163,6 +163,24 @@ class TradeNowService:
     ) -> PositionHints:
         entry_price = ticker.ask_or_close if is_long else ticker.bid_or_close
 
+        if stop_loss_percent_value <= 0:
+            return PositionHints(
+                entry_price=entry_price,
+                break_even_price=entry_price,
+                is_long=is_long,
+                is_safe=False,
+                margin=0.0,
+                leverage=0,
+                notional_size=0.0,
+                liquidation_price=0.0,
+                stop_loss_price=entry_price,
+                move_sl_to_break_even_price=entry_price,
+                move_sl_to_first_target_profit_price=entry_price,
+                take_profit_price=entry_price,
+                potential_loss=0.0,
+                potential_profit=0.0,
+            )
+
         # 1. Calculate Stop Loss Price
         stop_loss_price = self._orders_analytics_service.get_stop_loss_price(
             entry_price=entry_price,
@@ -194,6 +212,24 @@ class TradeNowService:
         required_leverage = math.ceil(target_notional_size / available_margin) if available_margin > 0 else 1
         # Final Decision: Pick the smaller leverage
         final_leverage = min(required_leverage, max_survival_leverage)
+
+        if final_leverage < 1:
+            return PositionHints(
+                entry_price=entry_price,
+                break_even_price=entry_price,
+                is_long=is_long,
+                is_safe=False,
+                margin=0.0,
+                leverage=0,
+                notional_size=0.0,
+                liquidation_price=0.0,
+                stop_loss_price=entry_price,
+                move_sl_to_break_even_price=entry_price,
+                move_sl_to_first_target_profit_price=entry_price,
+                take_profit_price=entry_price,
+                potential_loss=0.0,
+                potential_profit=0.0,
+            )
 
         # 3. Calculate Liquidation Price
         if is_long:

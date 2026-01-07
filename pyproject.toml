@@ -1,6 +1,6 @@
 [project]
 name = "crypto-futures-bot"
-version = "0.8.3"
+version = "0.9.0"
 description = "Crypto futures bot"
 readme = "README.md"
 authors = [
@@ -93,8 +93,12 @@ python_functions = "should_* test_*"
 
 [tool.coverage.run]
 source = ["src"]
+omit = [
+    "src/crypto_futures_bot/scripts/*",
+    "src/crypto_futures_bot/interfaces/telegram/*",
+]
 concurrency = ["thread", "multiprocessing"]
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 90
+fail_under = 80

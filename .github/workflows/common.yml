@@ -30,8 +30,6 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
       - name: Run tests
-        # FIXME: Remove this when the project has tests
-        continue-on-error: true
         run: |
           uv run task test:coverage
       - name: Upload coverage to Coveralls

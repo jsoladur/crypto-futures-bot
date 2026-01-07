@@ -79,3 +79,54 @@ class BotStrategy(Strategy):
                 self.buy(sl=sl_price, tp=tp_price, size=size_pct)
             else:
                 self.sell(sl=sl_price, tp=tp_price, size=size_pct)
+
+        # -----------------------------------------------------------
+        # EXIT LOGIC / SL MANAGEMENT
+        # -----------------------------------------------------------
+        if self.position:
+            current_trade = self.trades[-1]
+            signal_bar_index = current_trade.entry_bar - 1
+            entry_series = self.data.df.iloc[signal_bar_index]
+            entry_candle_indicators = CandleStickIndicators.from_series(
+                symbol="TEST", index=CandleStickEnum.LAST, series=entry_series
+            )
+            (move_sl_to_break_even_price, move_sl_to_first_target_profit_price, _) = (
+                self.orders_analytics_service.get_take_profit_price_levels(
+                    entry_price=current_trade.entry_price,
+                    is_long=current_trade.is_long,
+                    last_candlestick_indicators=entry_candle_indicators,
+                    signal_parametrization_item=self.signal_parametrization,
+                    symbol_market_config=self.symbol_market_config,
+                )
+            )
+
+            break_even_price = self.orders_analytics_service.calculate_break_even_price(
+                entry_price=current_trade.entry_price,
+                symbol_market_config=self.symbol_market_config,
+                is_long=self.position.is_long,
+            )
+            # 3. Check Triggers using HIGH/LOW (Simulating intra-candle movement)
+            current_sl = current_trade.sl
+            new_sl = current_sl
+
+            # Grab the High and Low of the last completed candle
+            last_high = self.data.High[-1]
+            last_low = self.data.Low[-1]
+
+            if current_trade.is_long:
+                # LONG: Check if price went HIGH enough to trigger update
+                if last_high >= move_sl_to_first_target_profit_price:
+                    new_sl = max(current_sl, move_sl_to_break_even_price)
+                elif last_high >= move_sl_to_break_even_price:
+                    new_sl = max(current_sl, break_even_price)
+            else:
+                # SHORT: Check if price went LOW enough to trigger update
+                if last_low <= move_sl_to_first_target_profit_price:
+                    new_sl = min(current_sl, move_sl_to_break_even_price)
+                elif last_low <= move_sl_to_break_even_price:
+                    new_sl = min(current_sl, break_even_price)
+
+            # 4. Update the SL
+            # Note: This update will apply effectively starting from the NEXT candle.
+            if new_sl != current_sl:
+                current_trade.sl = new_sl

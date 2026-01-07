@@ -7,10 +7,10 @@ source .venv/bin/activate
 PAIRS=(
     "DOGE"
     "PENGU"
-    "ZEC"
     "XRP"
-    "SOL"
-    "BNB"
+    # "ZEC"
+    # "SOL"
+    # "BNB"
 )
 
 # Define the directory where the result logs will be saved.

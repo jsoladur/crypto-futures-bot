@@ -22,7 +22,7 @@
       "args": [
         "research",
         "--currency=DOGE",
-        "--days=90",
+        "--days=30",
         "--no-apply-paralellism",
       ],
       "justMyCode": false

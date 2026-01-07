@@ -14,6 +14,7 @@ class BotStrategy(Strategy):
     orders_analytics_service: OrdersAnalyticsService | None = None
     symbol_market_config: SymbolMarketConfig | None = None
     signal_parametrization: SignalParametrizationItem | None = None
+    risk: float | None = None
 
     def init(self):
         # Indicators are already computed in the dataframe passed to Backtest

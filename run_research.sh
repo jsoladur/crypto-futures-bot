@@ -3,15 +3,10 @@
 source .venv/bin/activate
 
 # --- CONFIGURATION ---
-# Define the "" pairs you want to test.
-PAIRS=(
-    "DOGE"
-    "PENGU"
-    "ZEC"
-    "XRP"
-    "SOL"
-    "BNB"
-)
+# Fetch all USDT futures pairs from MEXC
+echo "Fetching available cryptocurrencies from MEXC..."
+PAIRS=($(curl -s "https://contract.mexc.com/api/v1/contract/detail" | jq -r '.data[] | select(.quoteCoin == "USDT") | .baseCoin' | sort | uniq))
+echo "Found ${#PAIRS[@]} USDT pairs."
 
 # Define the directory where the result logs will be saved.
 OUTPUT_DIR="out"

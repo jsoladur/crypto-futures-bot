@@ -1,6 +1,6 @@
 import logging
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from crypto_futures_bot.domain.vo import AutoTraderCryptoCurrencyItem
@@ -30,6 +30,17 @@ class AutoTraderCryptoCurrencyService:
             if not any(item.currency == tracked_crypto_currency for item in ret):
                 ret.append(AutoTraderCryptoCurrencyItem(currency=tracked_crypto_currency, activated=False))
         ret = sorted(ret, key=lambda x: x.currency)
+        return ret
+
+    @transactional(read_only=True)
+    async def count_enabled(self, *, session: AsyncSession | None = None) -> int:
+        query = (
+            select(func.count(AutoTraderCryptoCurrency.id))
+            .select_from(AutoTraderCryptoCurrency)
+            .where(AutoTraderCryptoCurrency.activated.is_(True))
+        )
+        result = await session.execute(query)
+        ret = result.scalar()
         return ret
 
     @transactional(read_only=True)

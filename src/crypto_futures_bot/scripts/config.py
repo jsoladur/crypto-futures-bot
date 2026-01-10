@@ -25,6 +25,7 @@ class Container(containers.DeclarativeContainer):
     push_notification_service_mock = providers.Object(SimpleNamespace())
     event_emitter_mock = providers.Object(SimpleNamespace())
     scheduler_mock = providers.Object(SimpleNamespace(add_job=_noop_add_job))
+    auto_trader_crypto_currency_service_mock = providers.Object(SimpleNamespace())
     tracked_crypto_currency_service_mock = providers.Object(SimpleNamespace())
     signal_parametrization_service_mock = providers.Object(SimpleNamespace())
     risk_management_service_mock = providers.Object(SimpleNamespace())
@@ -57,6 +58,7 @@ class Container(containers.DeclarativeContainer):
         signal_parametrization_service=signal_parametrization_service_mock,
         risk_management_service=risk_management_service_mock,
         tracked_crypto_currency_service=tracked_crypto_currency_service_mock,
+        auto_trader_crypto_currency_service=auto_trader_crypto_currency_service_mock,
     )
 
     market_signal_service = providers.Singleton(

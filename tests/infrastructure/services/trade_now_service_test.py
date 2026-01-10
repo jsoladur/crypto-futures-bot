@@ -105,6 +105,9 @@ async def should_get_trade_now_hints_properly(faker: Faker, test_environment: tu
             AsyncMock(return_value=candlestick_indicators),
         ),
         patch.object(trade_now_service._tracked_crypto_currency_service, "count", AsyncMock(return_value=1)),
+        patch.object(
+            trade_now_service._auto_trader_crypto_currency_service, "count_enabled", AsyncMock(return_value=0)
+        ),
         patch.object(trade_now_service._risk_management_service, "get", AsyncMock(return_value=RiskManagementItem())),
     ):
         hints = await trade_now_service.get_trade_now_hints(tracked_currency)

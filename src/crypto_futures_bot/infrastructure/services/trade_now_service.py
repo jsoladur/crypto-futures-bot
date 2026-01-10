@@ -17,6 +17,9 @@ from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import (
     SymbolMarketConfig,
     SymbolTicker,
 )
+from crypto_futures_bot.infrastructure.services.auto_trader_crypto_currency_service import (
+    AutoTraderCryptoCurrencyService,
+)
 from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_service import CryptoTechnicalAnalysisService
 from crypto_futures_bot.infrastructure.services.orders_analytics_service import OrdersAnalyticsService
 from crypto_futures_bot.infrastructure.services.risk_management_service import RiskManagementService
@@ -33,6 +36,7 @@ class TradeNowService:
         orders_analytics_service: OrdersAnalyticsService,
         risk_management_service: RiskManagementService,
         tracked_crypto_currency_service: TrackedCryptoCurrencyService,
+        auto_trader_crypto_currency_service: AutoTraderCryptoCurrencyService,
     ):
         self._futures_exchange_service = futures_exchange_service
         self._signal_parametrization_service = signal_parametrization_service
@@ -40,6 +44,7 @@ class TradeNowService:
         self._orders_analytics_service = orders_analytics_service
         self._risk_management_service = risk_management_service
         self._tracked_crypto_currency_service = tracked_crypto_currency_service
+        self._auto_trader_crypto_currency_service = auto_trader_crypto_currency_service
 
     async def open_position(
         self, crypto_currency: TrackedCryptoCurrencyItem, position_type: PositionTypeEnum
@@ -172,7 +177,10 @@ class TradeNowService:
         )
 
         # 2. Risk & Leverage Calculation
-        num_assets_investing = await self._tracked_crypto_currency_service.count()
+        num_tracked_assets = await self._tracked_crypto_currency_service.count()
+        num_auto_traded_enabled_assets = await self._auto_trader_crypto_currency_service.count_enabled()
+        num_assets_investing = min(num_tracked_assets, num_auto_traded_enabled_assets)
+        num_assets_investing = num_assets_investing if num_assets_investing > 0 else 1
         risk_management = await self._risk_management_service.get()
 
         # Financial Goal: How much we WANT to risk

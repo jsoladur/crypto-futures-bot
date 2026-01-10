@@ -1,6 +1,8 @@
+from typing import Any
+
 import pydash
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
+from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
 from crypto_futures_bot.constants import RISK_MANAGEMENT_ALLOWED_VALUES_LIST
@@ -170,4 +172,12 @@ class KeyboardsBuilder:
             InlineKeyboardButton(text="☑️ Yes", callback_data=yes_button_callback_data),
             InlineKeyboardButton(text="🔙 No", callback_data="go_back_home"),
         )
+        return builder.as_markup()
+
+    @staticmethod
+    def get_signal_parametrization_keyboard_for(values: list[Any]) -> ReplyKeyboardMarkup:
+        builder = ReplyKeyboardBuilder()
+        keyboard_buttons = [KeyboardButton(text=str(value)) for value in values]
+        for buttons_chunk in pydash.chunk(keyboard_buttons, size=2):
+            builder.row(*buttons_chunk)
         return builder.as_markup()

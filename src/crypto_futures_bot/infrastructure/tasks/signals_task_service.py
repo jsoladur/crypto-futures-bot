@@ -94,7 +94,7 @@ class SignalsTaskService(AbstractTaskService):
         self, tracked_crypto_currency: TrackedCryptoCurrencyItem, *, account_info: AccountInfo
     ) -> None:
         try:
-            logger.info(f"Evaluating signals for {tracked_crypto_currency.to_symbol(account_info=account_info)}")
+            logger.info(f"Evaluating signals for {tracked_crypto_currency.to_symbol(account_info=account_info)}...")
             signal_parametrization_item = await self._signal_parametrization_service.find_by_crypto_currency(
                 crypto_currency=tracked_crypto_currency.currency
             )

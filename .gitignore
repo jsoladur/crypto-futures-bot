@@ -235,9 +235,18 @@ pyrightconfig.json
 .db*/*.sqlite
 
 ### Backtesting ###
+
 *.html
 data/**/*.csv
 data/**/*.parquet
+
+### Gemini ###
+**/.gemini/
+GEMINI.local.md
+.gemini/*.local.json
+!/.gemini/
+!.gemini/commands/
+!.gemini/config.yaml
 
 
 # End of https://www.toptal.com/developers/gitignore/api/dotenv,python,macos,visualstudiocode

@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "pre_read_file": [
+      {
+        "disallow": [
+          ".env"
+        ]
+      }
+    ]
+  }
+}

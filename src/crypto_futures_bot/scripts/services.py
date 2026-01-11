@@ -271,8 +271,13 @@ class BacktestingService:
                 atr_tp_mult=atr_tp_mult,
                 long_entry_oversold_threshold=long_entry_oversold_threshold,
                 short_entry_overbought_threshold=short_entry_overbought_threshold,
+                double_confirm_trend=double_confirm_trend,
             )
-            for long_entry_oversold_threshold, short_entry_overbought_threshold, atr_sl_mult, atr_tp_mult in product(
-                LONG_ENTRY_OVERSOLD_THRESHOLDS, SHORT_ENTRY_OVERBOUGHT_THRESHOLDS, SL_MULTIPLIERS, TP_MULTIPLIERS
+            for long_entry_oversold_threshold, short_entry_overbought_threshold, atr_sl_mult, atr_tp_mult, double_confirm_trend in product(  # noqa: E501
+                LONG_ENTRY_OVERSOLD_THRESHOLDS,
+                SHORT_ENTRY_OVERBOUGHT_THRESHOLDS,
+                SL_MULTIPLIERS,
+                TP_MULTIPLIERS,
+                [True, False],
             )
         ]

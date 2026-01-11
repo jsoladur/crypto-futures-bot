@@ -33,6 +33,7 @@ async def should_save_and_find_parametrization_properly(faker: Faker, test_envir
         atr_tp_mult=faker.pyfloat(min_value=1, max_value=5, right_digits=1),
         long_entry_oversold_threshold=faker.pyint(min_value=20, max_value=30),
         short_entry_overbought_threshold=faker.pyint(min_value=70, max_value=80),
+        double_confirm_trend=faker.pybool(),
     )
     await signal_parametrization_service.save_or_update(new_params)
 
@@ -43,3 +44,4 @@ async def should_save_and_find_parametrization_properly(faker: Faker, test_envir
     assert updated_params.atr_tp_mult == new_params.atr_tp_mult
     assert updated_params.long_entry_oversold_threshold == new_params.long_entry_oversold_threshold
     assert updated_params.short_entry_overbought_threshold == new_params.short_entry_overbought_threshold
+    assert updated_params.double_confirm_trend == new_params.double_confirm_trend

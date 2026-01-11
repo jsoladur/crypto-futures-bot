@@ -139,6 +139,7 @@ class BacktestingService:
                 )
         results.sort(
             key=lambda r: (
+                # r.stats.get("SQN", -float("inf")),
                 r.stats.get("Return [%]", -float("inf")),
                 r.stats.get("Win Rate [%]", -float("inf")),
                 -r.stats.get(
@@ -155,6 +156,7 @@ class BacktestingService:
             f"📈 Short Entry Overbought Threshold = {best_result.signal_parametrization_item.short_entry_overbought_threshold}",  # noqa: E501
             f"🛡️ SL ATR x = {best_result.signal_parametrization_item.atr_sl_mult}",  # noqa: E501
             f"🏁 TP ATR x = {best_result.signal_parametrization_item.atr_tp_mult}",  # noqa: E501
+            f"➿ Double Confirm Trend? = {'🟢' if best_result.signal_parametrization_item.double_confirm_trend else '🟥'}",  # noqa: E501
             "",
             "📊 Stats:",
             *[f"{key}: {value}" for key, value in best_result.stats.items()],
@@ -271,8 +273,13 @@ class BacktestingService:
                 atr_tp_mult=atr_tp_mult,
                 long_entry_oversold_threshold=long_entry_oversold_threshold,
                 short_entry_overbought_threshold=short_entry_overbought_threshold,
+                double_confirm_trend=double_confirm_trend,
             )
-            for long_entry_oversold_threshold, short_entry_overbought_threshold, atr_sl_mult, atr_tp_mult in product(
-                LONG_ENTRY_OVERSOLD_THRESHOLDS, SHORT_ENTRY_OVERBOUGHT_THRESHOLDS, SL_MULTIPLIERS, TP_MULTIPLIERS
+            for long_entry_oversold_threshold, short_entry_overbought_threshold, atr_sl_mult, atr_tp_mult, double_confirm_trend in product(  # noqa: E501
+                LONG_ENTRY_OVERSOLD_THRESHOLDS,
+                SHORT_ENTRY_OVERBOUGHT_THRESHOLDS,
+                SL_MULTIPLIERS,
+                TP_MULTIPLIERS,
+                [True, False],
             )
         ]

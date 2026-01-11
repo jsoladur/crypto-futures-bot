@@ -54,6 +54,7 @@ def backtest(
     ),
     atr_sl_mult: float = typer.Option(DEFAULT_ATR_SL_MULT, help="ATR SL multiplier"),
     atr_tp_mult: float = typer.Option(DEFAULT_ATR_TP_MULT, help="ATR TP multiplier"),
+    double_confirm_trend: bool = typer.Option(False, help="Double confirm trend"),
     risk: float = typer.Option(DEFAULT_RISK_MANAGEMENT_PERCENTAGE, help="Risk management percentage"),
     show_plot: bool = typer.Option(False, help="Show plot"),
 ):
@@ -72,6 +73,7 @@ def backtest(
             short_entry_overbought_threshold=short_entry_overbought_threshold,
             atr_sl_mult=atr_sl_mult,
             atr_tp_mult=atr_tp_mult,
+            double_confirm_trend=double_confirm_trend,
             risk=risk,
             show_plot=show_plot,
         )

@@ -59,6 +59,7 @@ class BacktestingService:
         short_entry_overbought_threshold: float,
         atr_sl_mult: float,
         atr_tp_mult: float,
+        double_confirm_trend: bool,
         risk: float,
         show_plot: bool = False,
     ) -> None:
@@ -74,6 +75,7 @@ class BacktestingService:
             short_entry_overbought_threshold=short_entry_overbought_threshold,
             atr_sl_mult=atr_sl_mult,
             atr_tp_mult=atr_tp_mult,
+            double_confirm_trend=double_confirm_trend,
             risk=risk,
             symbol_market_config=symbol_market_config,
         )
@@ -127,6 +129,7 @@ class BacktestingService:
                     short_entry_overbought_threshold=signal_parametrization_item.short_entry_overbought_threshold,
                     atr_sl_mult=signal_parametrization_item.atr_sl_mult,
                     atr_tp_mult=signal_parametrization_item.atr_tp_mult,
+                    double_confirm_trend=signal_parametrization_item.double_confirm_trend,
                     risk=risk,
                     symbol_market_config=symbol_market_config,
                     use_tqdm=False,
@@ -173,6 +176,7 @@ class BacktestingService:
         short_entry_overbought_threshold: float,
         atr_sl_mult: float,
         atr_tp_mult: float,
+        double_confirm_trend: bool,
         risk: float,
         symbol_market_config: SymbolMarketConfig,
         use_tqdm: bool = True,
@@ -196,6 +200,7 @@ class BacktestingService:
                     atr_tp_mult=atr_tp_mult,
                     long_entry_oversold_threshold=long_entry_oversold_threshold,
                     short_entry_overbought_threshold=short_entry_overbought_threshold,
+                    double_confirm_trend=double_confirm_trend,
                 ),
             )
             return bt, stats

@@ -109,7 +109,7 @@ class SignalsTaskService(AbstractTaskService):
             logger.info(
                 f"SignalsEvaluationResult[{symbol}]: "
                 f"<Long Entry? = {signals_evaluation_result.long_entry}, "
-                f"Short Entry = {signals_evaluation_result.short_entry}>"
+                f"Short Entry? = {signals_evaluation_result.short_entry}>"
             )
             chat_ids = await self._push_notification_service.get_actived_subscription_by_type(
                 notification_type=PushNotificationTypeEnum.SIGNALS

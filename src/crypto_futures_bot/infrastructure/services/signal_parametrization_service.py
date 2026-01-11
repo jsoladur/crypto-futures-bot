@@ -19,6 +19,7 @@ class SignalParametrizationService:
                 atr_tp_mult=entity.atr_tp_mult,
                 long_entry_oversold_threshold=entity.long_entry_oversold_threshold,
                 short_entry_overbought_threshold=entity.short_entry_overbought_threshold,
+                double_confirm_trend=bool(entity.double_confirm_trend),
             )
         else:
             ret = SignalParametrizationItem(crypto_currency=crypto_currency)
@@ -32,6 +33,7 @@ class SignalParametrizationService:
             entity.atr_tp_mult = item.atr_tp_mult
             entity.long_entry_oversold_threshold = item.long_entry_oversold_threshold
             entity.short_entry_overbought_threshold = item.short_entry_overbought_threshold
+            entity.double_confirm_trend = item.double_confirm_trend
         else:
             entity = SignalParametrization(
                 crypto_currency=item.crypto_currency,
@@ -39,6 +41,7 @@ class SignalParametrizationService:
                 atr_tp_mult=item.atr_tp_mult,
                 long_entry_oversold_threshold=item.long_entry_oversold_threshold,
                 short_entry_overbought_threshold=item.short_entry_overbought_threshold,
+                double_confirm_trend=item.double_confirm_trend,
             )
             session.add(entity)
         await session.flush()

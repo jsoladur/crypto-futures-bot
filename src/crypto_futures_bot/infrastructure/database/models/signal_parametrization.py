@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from sqlalchemy import UUID, Column, Float, String, UniqueConstraint
+from sqlalchemy import UUID, Boolean, Column, Float, String, UniqueConstraint
 
 from crypto_futures_bot.infrastructure.database.models.base import Persistable
 
@@ -16,3 +16,4 @@ class SignalParametrization(Persistable):
     atr_tp_mult: float = Column(Float, nullable=False)
     long_entry_oversold_threshold: float = Column(Float, nullable=False)
     short_entry_overbought_threshold: float = Column(Float, nullable=False)
+    double_confirm_trend: bool = Column(Boolean, nullable=True, default=True)

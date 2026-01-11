@@ -15,3 +15,4 @@ class SignalParametrizationItem:
     short_entry_overbought_threshold: float = DEFAULT_SHORT_ENTRY_OVERBOUGHT_THRESHOLD
     atr_sl_mult: float = DEFAULT_ATR_SL_MULT
     atr_tp_mult: float = DEFAULT_ATR_TP_MULT
+    double_confirm_trend: bool = True

@@ -1,4 +1,6 @@
 from aiogram import F
+from aiogram.types import KeyboardButton
+from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from aiogram3_form import Form, FormField
 
 from crypto_futures_bot.constants import (
@@ -6,6 +8,7 @@ from crypto_futures_bot.constants import (
     SHORT_ENTRY_OVERBOUGHT_THRESHOLDS,
     SL_MULTIPLIERS,
     TP_MULTIPLIERS,
+    YES_NO_VALUES,
 )
 from crypto_futures_bot.domain.vo import SignalParametrizationItem
 from crypto_futures_bot.interfaces.telegram.utils.keyboards_builder import KeyboardsBuilder
@@ -40,6 +43,12 @@ class SignalParametrizationForm(Form):
         filter=F.text.in_([str(value) for value in TP_MULTIPLIERS]) & F.text,
         reply_markup=KeyboardsBuilder.get_signal_parametrization_keyboard_for(TP_MULTIPLIERS),
     )
+    double_confirm_trend: str = FormField(
+        enter_message_text="➿ Double Confirm Trend?",
+        error_message_text=f"❌ Invalid value. Valid values: {', '.join(YES_NO_VALUES)}",
+        filter=F.text.in_(YES_NO_VALUES) & F.text,
+        reply_markup=ReplyKeyboardBuilder().add(*(KeyboardButton(text=text) for text in YES_NO_VALUES)).as_markup(),
+    )
 
     def to_value_object(self, crypto_currency: str) -> SignalParametrizationItem:
         ret = SignalParametrizationItem(
@@ -48,5 +57,6 @@ class SignalParametrizationForm(Form):
             atr_tp_mult=float(self.atr_tp_mult),
             long_entry_oversold_threshold=float(self.long_entry_oversold_threshold),
             short_entry_overbought_threshold=float(self.short_entry_overbought_threshold),
+            double_confirm_trend=bool(self.double_confirm_trend.lower() == "yes"),
         )
         return ret

@@ -94,17 +94,22 @@ class SignalsTaskService(AbstractTaskService):
         self, tracked_crypto_currency: TrackedCryptoCurrencyItem, *, account_info: AccountInfo
     ) -> None:
         try:
+            symbol = tracked_crypto_currency.to_symbol(account_info=account_info)
+            logger.info(f"Evaluating signals for {symbol}...")
             signal_parametrization_item = await self._signal_parametrization_service.find_by_crypto_currency(
                 crypto_currency=tracked_crypto_currency.currency
             )
-            technical_analysis_df = await self._crypto_technical_analysis_service.get_technical_analysis(
-                symbol=tracked_crypto_currency.to_symbol(account_info=account_info)
-            )
+            technical_analysis_df = await self._crypto_technical_analysis_service.get_technical_analysis(symbol=symbol)
             signals_evaluation_result, *_ = await self._check_signals(
                 tracked_crypto_currency=tracked_crypto_currency,
                 technical_analysis_df=technical_analysis_df,
                 account_info=account_info,
                 signal_parametrization_item=signal_parametrization_item,
+            )
+            logger.info(
+                f"SignalsEvaluationResult[{symbol}]: "
+                f"<Long Entry? = {signals_evaluation_result.long_entry}, "
+                f"Short Entry = {signals_evaluation_result.short_entry}>"
             )
             chat_ids = await self._push_notification_service.get_actived_subscription_by_type(
                 notification_type=PushNotificationTypeEnum.SIGNALS
@@ -131,15 +136,12 @@ class SignalsTaskService(AbstractTaskService):
         *,
         signal_parametrization_item: SignalParametrizationItem,
     ) -> tuple[SignalsEvaluationResult, CandleStickIndicators]:
+        symbol = tracked_crypto_currency.to_symbol(account_info=account_info)
         prev_candle = await self._crypto_technical_analysis_service.get_candlestick_indicators(
-            symbol=tracked_crypto_currency.to_symbol(account_info=account_info),
-            index=CandleStickEnum.PREV,
-            technical_analysis_df=technical_analysis_df,
+            symbol=symbol, index=CandleStickEnum.PREV, technical_analysis_df=technical_analysis_df
         )
         last_candle = await self._crypto_technical_analysis_service.get_candlestick_indicators(
-            symbol=tracked_crypto_currency.to_symbol(account_info=account_info),
-            index=CandleStickEnum.LAST,
-            technical_analysis_df=technical_analysis_df,
+            symbol=symbol, index=CandleStickEnum.LAST, technical_analysis_df=technical_analysis_df
         )
         signals_evaluation_result = SignalsEvaluationResult(
             timestamp=last_candle.timestamp,
@@ -285,7 +287,9 @@ class SignalsTaskService(AbstractTaskService):
         signal_parametrization_item: SignalParametrizationItem,
     ) -> bool:
         # TREND: Price is above the baseline (Safety)
-        trend_ok = prev_candle.closing_price > prev_candle.ema50 and last_candle.closing_price > last_candle.ema50
+        trend_ok = (
+            not signal_parametrization_item.double_confirm_trend or prev_candle.closing_price > prev_candle.ema50
+        ) and last_candle.closing_price > last_candle.ema50
         # TRIGGER: Stoch Cross Up
         stoch_cross = (
             prev_candle.stoch_rsi_k <= prev_candle.stoch_rsi_d and last_candle.stoch_rsi_k > last_candle.stoch_rsi_d
@@ -304,7 +308,9 @@ class SignalsTaskService(AbstractTaskService):
         *,
         signal_parametrization_item: SignalParametrizationItem,
     ) -> bool:
-        trend_ok = prev_candle.closing_price < prev_candle.ema50 and last_candle.closing_price < last_candle.ema50
+        trend_ok = (
+            not signal_parametrization_item.double_confirm_trend or prev_candle.closing_price < prev_candle.ema50
+        ) and last_candle.closing_price < last_candle.ema50
         stoch_cross = (
             prev_candle.stoch_rsi_k >= prev_candle.stoch_rsi_d and last_candle.stoch_rsi_k < last_candle.stoch_rsi_d
         )

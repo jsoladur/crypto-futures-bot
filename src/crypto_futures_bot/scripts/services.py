@@ -139,6 +139,7 @@ class BacktestingService:
                 )
         results.sort(
             key=lambda r: (
+                r.stats.get("SQN", -float("inf")),
                 r.stats.get("Return [%]", -float("inf")),
                 r.stats.get("Win Rate [%]", -float("inf")),
                 -r.stats.get(

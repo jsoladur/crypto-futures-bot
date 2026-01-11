@@ -285,7 +285,7 @@ class SignalsTaskService(AbstractTaskService):
         signal_parametrization_item: SignalParametrizationItem,
     ) -> bool:
         # TREND: Price is above the baseline (Safety)
-        trend_ok = last_candle.closing_price > last_candle.ema50
+        trend_ok = prev_candle.closing_price > prev_candle.ema50 and last_candle.closing_price > last_candle.ema50
         # TRIGGER: Stoch Cross Up
         stoch_cross = (
             prev_candle.stoch_rsi_k <= prev_candle.stoch_rsi_d and last_candle.stoch_rsi_k > last_candle.stoch_rsi_d
@@ -304,7 +304,7 @@ class SignalsTaskService(AbstractTaskService):
         *,
         signal_parametrization_item: SignalParametrizationItem,
     ) -> bool:
-        trend_ok = last_candle.closing_price < last_candle.ema50
+        trend_ok = prev_candle.closing_price < prev_candle.ema50 and last_candle.closing_price < last_candle.ema50
         stoch_cross = (
             prev_candle.stoch_rsi_k >= prev_candle.stoch_rsi_d and last_candle.stoch_rsi_k < last_candle.stoch_rsi_d
         )

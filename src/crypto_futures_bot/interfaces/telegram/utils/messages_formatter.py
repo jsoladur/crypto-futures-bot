@@ -190,7 +190,7 @@ class MessagesFormatter:
             f"📈 Short Entry Overbought Threshold = {html.code(signal_parametrization.short_entry_overbought_threshold)}",  # noqa: E501
             f"🛡️ SL ATR x = {html.code(signal_parametrization.atr_sl_mult)}",
             f"🏁 TP ATR x = {html.code(signal_parametrization.atr_tp_mult)}",
-            f"➿ Double Confirm Trend? = {'🟢' if signal_parametrization.double_confirm_trend else '🟥'}\n",
+            f"➿ Double Confirm Trend? = {'🟢' if signal_parametrization.double_confirm_trend else '🟥'}",
         ]
         ret = "\n".join(message_lines)
         return ret

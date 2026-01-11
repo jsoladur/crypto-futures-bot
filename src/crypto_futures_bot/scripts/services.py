@@ -156,6 +156,7 @@ class BacktestingService:
             f"📈 Short Entry Overbought Threshold = {best_result.signal_parametrization_item.short_entry_overbought_threshold}",  # noqa: E501
             f"🛡️ SL ATR x = {best_result.signal_parametrization_item.atr_sl_mult}",  # noqa: E501
             f"🏁 TP ATR x = {best_result.signal_parametrization_item.atr_tp_mult}",  # noqa: E501
+            f"➿ Double Confirm Trend? = {'🟢' if best_result.signal_parametrization_item.double_confirm_trend else '🟥'}",  # noqa: E501
             "",
             "📊 Stats:",
             *[f"{key}: {value}" for key, value in best_result.stats.items()],

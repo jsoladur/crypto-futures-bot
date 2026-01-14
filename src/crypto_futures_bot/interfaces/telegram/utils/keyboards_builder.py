@@ -158,7 +158,6 @@ class KeyboardsBuilder:
         buttons = [
             InlineKeyboardButton(text=f"{percent_value}%", callback_data=f"persist_risk_management_$_{percent_value}")
             for percent_value in RISK_MANAGEMENT_ALLOWED_VALUES_LIST
-            if percent_value >= 1.0
         ]
         # Add buttons in rows of 5
         for buttons_chunk in pydash.chunk(buttons, size=4):

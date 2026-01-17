@@ -41,7 +41,7 @@
       "type": "debugpy",
       "request": "launch",
       "module": "pytest",
-      "args": ["-x", "--log-cli-level=INFO", "-k", "should_get_trade_now_hints_properly"],
+      "args": ["-x", "--log-cli-level=INFO", "-k", "should_open_position_successfully"],
       "envFile": "${workspaceFolder}/.env.pytest",
       "justMyCode": false
     }

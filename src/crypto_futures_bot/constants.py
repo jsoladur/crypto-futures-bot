@@ -14,10 +14,6 @@ SIGNALS_EVALUATION_RESULT_EVENT_NAME = "signals_evaluation_result"
 MARKET_SIGNAL_EVENT_NAME = "market_signal"
 TRIGGER_BUY_ACTION_EVENT_NAME = "trigger_buy_action"
 
-RISK_MANAGEMENT_ALLOWED_VALUES_LIST = np.concatenate(
-    (np.arange(0.25, 5.25, 0.25), np.arange(5.50, 10.50, 0.50), np.arange(11, 21, 1))
-).tolist()
-
 MEXC_WEB_API_BASE_URL = "https://futures.mexc.com/api"
 MEXC_WEB_API_DEFAULT_HEADERS = {
     "accept": "*/*",
@@ -55,5 +51,9 @@ DEFAULT_SHORT_ENTRY_OVERBOUGHT_THRESHOLD = 0.9
 LONG_ENTRY_OVERSOLD_THRESHOLDS = np.round(np.arange(0.05, 0.41, 0.05), 2).tolist()
 SHORT_ENTRY_OVERBOUGHT_THRESHOLDS = np.round(np.arange(0.60, 0.96, 0.05), 2).tolist()
 
-
 DEFAULT_RISK_MANAGEMENT_PERCENTAGE = 1.5
+DEFAULT_RISK_MANAGEMENT_NUMBER_OF_CONCURRENT_TRADES = 3
+RISK_MANAGEMENT_ALLOWED_VALUES_LIST = np.concatenate(
+    (np.arange(0.25, 5.25, 0.25), np.arange(5.50, 10.50, 0.50), np.arange(11, 21, 1))
+).tolist()
+RISK_MANAGEMENT_NUMBER_OF_CONCURRENT_TRADES_VALUES_LIST = list(range(1, 11))

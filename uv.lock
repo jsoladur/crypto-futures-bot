@@ -524,7 +524,7 @@ wheels = [
 
 [[package]]
 name = "crypto-futures-bot"
-version = "0.10.3"
+version = "0.11.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiogram" },

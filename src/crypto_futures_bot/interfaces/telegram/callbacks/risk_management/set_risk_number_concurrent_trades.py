@@ -20,15 +20,16 @@ keyboards_builder: KeyboardsBuilder = (
 )
 
 
-@dp.callback_query(lambda c: c.data == "set_risk_management")
-async def set_risk_management_callback_handler(callback_query: CallbackQuery, state: FSMContext) -> None:
+@dp.callback_query(lambda c: c.data == "set_risk_number_concurrent_trades")
+async def set_risk_number_concurrent_trades_callback_handler(callback_query: CallbackQuery, state: FSMContext) -> None:
     is_user_logged = await session_storage_service.is_user_logged(state)
     if is_user_logged:
         await callback_query.message.answer(
-            "ℹ️ Select the new Risk Management value to apply", reply_markup=keyboards_builder.get_risk_percent_values()
+            "ℹ️ Select the number of concurrent trades to apply",
+            reply_markup=keyboards_builder.get_risk_number_concurrent_trades_values(),
         )
     else:
         await callback_query.message.answer(
-            "⚠️ Please log in to set the risk management value (%).",
+            "⚠️ Please log in to set the number of concurrent trades.",
             reply_markup=keyboards_builder.get_login_keyboard(state),
         )

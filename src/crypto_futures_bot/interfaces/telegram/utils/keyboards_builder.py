@@ -5,7 +5,10 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardBu
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
-from crypto_futures_bot.constants import RISK_MANAGEMENT_ALLOWED_VALUES_LIST
+from crypto_futures_bot.constants import (
+    RISK_MANAGEMENT_ALLOWED_VALUES_LIST,
+    RISK_MANAGEMENT_NUMBER_OF_CONCURRENT_TRADES_VALUES_LIST,
+)
 from crypto_futures_bot.domain.vo import AutoTraderCryptoCurrencyItem, TrackedCryptoCurrencyItem
 from crypto_futures_bot.domain.vo.push_notification_item import PushNotificationItem
 from crypto_futures_bot.domain.vo.risk_management_item import RiskManagementItem
@@ -147,7 +150,13 @@ class KeyboardsBuilder:
         builder = InlineKeyboardBuilder()
         builder.row(
             InlineKeyboardButton(
-                text=f"🛡️ Current Risk :: {risk_management_item.percent_value} %", callback_data="set_risk_management"
+                text=f"🛡️ Current Risk :: {risk_management_item.percent_value} %", callback_data="set_risk_percent"
+            )
+        )
+        builder.row(
+            InlineKeyboardButton(
+                text=f"🔝 Max. Concurrent Trades :: {risk_management_item.number_of_concurrent_trades}",
+                callback_data="set_risk_number_concurrent_trades",
             )
         )
         builder.row(InlineKeyboardButton(text="🔙 Back", callback_data="go_back_home"))
@@ -156,11 +165,23 @@ class KeyboardsBuilder:
     def get_risk_percent_values(self) -> InlineKeyboardMarkup:
         builder = InlineKeyboardBuilder()
         buttons = [
-            InlineKeyboardButton(text=f"{percent_value}%", callback_data=f"persist_risk_management_$_{percent_value}")
+            InlineKeyboardButton(text=f"{percent_value}%", callback_data=f"persist_risk_percent_$_{percent_value}")
             for percent_value in RISK_MANAGEMENT_ALLOWED_VALUES_LIST
         ]
         # Add buttons in rows of 5
         for buttons_chunk in pydash.chunk(buttons, size=4):
+            builder.row(*buttons_chunk)
+        builder.row(InlineKeyboardButton(text="🔙 Back", callback_data="go_back_home"))
+        return builder.as_markup()
+
+    def get_risk_number_concurrent_trades_values(self) -> InlineKeyboardMarkup:
+        builder = InlineKeyboardBuilder()
+        buttons = [
+            InlineKeyboardButton(text=f"{value}", callback_data=f"persist_risk_max_trades_$_{value}")
+            for value in RISK_MANAGEMENT_NUMBER_OF_CONCURRENT_TRADES_VALUES_LIST
+        ]
+        # Add buttons in rows of 5
+        for buttons_chunk in pydash.chunk(buttons, size=5):
             builder.row(*buttons_chunk)
         builder.row(InlineKeyboardButton(text="🔙 Back", callback_data="go_back_home"))
         return builder.as_markup()

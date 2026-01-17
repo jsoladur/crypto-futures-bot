@@ -124,13 +124,19 @@ class MessagesFormatter:
             case OpenPositionResultTypeEnum.ALREADY_OPEN:
                 message = (
                     "⚠️ WARNING ⚠️:: There is already a position open for "
-                    f"{html.bold(open_position_result.crypto_currency.currency)}!!"
+                    f"{html.bold(open_position_result.crypto_currency.currency)}!"
                 )
             case OpenPositionResultTypeEnum.NO_FUNDS:
                 message = (
                     f"❗ ATTENTION ❗:: There are not enough funds to open a "
                     f"{html.bold(open_position_result.position_type.value.upper())} "
-                    f"position for {html.bold(open_position_result.crypto_currency.currency)}!!"
+                    f"position for {html.bold(open_position_result.crypto_currency.currency)}!"
+                )
+            case OpenPositionResultTypeEnum.MAX_CONCURRENT_POSITIONS_REACHED:
+                message = (
+                    "❗ ATTENTION ❗:: The maximum number of concurrent open positions has been reached! "
+                    f"Cannot open a new {html.bold(open_position_result.position_type.value.upper())} position for "
+                    f"{html.bold(open_position_result.crypto_currency.currency)}!"
                 )
             case OpenPositionResultTypeEnum.ERROR:
                 message = (

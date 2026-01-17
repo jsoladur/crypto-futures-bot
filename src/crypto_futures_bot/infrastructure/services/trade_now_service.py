@@ -5,6 +5,7 @@ from crypto_futures_bot.domain.vo import (
     CandleStickIndicators,
     OpenPositionResult,
     PositionHints,
+    RiskManagementItem,
     SignalParametrizationItem,
     TrackedCryptoCurrencyItem,
     TradeNowHints,
@@ -59,42 +60,53 @@ class TradeNowService:
                 position_type=position_type,
             )
         else:
-            trade_now_hints = await self.get_trade_now_hints(crypto_currency)
-            position_hints = trade_now_hints.long if position_type == PositionTypeEnum.LONG else trade_now_hints.short
-            if position_hints.margin <= 0:
+            risk_management = await self._risk_management_service.get()
+            if len(open_positions) >= risk_management.number_of_concurrent_trades:
                 ret = OpenPositionResult(
-                    result_type=OpenPositionResultTypeEnum.NO_FUNDS,
+                    result_type=OpenPositionResultTypeEnum.MAX_CONCURRENT_POSITIONS_REACHED,
                     crypto_currency=crypto_currency,
                     position_type=position_type,
                 )
             else:
-                market_position_order = CreateMarketPositionOrder(
-                    symbol=crypto_currency.to_symbol(account_info=account_info),
-                    initial_margin=position_hints.margin,
-                    leverage=position_hints.leverage,
-                    open_type=PositionOpenTypeEnum.ISOLATED,
-                    position_type=position_type,
-                    stop_loss_price=position_hints.stop_loss_price,
-                    take_profit_price=position_hints.take_profit_price,
+                trade_now_hints = await self.get_trade_now_hints(crypto_currency, risk_management=risk_management)
+                position_hints = (
+                    trade_now_hints.long if position_type == PositionTypeEnum.LONG else trade_now_hints.short
                 )
-                opened_position = await self._futures_exchange_service.create_market_position_order(
-                    position=market_position_order
-                )
-                position_metrics = await self._orders_analytics_service.get_metrics_by_position_id(
-                    position_id=opened_position.position_id
-                )
-                ret = OpenPositionResult(
-                    result_type=OpenPositionResultTypeEnum.SUCCESS,
-                    crypto_currency=crypto_currency,
-                    position_type=position_type,
-                    position_metrics=position_metrics,
-                )
+                if position_hints.margin <= 0:
+                    ret = OpenPositionResult(
+                        result_type=OpenPositionResultTypeEnum.NO_FUNDS,
+                        crypto_currency=crypto_currency,
+                        position_type=position_type,
+                    )
+                else:
+                    market_position_order = CreateMarketPositionOrder(
+                        symbol=crypto_currency.to_symbol(account_info=account_info),
+                        initial_margin=position_hints.margin,
+                        leverage=position_hints.leverage,
+                        open_type=PositionOpenTypeEnum.ISOLATED,
+                        position_type=position_type,
+                        stop_loss_price=position_hints.stop_loss_price,
+                        take_profit_price=position_hints.take_profit_price,
+                    )
+                    opened_position = await self._futures_exchange_service.create_market_position_order(
+                        position=market_position_order
+                    )
+                    position_metrics = await self._orders_analytics_service.get_metrics_by_position_id(
+                        position_id=opened_position.position_id
+                    )
+                    ret = OpenPositionResult(
+                        result_type=OpenPositionResultTypeEnum.SUCCESS,
+                        crypto_currency=crypto_currency,
+                        position_type=position_type,
+                        position_metrics=position_metrics,
+                    )
         return ret
 
     async def get_trade_now_hints(
         self,
         tracked_crypto_currency: TrackedCryptoCurrencyItem,
         *,
+        risk_management: RiskManagementItem | None = None,
         signal_parametrization_item: SignalParametrizationItem | None = None,
     ) -> TradeNowHints:
         account_info = await self._futures_exchange_service.get_account_info()
@@ -132,6 +144,7 @@ class TradeNowService:
             candlestick_indicators=candlestick_indicators,
             signal_parametrization_item=signal_parametrization_item,
             symbol_market_config=symbol_market_config,
+            risk_management=risk_management,
             is_long=True,
         )
         short = await self._calculate_position_hints(
@@ -142,6 +155,7 @@ class TradeNowService:
             candlestick_indicators=candlestick_indicators,
             signal_parametrization_item=signal_parametrization_item,
             symbol_market_config=symbol_market_config,
+            risk_management=risk_management,
             is_long=False,
         )
         return TradeNowHints(
@@ -164,6 +178,7 @@ class TradeNowService:
         symbol_market_config: SymbolMarketConfig,
         *,
         is_long: bool,
+        risk_management: RiskManagementItem | None = None,
         maintenance_margin_rate: float = 0.01,
     ) -> PositionHints:
         entry_price = ticker.ask_or_close if is_long else ticker.bid_or_close
@@ -181,7 +196,8 @@ class TradeNowService:
         num_auto_traded_enabled_assets = await self._auto_trader_crypto_currency_service.count_enabled()
         num_assets_investing = min(num_tracked_assets, num_auto_traded_enabled_assets)
         num_assets_investing = num_assets_investing if num_assets_investing > 0 else 1
-        risk_management = await self._risk_management_service.get()
+        if not risk_management:
+            risk_management = await self._risk_management_service.get()
 
         # Financial Goal: How much we WANT to risk
         desired_risk_amount = round(

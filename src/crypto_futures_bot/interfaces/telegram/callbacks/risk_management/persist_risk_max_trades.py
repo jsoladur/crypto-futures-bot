@@ -1,5 +1,6 @@
 import logging
 import re
+from dataclasses import replace
 
 from aiogram import Dispatcher, F, html
 from aiogram.fsm.context import FSMContext
@@ -30,28 +31,30 @@ risk_management_service: RiskManagementService = (
     application_container.infrastructure_container().services_container().risk_management_service()
 )
 
-REGEX = r"^persist_risk_management_\$_(.+?)$"
+REGEX = r"^persist_risk_max_trades_\$_(.+?)$"
 
 
 @dp.callback_query(F.data.regexp(REGEX))
-async def handle_persist_risk_management_callback(callback_query: CallbackQuery, state: FSMContext):
+async def handle_persist_risk_max_trades_callback(callback_query: CallbackQuery, state: FSMContext):
     is_user_logged = await session_storage_service.is_user_logged(state)
     if is_user_logged:
         try:
             match = re.match(REGEX, callback_query.data)
-            risk_management_value = float(match.group(1).strip())
-            await risk_management_service.update(RiskManagementItem(percent_value=risk_management_value))
+            max_trades_value = int(match.group(1).strip())
+            item: RiskManagementItem = await risk_management_service.get()
+            updated_item = replace(item, number_of_concurrent_trades=max_trades_value)
+            await risk_management_service.update(updated_item)
             await callback_query.message.answer(
-                f"🛡️ Risk Management percent changed to {html.code(str(risk_management_value))} %",
+                f"🛡️ Risk Management max trades changed to {html.code(str(max_trades_value))}",
                 reply_markup=keyboards_builder.get_home_keyboard(),
             )
         except Exception as e:
-            logger.error(f"Error persisting risk management percent value: {str(e)}", exc_info=True)
+            logger.error(f"Error persisting risk management max trades value: {str(e)}", exc_info=True)
             await callback_query.message.answer(
-                f"⚠️ An error occurred while persisting risk management percent value. Please try again later:\n\n{html.code(format_exception(e))}"  # noqa: E501
+                f"⚠️ An error occurred while persisting risk management max trades value. Please try again later:\n\n{html.code(format_exception(e))}"  # noqa: E501
             )
     else:
         await callback_query.message.answer(
-            "⚠️ Please log in to set the risk management percent value (%).",
+            "⚠️ Please log in to set the risk management max trades value.",
             reply_markup=keyboards_builder.get_login_keyboard(state),
         )

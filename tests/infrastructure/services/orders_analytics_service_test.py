@@ -39,7 +39,7 @@ async def should_get_open_position_metrics_properly(faker: Faker, test_environme
     )
     ticker = SymbolTicker(timestamp=int(datetime.now(UTC).timestamp() * 1000), symbol=symbol, close=26000.0)
     market_config = SymbolMarketConfig(
-        symbol=symbol, price_precision=2, amount_precision=3, contract_size=faker.pyfloat()
+        symbol=symbol, price_precision=2, amount_precision=3, contract_size=faker.pyfloat(), max_leverage=300
     )
 
     mock_get_open_positions = AsyncMock(return_value=[position])
@@ -88,7 +88,9 @@ def should_calculate_stop_loss_and_take_profit_properly(faker: Faker, test_envir
         relative_volume=faker.pyfloat(),
     )
     signal_parametrization = SignalParametrizationItem(crypto_currency="BTC", atr_sl_mult=1.5, atr_tp_mult=3.0)
-    market_config = SymbolMarketConfig(symbol=symbol, price_precision=2, amount_precision=3, contract_size=0.001)
+    market_config = SymbolMarketConfig(
+        symbol=symbol, price_precision=2, amount_precision=3, contract_size=0.001, max_leverage=300
+    )
 
     sl_percent = orders_analytics_service.get_stop_loss_percent_value(
         entry_price,
@@ -129,7 +131,9 @@ def should_calculate_break_even_price_properly(test_environment: tuple[Container
 
     entry_price = 100.0
     symbol = "BTC/USDT"
-    market_config = SymbolMarketConfig(symbol=symbol, price_precision=2, amount_precision=3, contract_size=0.001)
+    market_config = SymbolMarketConfig(
+        symbol=symbol, price_precision=2, amount_precision=3, contract_size=0.001, max_leverage=300
+    )
     taker_fee = 0.001  # 0.1%
 
     with patch.object(orders_analytics_service._futures_exchange_service, "get_taker_fee", return_value=taker_fee):

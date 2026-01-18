@@ -55,7 +55,9 @@ async def should_get_trade_now_hints_properly(faker: Faker, test_environment: tu
     )
     ticker = SymbolTicker(timestamp=int(datetime.now(UTC).timestamp() * 1000), symbol=symbol, close=100.0)
     signal_params = SignalParametrizationItem(crypto_currency=currency)
-    market_config = SymbolMarketConfig(symbol=symbol, price_precision=2, amount_precision=3, contract_size=0.001)
+    market_config = SymbolMarketConfig(
+        symbol=symbol, price_precision=2, amount_precision=3, contract_size=0.001, max_leverage=300
+    )
     candlestick_indicators = CandleStickIndicators(
         symbol=ticker.symbol,
         timestamp=datetime.now(UTC),
@@ -228,7 +230,9 @@ async def should_not_open_position_if_already_open(faker: Faker, test_environmen
         initial_margin=faker.pyfloat(),
         open_type=PositionOpenTypeEnum.ISOLATED,
     )
-    market_config = SymbolMarketConfig(symbol=symbol, price_precision=2, amount_precision=3, contract_size=0.001)
+    market_config = SymbolMarketConfig(
+        symbol=symbol, price_precision=2, amount_precision=3, contract_size=0.001, max_leverage=300
+    )
     ticker = SymbolTicker(
         timestamp=int(datetime.now(UTC).timestamp() * 1000), symbol=symbol, close=100.0, mark_price=faker.pyfloat()
     )

@@ -7,3 +7,4 @@ class SymbolMarketConfig:
     price_precision: int
     amount_precision: int
     contract_size: float
+    max_leverage: int

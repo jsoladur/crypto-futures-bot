@@ -193,6 +193,7 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
             price_precision=int(raw_future_market["info"]["priceScale"]),
             amount_precision=int(raw_future_market["info"]["amountScale"]),
             contract_size=float(raw_future_market["info"]["contractSize"]),
+            max_leverage=int(raw_future_market["info"]["maxLeverage"]),
         )
 
     @override

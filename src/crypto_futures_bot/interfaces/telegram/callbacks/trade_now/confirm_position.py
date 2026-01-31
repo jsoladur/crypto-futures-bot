@@ -47,5 +47,5 @@ async def confirm_position_callback_handler(callback_query: CallbackQuery, state
     else:
         await callback_query.message.answer(
             "⚠️ Please log in to operate with tracked crypto currencies.",
-            reply_markup=keyboards_builder.get_login_keyboard(state),
+            reply_markup=keyboards_builder.get_login_keyboard(),
         )

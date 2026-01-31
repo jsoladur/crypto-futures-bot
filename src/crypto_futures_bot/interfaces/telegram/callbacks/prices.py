@@ -46,5 +46,5 @@ async def get_current_prices_callback_handler(callback_query: CallbackQuery, sta
     else:
         await callback_query.message.answer(
             "⚠️ Please log in to get the current crypto currency prices!",
-            reply_markup=keyboards_builder.get_login_keyboard(state),
+            reply_markup=keyboards_builder.get_login_keyboard(),
         )

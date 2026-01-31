@@ -55,5 +55,5 @@ async def trade_now_result_callback_handler(callback_query: CallbackQuery, state
             )
     else:
         await callback_query.message.answer(
-            "⚠️ Please log in to use trade now hints features.", reply_markup=keyboards_builder.get_login_keyboard(state)
+            "⚠️ Please log in to use trade now hints features.", reply_markup=keyboards_builder.get_login_keyboard()
         )

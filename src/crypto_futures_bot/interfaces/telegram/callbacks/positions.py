@@ -53,5 +53,5 @@ async def get_positions_callback_handler(callback_query: CallbackQuery, state: F
             )
     else:
         await callback_query.message.answer(
-            "⚠️ Please log in to get the positions info.", reply_markup=keyboards_builder.get_login_keyboard(state)
+            "⚠️ Please log in to get the positions info.", reply_markup=keyboards_builder.get_login_keyboard()
         )

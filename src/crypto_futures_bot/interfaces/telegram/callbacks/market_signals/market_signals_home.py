@@ -43,5 +43,5 @@ async def market_signals_home_callback_handler(callback_query: CallbackQuery, st
             )
     else:
         await callback_query.message.answer(
-            "⚠️ Please log in to fetch the market signals.", reply_markup=keyboards_builder.get_login_keyboard(state)
+            "⚠️ Please log in to fetch the market signals.", reply_markup=keyboards_builder.get_login_keyboard()
         )

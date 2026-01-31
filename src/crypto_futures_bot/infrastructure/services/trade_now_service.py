@@ -200,8 +200,9 @@ class TradeNowService:
             risk_management = await self._risk_management_service.get()
 
         # Financial Goal: How much we WANT to risk
+        # Using futures balance to be more conservative
         desired_risk_amount = round(
-            portfolio_balance.total_balance * (risk_management.percent_value / 100),
+            portfolio_balance.futures_balance * (risk_management.percent_value / 100),
             ndigits=symbol_market_config.price_precision,
         )
         target_notional_size = round(

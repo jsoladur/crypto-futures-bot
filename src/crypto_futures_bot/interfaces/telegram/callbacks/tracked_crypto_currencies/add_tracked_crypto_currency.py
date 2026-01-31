@@ -41,5 +41,5 @@ async def add_tracker_crypto_currency_callback_handler(
     else:
         await callback_query.message.answer(
             "⚠️ Please log in to operate with favourites crypto currencies.",
-            reply_markup=keyboards_builder.get_login_keyboard(state),
+            reply_markup=keyboards_builder.get_login_keyboard(),
         )

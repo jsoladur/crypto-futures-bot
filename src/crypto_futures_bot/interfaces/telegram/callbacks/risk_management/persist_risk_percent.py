@@ -56,5 +56,5 @@ async def handle_persist_risk_percent_callback(callback_query: CallbackQuery, st
     else:
         await callback_query.message.answer(
             "⚠️ Please log in to set the risk management percent value (%).",
-            reply_markup=keyboards_builder.get_login_keyboard(state),
+            reply_markup=keyboards_builder.get_login_keyboard(),
         )

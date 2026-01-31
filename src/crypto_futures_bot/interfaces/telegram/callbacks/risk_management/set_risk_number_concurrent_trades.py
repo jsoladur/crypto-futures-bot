@@ -31,5 +31,5 @@ async def set_risk_number_concurrent_trades_callback_handler(callback_query: Cal
     else:
         await callback_query.message.answer(
             "⚠️ Please log in to set the number of concurrent trades.",
-            reply_markup=keyboards_builder.get_login_keyboard(state),
+            reply_markup=keyboards_builder.get_login_keyboard(),
         )

@@ -56,5 +56,5 @@ async def handle_persist_risk_max_trades_callback(callback_query: CallbackQuery,
     else:
         await callback_query.message.answer(
             "⚠️ Please log in to set the risk management max trades value.",
-            reply_markup=keyboards_builder.get_login_keyboard(state),
+            reply_markup=keyboards_builder.get_login_keyboard(),
         )

@@ -46,5 +46,5 @@ async def get_portfolio_balance_callback(callback_query: CallbackQuery, state: F
     else:
         await callback_query.message.answer(
             "⚠️ Please log in to get the current the Portfolio balance!",
-            reply_markup=keyboards_builder.get_login_keyboard(state),
+            reply_markup=keyboards_builder.get_login_keyboard(),
         )

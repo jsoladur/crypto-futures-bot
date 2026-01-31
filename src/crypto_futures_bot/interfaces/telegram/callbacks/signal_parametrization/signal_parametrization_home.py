@@ -43,6 +43,5 @@ async def signal_parametrization_home_callback_handler(callback_query: CallbackQ
             )
     else:
         await callback_query.message.answer(
-            "⚠️ Please log in to fetch the signal parametrization.",
-            reply_markup=keyboards_builder.get_login_keyboard(state),
+            "⚠️ Please log in to fetch the signal parametrization.", reply_markup=keyboards_builder.get_login_keyboard()
         )

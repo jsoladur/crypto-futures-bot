@@ -93,6 +93,7 @@ class SignalsTaskService(AbstractTaskService):
     async def _eval_signals(
         self, tracked_crypto_currency: TrackedCryptoCurrencyItem, *, account_info: AccountInfo
     ) -> None:
+        signals_evaluation_result: SignalsEvaluationResult | None = None
         try:
             symbol = tracked_crypto_currency.to_symbol(account_info=account_info)
             logger.info(f"Evaluating signals for {symbol}...")
@@ -125,7 +126,7 @@ class SignalsTaskService(AbstractTaskService):
             logger.error(f"Error evaluating signals for {tracked_crypto_currency}: {e}", exc_info=True)
             await self._notify_fatal_error_via_telegram(e)
         finally:
-            if signals_evaluation_result.is_entry:
+            if signals_evaluation_result is not None and signals_evaluation_result.is_entry:
                 self._event_emitter.emit(SIGNALS_EVALUATION_RESULT_EVENT_NAME, signals_evaluation_result)
 
     async def _check_signals(

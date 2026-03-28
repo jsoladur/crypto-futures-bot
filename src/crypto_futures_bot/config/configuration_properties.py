@@ -35,6 +35,9 @@ class ConfigurationProperties(BaseSettings):
     mexc_api_key: str | None = None
     mexc_api_secret: str | None = None
 
+    bybit_api_key: str | None = None
+    bybit_api_secret: str | None = None
+
     currency_code: str = DEFAULT_CURRENCY_CODE
 
     login_enabled: bool = True

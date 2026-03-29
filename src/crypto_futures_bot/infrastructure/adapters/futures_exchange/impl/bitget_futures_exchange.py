@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import math
 from dataclasses import replace
 from typing import Any, override
 
@@ -7,7 +8,7 @@ import backoff
 import ccxt.async_support as ccxt
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
-from crypto_futures_bot.constants import BITGET_FUTURES_TAKER_FEES
+from crypto_futures_bot.constants import BITGET_CREATE_MARKET_POSITION_ORDER_SAFETY_FACTOR, BITGET_FUTURES_TAKER_FEES
 from crypto_futures_bot.domain.enums import PositionOpenTypeEnum, PositionTypeEnum
 from crypto_futures_bot.domain.types import Timeframe
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
@@ -74,8 +75,8 @@ class BitgetFuturesExchangeService(AbstractFuturesExchangeService):
         spot_balance = await self._get_spot_total_balance(account_info)
         swap_balance = await self._get_futures_total_balance(account_info)
         return PortfolioBalance(
-            spot_balance=round(spot_balance, ndigits=2),
-            futures_balance=round(swap_balance, ndigits=2),
+            spot_balance=self._floor_round(spot_balance, ndigits=2),
+            futures_balance=self._floor_round(swap_balance, ndigits=2),
             currency_code=account_info.currency_code,
         )
 
@@ -85,11 +86,11 @@ class BitgetFuturesExchangeService(AbstractFuturesExchangeService):
         raw_balance = await self._get_futures_wallet_raw_balance(account_info)
         return FuturesWallet(
             currency=account_info.currency_code,
-            equity=round(float(raw_balance.get("equity", 0.0)), ndigits=2),
-            position_margin=round(float(raw_balance.get("positionMargin", 0.0)), ndigits=2),
-            available_balance=round(float(raw_balance.get("availableBalance", 0.0)), ndigits=2),
-            cash_balance=round(float(raw_balance.get("cashBalance", 0.0)), ndigits=2),
-            unrealized_pnl=round(float(raw_balance.get("unrealizedPnl", 0.0)), ndigits=2),
+            equity=self._floor_round(float(raw_balance.get("equity", 0.0)), ndigits=2),
+            position_margin=self._floor_round(float(raw_balance.get("positionMargin", 0.0)), ndigits=2),
+            available_balance=self._floor_round(float(raw_balance.get("availableBalance", 0.0)), ndigits=2),
+            cash_balance=self._floor_round(float(raw_balance.get("cashBalance", 0.0)), ndigits=2),
+            unrealized_pnl=self._floor_round(float(raw_balance.get("unrealizedPnl", 0.0)), ndigits=2),
         )
 
     @override
@@ -214,19 +215,41 @@ class BitgetFuturesExchangeService(AbstractFuturesExchangeService):
         symbol_ticker = await self.get_symbol_ticker(symbol=symbol)
         crypto_currency = symbol.split("/")[0]
         symbol_market_config = await self.get_symbol_market_config(crypto_currency=crypto_currency)
-        # Calculate the number of contracts
-        raw_amount = (
-            position.initial_margin
-            * position.leverage
-            / (symbol_ticker.mark_price * symbol_market_config.contract_size)
+
+        # 1. Fetch taker fee rate
+        taker_fee_rate = self.get_taker_fee()
+
+        # 2. Add a Slippage Buffer (5%)
+        # This prevents the exchange from rejecting the market order due to their internal slippage lock
+        safe_margin = position.initial_margin * BITGET_CREATE_MARKET_POSITION_ORDER_SAFETY_FACTOR
+
+        # 3. Use Ask/Bid instead of Mark Price for accurate execution cost
+        if position.position_type == PositionTypeEnum.LONG:
+            # Buy at the Ask
+            execution_price = symbol_ticker.ask if symbol_ticker.ask else symbol_ticker.mark_price
+        else:
+            # Sell at the Bid
+            execution_price = symbol_ticker.bid if symbol_ticker.bid else symbol_ticker.mark_price
+
+        # 4. Calculate max affordable nominal using the buffered margin and real execution price
+        max_affordable_nominal = safe_margin / ((1 / position.leverage) + taker_fee_rate)
+
+        # 5. Calculate the raw amount
+        raw_amount = max_affordable_nominal / (execution_price * symbol_market_config.contract_size)
+
+        # 6. Format the amount safely using your floor rounding logic
+        amount = (
+            int(raw_amount)
+            if symbol_market_config.contract_size >= 1.0
+            else self._floor_round(raw_amount, ndigits=symbol_market_config.amount_precision)
         )
-        amount = int(raw_amount) if symbol_market_config.contract_size >= 1.0 else round(raw_amount, ndigits=4)
+
         order = await self._place_market_order(position, amount)
-        logger.info(f"Market position order created successfully, order_id: {order['id']}")
+
         await self._wait_for_order_to_close(order["id"], position=position)
         opened_position = await self._get_opened_position(position=position)
 
-        # Inject TP/SL because Bitget fetch_positions doesn't natively return triggers
+        # 7. Inject TP/SL
         return replace(
             opened_position, stop_loss_price=position.stop_loss_price, take_profit_price=position.take_profit_price
         )
@@ -253,31 +276,49 @@ class BitgetFuturesExchangeService(AbstractFuturesExchangeService):
         return ret
 
     async def _place_market_order(self, position: CreateMarketPositionOrder, amount: float | int) -> dict[str, Any]:
+        account_info = await self.get_account_info()
         async with self._order_lock:
-            # Set leverage for the symbol
-            await self._futures_client.set_leverage(position.leverage, position.symbol)
-
+            # 1. Determine sides and modes
             order_side = "buy" if position.position_type == PositionTypeEnum.LONG else "sell"
+            hold_side = "long" if position.position_type == PositionTypeEnum.LONG else "short"
+            margin_mode = str(position.open_type.value).lower()
+            # CCXT wrapper for Bitget's /api/v2/mix/account/set-margin-mode
+            await self._futures_client.set_margin_mode(
+                marginMode=margin_mode,
+                symbol=position.symbol,
+                params={"marginCoin": account_info.currency_code.upper()},
+            )
+            # --- Explicitly Set Leverage ---
+            leverage_params = {
+                "marginCoin": account_info.currency_code.upper(),
+                "marginMode": margin_mode,
+                "holdSide": hold_side,
+            }
+            await self._futures_client.set_leverage(
+                leverage=position.leverage, symbol=position.symbol, params=leverage_params
+            )
 
-            # Base parameters
+            # 2. Base parameters for the order
+            product_type = f"{account_info.currency_code.upper()}-FUTURES"
             params: dict[str, Any] = {
-                "marginCoin": "USDT",
-                "marginMode": str(position.open_type.value).lower(),
+                "marginCoin": account_info.currency_code.upper(),
+                "marginMode": margin_mode,
                 "tradeSide": "open",
+                "productType": product_type,
             }
 
-            # Attach Order-Level TP/SL (which acts as Full Position TP/SL for your strategy)
+            # 3. Attach Order-Level TP/SL
             if position.stop_loss_price is not None:
                 params["presetStopLossPrice"] = str(position.stop_loss_price)
-                params["presetStopLossExecutePrice"] = ""  # Market Execution
+                params["presetStopLossExecutePrice"] = ""
                 params["presetStopLossType"] = "mark_price"
 
             if position.take_profit_price is not None:
                 params["presetStopSurplusPrice"] = str(position.take_profit_price)
-                params["presetStopSurplusExecutePrice"] = ""  # Market Execution
+                params["presetStopSurplusExecutePrice"] = ""
                 params["presetStopSurplusType"] = "mark_price"
 
-            # Place market order for swap perpetual contract
+            # 4. Place market order
             return await self._futures_client.create_order(
                 symbol=position.symbol, type="market", side=order_side, amount=amount, params=params
             )
@@ -507,3 +548,7 @@ class BitgetFuturesExchangeService(AbstractFuturesExchangeService):
                 return PositionOpenTypeEnum.CROSS
             case _:
                 raise ValueError(f"Unknown margin mode: {margin_mode}")
+
+    def _floor_round(self, value: float, *, ndigits: int) -> float:
+        factor = 10**ndigits
+        return math.floor(value * factor) / factor

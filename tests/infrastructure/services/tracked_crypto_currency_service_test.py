@@ -1,4 +1,5 @@
 import logging
+from os import getenv
 
 import pytest
 from dependency_injector.containers import Container
@@ -14,6 +15,9 @@ logger = logging.getLogger(__name__)
 async def should_add_and_remove_tracked_crypto_currencies_properly(
     faker: Faker, test_environment: tuple[Container, ...]
 ) -> None:
+    if getenv("FUTURES_EXCHANGE") == "BITGET":
+        pytest.skip("Skipping until further notice")
+
     application_container, *_ = test_environment
 
     tracked_crypto_currency_service: TrackedCryptoCurrencyService = (

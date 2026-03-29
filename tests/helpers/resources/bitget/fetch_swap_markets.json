@@ -1,0 +1,239 @@
+[
+  {
+    "active": true,
+    "base": "BTC",
+    "baseId": "BTC",
+    "contract": true,
+    "contractSize": 0.001,
+    "future": false,
+    "id": "BTCUSDT",
+    "info": {
+      "baseCoin": "BTC",
+      "buyLimitPriceRatio": "0.01",
+      "deliveryPeriod": "",
+      "deliveryStartTime": "",
+      "deliveryTime": "",
+      "feeRateUpRatio": "0.005",
+      "fundInterval": "8",
+      "launchTime": "",
+      "limitOpenTime": "-1",
+      "maintainTime": "",
+      "makerFeeRate": "0.0002",
+      "maxLever": "125",
+      "maxPositionNum": "150",
+      "maxProductOrderNum": "400",
+      "maxSymbolOrderNum": "200",
+      "minLever": "1",
+      "minTradeNum": "0.001",
+      "minTradeUSDT": "5",
+      "offTime": "-1",
+      "openCostUpRatio": "0.01",
+      "posLimit": "0.05",
+      "priceEndStep": "1",
+      "pricePlace": "1",
+      "quoteCoin": "USDT",
+      "sellLimitPriceRatio": "0.01",
+      "sizeMultiplier": "0.001",
+      "supportMarginCoins": [
+        "USDT"
+      ],
+      "symbol": "BTCUSDT",
+      "symbolStatus": "normal",
+      "symbolType": "perpetual",
+      "takerFeeRate": "0.0006",
+      "volumePlace": "3"
+    },
+    "inverse": false,
+    "limits": {
+      "amount": {
+        "max": 10000,
+        "min": 0.001
+      },
+      "cost": {
+        "max": null,
+        "min": null
+      },
+      "leverage": {
+        "max": 125,
+        "min": 1
+      },
+      "price": {
+        "max": 1000000,
+        "min": 0.1
+      }
+    },
+    "linear": true,
+    "margin": false,
+    "option": false,
+    "precision": {
+      "amount": 3,
+      "price": 1
+    },
+    "quote": "USDT",
+    "quoteId": "USDT",
+    "settle": "USDT",
+    "settleId": "USDT",
+    "spot": false,
+    "swap": true,
+    "symbol": "BTC/USDT:USDT",
+    "type": "swap"
+  },
+  {
+    "active": true,
+    "base": "ETH",
+    "baseId": "ETH",
+    "contract": true,
+    "contractSize": 0.01,
+    "future": false,
+    "id": "ETHUSDT",
+    "info": {
+      "baseCoin": "ETH",
+      "buyLimitPriceRatio": "0.01",
+      "deliveryPeriod": "",
+      "deliveryStartTime": "",
+      "deliveryTime": "",
+      "feeRateUpRatio": "0.005",
+      "fundInterval": "8",
+      "launchTime": "",
+      "limitOpenTime": "-1",
+      "maintainTime": "",
+      "makerFeeRate": "0.0002",
+      "maxLever": "100",
+      "maxPositionNum": "150",
+      "maxProductOrderNum": "400",
+      "maxSymbolOrderNum": "200",
+      "minLever": "1",
+      "minTradeNum": "0.01",
+      "minTradeUSDT": "5",
+      "offTime": "-1",
+      "openCostUpRatio": "0.01",
+      "posLimit": "0.05",
+      "priceEndStep": "1",
+      "pricePlace": "2",
+      "quoteCoin": "USDT",
+      "sellLimitPriceRatio": "0.01",
+      "sizeMultiplier": "0.01",
+      "supportMarginCoins": [
+        "USDT"
+      ],
+      "symbol": "ETHUSDT",
+      "symbolStatus": "normal",
+      "symbolType": "perpetual",
+      "takerFeeRate": "0.0006",
+      "volumePlace": "2"
+    },
+    "inverse": false,
+    "limits": {
+      "amount": {
+        "max": 100000,
+        "min": 0.01
+      },
+      "cost": {
+        "max": null,
+        "min": null
+      },
+      "leverage": {
+        "max": 100,
+        "min": 1
+      },
+      "price": {
+        "max": 1000000,
+        "min": 0.01
+      }
+    },
+    "linear": true,
+    "margin": false,
+    "option": false,
+    "precision": {
+      "amount": 2,
+      "price": 2
+    },
+    "quote": "USDT",
+    "quoteId": "USDT",
+    "settle": "USDT",
+    "settleId": "USDT",
+    "spot": false,
+    "swap": true,
+    "symbol": "ETH/USDT:USDT",
+    "type": "swap"
+  },
+  {
+    "active": true,
+    "base": "SOL",
+    "baseId": "SOL",
+    "contract": true,
+    "contractSize": 0.1,
+    "future": false,
+    "id": "SOLUSDT",
+    "info": {
+      "baseCoin": "SOL",
+      "buyLimitPriceRatio": "0.01",
+      "deliveryPeriod": "",
+      "deliveryStartTime": "",
+      "deliveryTime": "",
+      "feeRateUpRatio": "0.005",
+      "fundInterval": "8",
+      "launchTime": "",
+      "limitOpenTime": "-1",
+      "maintainTime": "",
+      "makerFeeRate": "0.0002",
+      "maxLever": "75",
+      "maxPositionNum": "150",
+      "maxProductOrderNum": "400",
+      "maxSymbolOrderNum": "200",
+      "minLever": "1",
+      "minTradeNum": "0.1",
+      "minTradeUSDT": "5",
+      "offTime": "-1",
+      "openCostUpRatio": "0.01",
+      "posLimit": "0.05",
+      "priceEndStep": "1",
+      "pricePlace": "4",
+      "quoteCoin": "USDT",
+      "sellLimitPriceRatio": "0.01",
+      "sizeMultiplier": "0.1",
+      "supportMarginCoins": [
+        "USDT"
+      ],
+      "symbol": "SOLUSDT",
+      "symbolStatus": "normal",
+      "symbolType": "perpetual",
+      "takerFeeRate": "0.0006",
+      "volumePlace": "1"
+    },
+    "inverse": false,
+    "limits": {
+      "amount": {
+        "max": 1000000,
+        "min": 0.1
+      },
+      "cost": {
+        "max": null,
+        "min": null
+      },
+      "leverage": {
+        "max": 75,
+        "min": 1
+      },
+      "price": {
+        "max": 1000000,
+        "min": 0.0001
+      }
+    },
+    "linear": true,
+    "margin": false,
+    "option": false,
+    "precision": {
+      "amount": 1,
+      "price": 4
+    },
+    "quote": "USDT",
+    "quoteId": "USDT",
+    "settle": "USDT",
+    "settleId": "USDT",
+    "spot": false,
+    "swap": true,
+    "symbol": "SOL/USDT:USDT",
+    "type": "swap"
+  }
+]

@@ -1,0 +1,134 @@
+[
+  {
+    "active": true,
+    "code": "USDT",
+    "deposit": true,
+    "fee": 1.0,
+    "id": "bitget_usdt",
+    "info": {
+      "chains": [
+        {
+          "browserUrl": "https://tronscan.org/#/transaction/",
+          "chain": "TRC20",
+          "depositConfirm": "20",
+          "extraWithdrawFee": "0",
+          "minDepositAmount": "1",
+          "minWithdrawAmount": "10",
+          "needTag": "false",
+          "rechargeable": "true",
+          "withdrawConfirm": "20",
+          "withdrawFee": "1",
+          "withdrawable": "true"
+        }
+      ],
+      "coin": "USDT",
+      "coinId": "45",
+      "transfer": "true"
+    },
+    "limits": {
+      "amount": {
+        "max": null,
+        "min": null
+      },
+      "deposit": {
+        "max": null,
+        "min": 1.0
+      },
+      "withdraw": {
+        "max": null,
+        "min": 10.0
+      }
+    },
+    "name": "USDT",
+    "precision": 0.01,
+    "withdraw": true
+  },
+  {
+    "active": true,
+    "code": "BTC",
+    "deposit": true,
+    "fee": 0.0005,
+    "id": "bitget_btc",
+    "info": {
+      "chains": [
+        {
+          "browserUrl": "https://blockchair.com/bitcoin/transaction/",
+          "chain": "BTC",
+          "depositConfirm": "2",
+          "extraWithdrawFee": "0",
+          "minDepositAmount": "0.0001",
+          "minWithdrawAmount": "0.001",
+          "needTag": "false",
+          "rechargeable": "true",
+          "withdrawConfirm": "2",
+          "withdrawFee": "0.0005",
+          "withdrawable": "true"
+        }
+      ],
+      "coin": "BTC",
+      "coinId": "1",
+      "transfer": "true"
+    },
+    "limits": {
+      "amount": {
+        "max": null,
+        "min": null
+      },
+      "deposit": {
+        "max": null,
+        "min": 0.0001
+      },
+      "withdraw": {
+        "max": null,
+        "min": 0.001
+      }
+    },
+    "name": "BTC",
+    "precision": 1e-08,
+    "withdraw": true
+  },
+  {
+    "active": true,
+    "code": "ETH",
+    "deposit": true,
+    "fee": 0.005,
+    "id": "bitget_eth",
+    "info": {
+      "chains": [
+        {
+          "browserUrl": "https://etherscan.io/tx/",
+          "chain": "ETH",
+          "depositConfirm": "12",
+          "extraWithdrawFee": "0",
+          "minDepositAmount": "0.001",
+          "minWithdrawAmount": "0.01",
+          "needTag": "false",
+          "rechargeable": "true",
+          "withdrawConfirm": "12",
+          "withdrawFee": "0.005",
+          "withdrawable": "true"
+        }
+      ],
+      "coin": "ETH",
+      "coinId": "2",
+      "transfer": "true"
+    },
+    "limits": {
+      "amount": {
+        "max": null,
+        "min": null
+      },
+      "deposit": {
+        "max": null,
+        "min": 0.001
+      },
+      "withdraw": {
+        "max": null,
+        "min": 0.01
+      }
+    },
+    "name": "ETH",
+    "precision": 1e-08,
+    "withdraw": true
+  }
+]

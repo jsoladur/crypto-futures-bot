@@ -31,6 +31,9 @@ def defaults_env(faker: Faker) -> Generator[None]:
         environ["MEXC_API_KEY"] = faker.uuid4()
         environ["MEXC_API_SECRET"] = faker.uuid4()
         environ["MEXC_WEB_AUTH_TOKEN"] = faker.uuid4()
+        environ["BITGET_API_KEY"] = faker.uuid4()
+        environ["BITGET_API_SECRET"] = faker.uuid4()
+        environ["BITGET_API_PASSPHRASE"] = faker.uuid4()
         environ["TELEGRAM_BOT_ENABLED"] = "false"
         environ["TELEGRAM_BOT_TOKEN"] = f"{faker.pyint()}:{faker.uuid4().replace('-', '_')}"
         environ["LOGIN_ENABLED"] = "false"

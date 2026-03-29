@@ -218,17 +218,6 @@ class MEXCFuturesExchangeService(AbstractFuturesExchangeService):
         return ret
 
     @override
-    @backoff.on_exception(
-        backoff.constant,
-        exception=ccxt.BaseError,
-        interval=2,
-        max_tries=5,
-        jitter=backoff.full_jitter,
-        giveup=lambda e: isinstance(e, ccxt.BadRequest) or isinstance(e, ccxt.AuthenticationError),
-        on_backoff=lambda details: logger.warning(
-            f"[Retry {details['tries']}] " + f"Waiting {details['wait']:.2f}s due to {str(details['exception'])}"
-        ),
-    )
     async def get_position_by_id(self, position_id: str) -> Position:
         raise NotImplementedError("Operation not supported in MEXC exchange")
 

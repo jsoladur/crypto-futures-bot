@@ -58,3 +58,5 @@ RISK_MANAGEMENT_ALLOWED_VALUES_LIST = np.concatenate(
     (np.arange(0.25, 5.25, 0.25), np.arange(5.50, 10.50, 0.50), np.arange(11, 21, 1))
 ).tolist()
 RISK_MANAGEMENT_NUMBER_OF_CONCURRENT_TRADES_VALUES_LIST = list(range(1, 11))
+
+BITGET_CREATE_MARKET_POSITION_ORDER_SAFETY_FACTOR = 0.975  # 2.5% less to avoid insufficient balance errors

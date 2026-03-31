@@ -177,9 +177,7 @@ class MessagesFormatter:
             f"💸 {html.bold('Fees Paid')} = {position.fee} {ticker.quote_asset}",
         ]
         if position_metrics.profit_factor is not None:
-            message_lines.append(
-                f"⚖️ {html.bold('Profit Factor')} = {position_metrics.profit_factor} {ticker.quote_asset}"  # noqa: E501
-            )
+            message_lines.append(f"⚖️ {html.bold('Profit Factor')} = {position_metrics.profit_factor}")
         if position_metrics.potential_profit_at_tp is not None:
             message_lines.append(
                 f"🟢 {html.bold('Potential Profit at TP')} = {'+' if position_metrics.potential_profit_at_tp > 0 else '-'}{abs(position_metrics.potential_profit_at_tp)} {ticker.quote_asset}"  # noqa: E501

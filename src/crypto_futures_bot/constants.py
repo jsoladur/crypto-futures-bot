@@ -40,7 +40,14 @@ MEXC_WEB_API_DEFAULT_HEADERS = {
     "x-language": "en-US",
 }
 MEXC_FUTURES_TAKER_FEES = 0.0004
+
 BITGET_FUTURES_TAKER_FEES = 0.0006
+BITGET_MARKET_ORDER_SLIPPAGE_BUFFER = 0.025  # Bitget's 2.5% Market Order limit ratio
+BITGET_MARKET_ORDER_SAFETY_FACTOR = (
+    1 - BITGET_MARKET_ORDER_SLIPPAGE_BUFFER
+)  # 2.5% less to avoid insufficient balance errors
+
+
 DEFAULT_MARKET_SIGNAL_RETENTION_DAYS = 5
 
 YES_NO_VALUES = ["Yes", "No"]
@@ -58,5 +65,3 @@ RISK_MANAGEMENT_ALLOWED_VALUES_LIST = np.concatenate(
     (np.arange(0.25, 5.25, 0.25), np.arange(5.50, 10.50, 0.50), np.arange(11, 21, 1))
 ).tolist()
 RISK_MANAGEMENT_NUMBER_OF_CONCURRENT_TRADES_VALUES_LIST = list(range(1, 11))
-
-BITGET_CREATE_MARKET_POSITION_ORDER_SAFETY_FACTOR = 0.975  # 2.5% less to avoid insufficient balance errors

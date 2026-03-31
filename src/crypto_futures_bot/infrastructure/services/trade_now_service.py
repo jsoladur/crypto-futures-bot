@@ -82,6 +82,7 @@ class TradeNowService:
                     market_position_order = CreateMarketPositionOrder(
                         symbol=crypto_currency.to_symbol(account_info=account_info),
                         initial_margin=position_hints.margin,
+                        notional_size=position_hints.notional_size,
                         leverage=position_hints.leverage,
                         open_type=PositionOpenTypeEnum.ISOLATED,
                         position_type=position_type,
@@ -183,15 +184,7 @@ class TradeNowService:
     ) -> PositionHints:
         entry_price = ticker.ask_or_close if is_long else ticker.bid_or_close
 
-        # 1. Calculate Stop Loss Price
-        stop_loss_price = self._orders_analytics_service.get_stop_loss_price(
-            entry_price=entry_price,
-            stop_loss_percent_value=stop_loss_percent_value,
-            is_long=is_long,
-            symbol_market_config=symbol_market_config,
-        )
-
-        # 2. Risk & Leverage Calculation
+        # Risk & Leverage Calculation
         num_tracked_assets = await self._tracked_crypto_currency_service.count()
         num_auto_traded_enabled_assets = await self._auto_trader_crypto_currency_service.count_enabled()
         num_assets_investing = min(num_tracked_assets, num_auto_traded_enabled_assets)
@@ -202,17 +195,14 @@ class TradeNowService:
         # Financial Goal: How much we WANT to risk
         # Using futures balance to be more conservative
         desired_risk_amount = round(
-            portfolio_balance.futures_balance * (risk_management.percent_value / 100),
-            ndigits=symbol_market_config.price_precision,
+            portfolio_balance.futures_balance * (risk_management.percent_value / 100), ndigits=4
         )
-        target_notional_size = round(
-            desired_risk_amount / (stop_loss_percent_value / 100), ndigits=symbol_market_config.price_precision
-        )
+        target_notional_size = round(desired_risk_amount / (stop_loss_percent_value / 100), ndigits=4)
         # Margin Availability
         available_margin = round(
-            min(portfolio_balance.futures_balance / num_assets_investing, futures_wallet.available_balance),
-            ndigits=symbol_market_config.price_precision,
+            min(portfolio_balance.futures_balance / num_assets_investing, futures_wallet.available_balance), ndigits=4
         )
+
         # Safety Constraint: Max Leverage < 1 / (SL% + MMR)
         max_survival_leverage = math.floor(0.95 * (1.0 / ((stop_loss_percent_value / 100) + maintenance_margin_rate)))
         # Financial Constraint: Leverage needed to hit risk target
@@ -222,7 +212,15 @@ class TradeNowService:
             required_leverage if required_leverage > 0 else 1, max_survival_leverage if max_survival_leverage > 0 else 1
         )
         final_leverage = min(factible_leverage if factible_leverage > 0 else 1, symbol_market_config.max_leverage)
-        # 3. Calculate Liquidation Price
+
+        # Calculate Liquidation Price
+        # We need to calculate the stop loss price first to determine the liquidation price.
+        stop_loss_price = self._orders_analytics_service.get_stop_loss_price(
+            entry_price=entry_price,
+            stop_loss_percent_value=stop_loss_percent_value,
+            is_long=is_long,
+            symbol_market_config=symbol_market_config,
+        )
         if is_long:
             liquidation_price = round(
                 entry_price * (1 - (1 / final_leverage) + maintenance_margin_rate),
@@ -246,10 +244,10 @@ class TradeNowService:
                 symbol_market_config=symbol_market_config,
             )
         )
-
-        # --- NEW: Calculate Final Potential PnL ---
-        # We must use the ACTUAL size (which might be smaller than target if capped)
-        final_notional_size = round(available_margin * final_leverage, ndigits=symbol_market_config.price_precision)
+        # Calculate Final Potential PnL and Safe Size
+        max_possible_notional = round(available_margin * final_leverage, ndigits=4)
+        final_notional_size = round(min(target_notional_size, max_possible_notional), ndigits=4)
+        actual_margin_needed = round(final_notional_size / final_leverage, ndigits=4)
 
         # Loss: Size * % distance to SL
         # We use the percent value directly as it's cleaner, but using price diff is also fine.
@@ -267,7 +265,7 @@ class TradeNowService:
             ),
             is_long=is_long,
             is_safe=is_safe,
-            margin=available_margin,
+            margin=actual_margin_needed,
             leverage=final_leverage,
             notional_size=final_notional_size,
             liquidation_price=liquidation_price,
@@ -275,6 +273,6 @@ class TradeNowService:
             move_sl_to_break_even_price=move_sl_to_break_even_price,
             move_sl_to_first_target_profit_price=move_sl_to_first_target_profit_price,
             take_profit_price=take_profit_price,
-            potential_loss=round(potential_loss, ndigits=symbol_market_config.price_precision),
-            potential_profit=round(potential_profit, ndigits=symbol_market_config.price_precision),
+            potential_loss=round(potential_loss, ndigits=4),
+            potential_profit=round(potential_profit, ndigits=4),
         )

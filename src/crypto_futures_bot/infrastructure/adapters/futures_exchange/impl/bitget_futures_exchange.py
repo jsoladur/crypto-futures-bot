@@ -8,7 +8,11 @@ import backoff
 import ccxt.async_support as ccxt
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
-from crypto_futures_bot.constants import BITGET_CREATE_MARKET_POSITION_ORDER_SAFETY_FACTOR, BITGET_FUTURES_TAKER_FEES
+from crypto_futures_bot.constants import (
+    BITGET_FUTURES_TAKER_FEES,
+    BITGET_MARKET_ORDER_SAFETY_FACTOR,
+    BITGET_MARKET_ORDER_SLIPPAGE_BUFFER,
+)
 from crypto_futures_bot.domain.enums import PositionOpenTypeEnum, PositionTypeEnum
 from crypto_futures_bot.domain.types import Timeframe
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
@@ -217,27 +221,35 @@ class BitgetFuturesExchangeService(AbstractFuturesExchangeService):
         symbol_market_config = await self.get_symbol_market_config(crypto_currency=crypto_currency)
 
         # 1. Fetch taker fee rate
+        # Fetch taker fee rate
         taker_fee_rate = self.get_taker_fee()
-
-        # 2. Add a Slippage Buffer (5%)
-        # This prevents the exchange from rejecting the market order due to their internal slippage lock
-        safe_margin = position.initial_margin * BITGET_CREATE_MARKET_POSITION_ORDER_SAFETY_FACTOR
 
         # 3. Use Ask/Bid instead of Mark Price for accurate execution cost
         if position.position_type == PositionTypeEnum.LONG:
-            # Buy at the Ask
             execution_price = symbol_ticker.ask if symbol_ticker.ask else symbol_ticker.mark_price
+            # Long Bankruptcy Price is lower than entry
+            bankruptcy_factor = 1 - (1 / position.leverage)
         else:
-            # Sell at the Bid
             execution_price = symbol_ticker.bid if symbol_ticker.bid else symbol_ticker.mark_price
+            # Short Bankruptcy Price is higher than entry
+            bankruptcy_factor = 1 + (1 / position.leverage)
 
-        # 4. Calculate max affordable nominal using the buffered margin and real execution price
-        max_affordable_nominal = safe_margin / ((1 / position.leverage) + taker_fee_rate)
+        # 4. Calculate Effective Margin Rate based on Bitget's actual risk engine
+        estimated_closing_fee_rate = taker_fee_rate * bankruptcy_factor
 
-        # 5. Calculate the raw amount
-        raw_amount = max_affordable_nominal / (execution_price * symbol_market_config.contract_size)
+        effective_margin_rate = (1 + BITGET_MARKET_ORDER_SLIPPAGE_BUFFER) * (
+            (1 / position.leverage) + taker_fee_rate + estimated_closing_fee_rate
+        )
 
-        # 6. Format the amount safely using your floor rounding logic
+        max_affordable_nominal = self._floor_round(position.initial_margin / effective_margin_rate, ndigits=4)
+
+        # Pick the smaller value (Safety factor optional here, but good for dust protection)
+        final_nominal = min(position.notional_size, max_affordable_nominal)
+
+        # 5. Calculate the raw amount in Base Currency (expected by CCXT)
+        raw_amount = (final_nominal / execution_price) * BITGET_MARKET_ORDER_SAFETY_FACTOR
+
+        # 6. Format the amount safely using the exchange's precision
         amount = (
             int(raw_amount)
             if symbol_market_config.contract_size >= 1.0
@@ -245,7 +257,6 @@ class BitgetFuturesExchangeService(AbstractFuturesExchangeService):
         )
 
         order = await self._place_market_order(position, amount)
-
         await self._wait_for_order_to_close(order["id"], position=position)
         opened_position = await self._get_opened_position(position=position)
 

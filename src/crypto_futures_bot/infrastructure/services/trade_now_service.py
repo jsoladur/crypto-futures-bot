@@ -1,4 +1,5 @@
 import math
+from datetime import date, datetime
 
 from crypto_futures_bot.domain.enums import OpenPositionResultTypeEnum, PositionOpenTypeEnum, PositionTypeEnum
 from crypto_futures_bot.domain.vo import (
@@ -50,58 +51,61 @@ class TradeNowService:
     async def open_position(
         self, crypto_currency: TrackedCryptoCurrencyItem, position_type: PositionTypeEnum
     ) -> OpenPositionResult:
+        risk_management = await self._risk_management_service.get()
+        if not risk_management.open_trades_on_weekends and self.is_weekend():
+            return OpenPositionResult(
+                result_type=OpenPositionResultTypeEnum.OPERATION_IN_WEEKEND_NOT_ALLOWED,
+                crypto_currency=crypto_currency,
+                position_type=position_type,
+            )
+
         account_info = await self._futures_exchange_service.get_account_info()
         open_positions = await self._orders_analytics_service.get_open_position_metrics()
         symbols = set(p.position.symbol for p in open_positions)
         if crypto_currency.to_symbol(account_info) in symbols:
-            ret = OpenPositionResult(
+            return OpenPositionResult(
                 result_type=OpenPositionResultTypeEnum.ALREADY_OPEN,
                 crypto_currency=crypto_currency,
                 position_type=position_type,
             )
-        else:
-            risk_management = await self._risk_management_service.get()
-            if len(open_positions) >= risk_management.number_of_concurrent_trades:
-                ret = OpenPositionResult(
-                    result_type=OpenPositionResultTypeEnum.MAX_CONCURRENT_POSITIONS_REACHED,
-                    crypto_currency=crypto_currency,
-                    position_type=position_type,
-                )
-            else:
-                trade_now_hints = await self.get_trade_now_hints(crypto_currency, risk_management=risk_management)
-                position_hints = (
-                    trade_now_hints.long if position_type == PositionTypeEnum.LONG else trade_now_hints.short
-                )
-                if position_hints.margin <= 0:
-                    ret = OpenPositionResult(
-                        result_type=OpenPositionResultTypeEnum.NO_FUNDS,
-                        crypto_currency=crypto_currency,
-                        position_type=position_type,
-                    )
-                else:
-                    market_position_order = CreateMarketPositionOrder(
-                        symbol=crypto_currency.to_symbol(account_info=account_info),
-                        initial_margin=position_hints.margin,
-                        notional_size=position_hints.notional_size,
-                        leverage=position_hints.leverage,
-                        open_type=PositionOpenTypeEnum.ISOLATED,
-                        position_type=position_type,
-                        stop_loss_price=position_hints.stop_loss_price,
-                        take_profit_price=position_hints.take_profit_price,
-                    )
-                    opened_position = await self._futures_exchange_service.create_market_position_order(
-                        position=market_position_order
-                    )
-                    position_metrics = await self._orders_analytics_service.get_metrics_by_position_id(
-                        position_id=opened_position.position_id
-                    )
-                    ret = OpenPositionResult(
-                        result_type=OpenPositionResultTypeEnum.SUCCESS,
-                        crypto_currency=crypto_currency,
-                        position_type=position_type,
-                        position_metrics=position_metrics,
-                    )
-        return ret
+
+        if len(open_positions) >= risk_management.number_of_concurrent_trades:
+            return OpenPositionResult(
+                result_type=OpenPositionResultTypeEnum.MAX_CONCURRENT_POSITIONS_REACHED,
+                crypto_currency=crypto_currency,
+                position_type=position_type,
+            )
+
+        trade_now_hints = await self.get_trade_now_hints(crypto_currency, risk_management=risk_management)
+        position_hints = trade_now_hints.long if position_type == PositionTypeEnum.LONG else trade_now_hints.short
+        if position_hints.margin <= 0:
+            return OpenPositionResult(
+                result_type=OpenPositionResultTypeEnum.NO_FUNDS,
+                crypto_currency=crypto_currency,
+                position_type=position_type,
+            )
+        market_position_order = CreateMarketPositionOrder(
+            symbol=crypto_currency.to_symbol(account_info=account_info),
+            initial_margin=position_hints.margin,
+            notional_size=position_hints.notional_size,
+            leverage=position_hints.leverage,
+            open_type=PositionOpenTypeEnum.ISOLATED,
+            position_type=position_type,
+            stop_loss_price=position_hints.stop_loss_price,
+            take_profit_price=position_hints.take_profit_price,
+        )
+        opened_position = await self._futures_exchange_service.create_market_position_order(
+            position=market_position_order
+        )
+        position_metrics = await self._orders_analytics_service.get_metrics_by_position_id(
+            position_id=opened_position.position_id
+        )
+        return OpenPositionResult(
+            result_type=OpenPositionResultTypeEnum.SUCCESS,
+            crypto_currency=crypto_currency,
+            position_type=position_type,
+            position_metrics=position_metrics,
+        )
 
     async def get_trade_now_hints(
         self,
@@ -276,3 +280,8 @@ class TradeNowService:
             potential_loss=round(potential_loss, ndigits=4),
             potential_profit=round(potential_profit, ndigits=4),
         )
+
+    def is_weekend(self, current_date: date | datetime | None = None) -> bool:
+        if current_date is None:
+            current_date = datetime.today()
+        return current_date.weekday() > 4

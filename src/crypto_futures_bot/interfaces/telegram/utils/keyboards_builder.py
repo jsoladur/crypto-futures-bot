@@ -159,6 +159,21 @@ class KeyboardsBuilder:
                 callback_data="set_risk_number_concurrent_trades",
             )
         )
+        weekend_status = "✅ ON" if risk_management_item.open_trades_on_weekends else "❌ OFF"
+        builder.row(
+            InlineKeyboardButton(
+                text=f"📅 Open Trades on Weekends :: {weekend_status}", callback_data="set_risk_weekends"
+            )
+        )
+        builder.row(InlineKeyboardButton(text="🔙 Back", callback_data="go_back_home"))
+        return builder.as_markup()
+
+    def get_risk_weekends_values(self) -> InlineKeyboardMarkup:
+        builder = InlineKeyboardBuilder()
+        builder.row(
+            InlineKeyboardButton(text="✅ Yes", callback_data="persist_risk_weekends_yes"),
+            InlineKeyboardButton(text="❌ No", callback_data="persist_risk_weekends_no"),
+        )
         builder.row(InlineKeyboardButton(text="🔙 Back", callback_data="go_back_home"))
         return builder.as_markup()
 

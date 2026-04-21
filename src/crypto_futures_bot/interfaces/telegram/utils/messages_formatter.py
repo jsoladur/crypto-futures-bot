@@ -144,6 +144,8 @@ class MessagesFormatter:
                     f"{html.bold(open_position_result.position_type.value.upper())} "
                     f"position for {html.bold(open_position_result.crypto_currency.currency)}"
                 )
+            case OpenPositionResultTypeEnum.OPERATION_IN_WEEKEND_NOT_ALLOWED:
+                message = "❌ WEEKEND ❌:: Cannot open positions on weekends (Saturday/Sunday)!"
             case _:
                 raise ValueError(f"Unknown open position result type: {open_position_result.result_type}")
         return message

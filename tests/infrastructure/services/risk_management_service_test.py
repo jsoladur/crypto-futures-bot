@@ -22,12 +22,14 @@ async def should_update_and_get_risk_management_settings_properly(
     # Initial get
     initial_settings = await risk_management_service.get()
     assert initial_settings.percent_value is not None  # Should have a default value
+    assert isinstance(initial_settings.open_trades_on_weekends, bool)
 
     # Update
     new_value = faker.pyfloat(min_value=1, max_value=10, right_digits=2)
-    new_settings = RiskManagementItem(percent_value=new_value)
+    new_settings = RiskManagementItem(percent_value=new_value, open_trades_on_weekends=True)
     await risk_management_service.update(new_settings)
 
     # Get again
     updated_settings = await risk_management_service.get()
     assert updated_settings.percent_value == new_value
+    assert updated_settings.open_trades_on_weekends is True

@@ -4,13 +4,15 @@ ENV \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONHASHSEED=random \
     PYTHONUNBUFFERED=1 \
-    PYTHONFAULTHANDLER=1
+    PYTHONFAULTHANDLER=1 \
+    TZ=Europe/Madrid
 
 # Install bash for connecting via TTY
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
     sqlite3 \
     procps \
+    tzdata \
     && rm -rf /var/lib/apt/lists/*
 # ==================================================================
 FROM base as build

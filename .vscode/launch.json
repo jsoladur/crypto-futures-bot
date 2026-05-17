@@ -21,7 +21,7 @@
       "console": "integratedTerminal",
       "args": [
         "research",
-        "--currency=DOGE",
+        "--currency=XRP",
         "--days=90",
         "--no-apply-paralellism",
       ],

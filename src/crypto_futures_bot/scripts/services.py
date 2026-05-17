@@ -63,6 +63,8 @@ class BacktestingService:
         risk: float,
         show_plot: bool = False,
     ) -> None:
+        await self._exchange_service.post_init()
+
         symbol_market_config = await self._exchange_service.get_symbol_market_config(crypto_currency)
         symbol, df = await self._calculate_historical_indicators(
             crypto_currency=crypto_currency, start_date=start_date, end_date=end_date
@@ -94,7 +96,10 @@ class BacktestingService:
         risk: float,
         apply_paralellism: bool = True,
     ) -> None:
+        await self._exchange_service.post_init()
+
         echo(f"\n--- Research for {crypto_currency} ---\n")
+
         symbol_market_config = await self._exchange_service.get_symbol_market_config(crypto_currency)
         signal_parametrization_items = self._calculate_signal_parametrization_items(crypto_currency)
         symbol, df = await self._calculate_historical_indicators(

@@ -61,6 +61,7 @@ class BacktestingService:
         atr_tp_mult: float,
         double_confirm_trend: bool,
         risk: float,
+        operation_in_weekend_allowed: bool = False,
         show_plot: bool = False,
     ) -> None:
         await self._exchange_service.post_init()
@@ -79,6 +80,7 @@ class BacktestingService:
             atr_tp_mult=atr_tp_mult,
             double_confirm_trend=double_confirm_trend,
             risk=risk,
+            operation_in_weekend_allowed=operation_in_weekend_allowed,
             symbol_market_config=symbol_market_config,
         )
         echo(f"\n--- Backtest Result for {crypto_currency} ---\n")
@@ -94,6 +96,7 @@ class BacktestingService:
         *,
         initial_cash: float,
         risk: float,
+        operation_in_weekend_allowed: bool = False,
         apply_paralellism: bool = True,
     ) -> None:
         await self._exchange_service.post_init()
@@ -136,6 +139,7 @@ class BacktestingService:
                     atr_tp_mult=signal_parametrization_item.atr_tp_mult,
                     double_confirm_trend=signal_parametrization_item.double_confirm_trend,
                     risk=risk,
+                    operation_in_weekend_allowed=operation_in_weekend_allowed,
                     symbol_market_config=symbol_market_config,
                     use_tqdm=False,
                 )
@@ -184,6 +188,7 @@ class BacktestingService:
         double_confirm_trend: bool,
         risk: float,
         symbol_market_config: SymbolMarketConfig,
+        operation_in_weekend_allowed: bool = False,
         use_tqdm: bool = True,
     ) -> tuple[Backtest, pd.Series]:
         original_backtesting_tqdm = backtesting._tqdm
@@ -199,6 +204,7 @@ class BacktestingService:
                 orders_analytics_service=self._orders_analytics_service,
                 symbol_market_config=symbol_market_config,
                 risk=risk,
+                operation_in_weekend_allowed=operation_in_weekend_allowed,
                 signal_parametrization=SignalParametrizationItem(
                     crypto_currency=crypto_currency,
                     atr_sl_mult=atr_sl_mult,

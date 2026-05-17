@@ -58,6 +58,7 @@ def backtest(
     atr_sl_mult: float = typer.Option(DEFAULT_ATR_SL_MULT, help="ATR SL multiplier"),
     atr_tp_mult: float = typer.Option(DEFAULT_ATR_TP_MULT, help="ATR TP multiplier"),
     double_confirm_trend: bool = typer.Option(False, help="Double confirm trend"),
+    operation_in_weekend_allowed: bool = typer.Option(False, help="Operation in weekend allowed"),
     risk: float = typer.Option(DEFAULT_RISK_MANAGEMENT_PERCENTAGE, help="Risk management percentage"),
     show_plot: bool = typer.Option(False, help="Show plot"),
 ):
@@ -77,6 +78,7 @@ def backtest(
             atr_sl_mult=atr_sl_mult,
             atr_tp_mult=atr_tp_mult,
             double_confirm_trend=double_confirm_trend,
+            operation_in_weekend_allowed=operation_in_weekend_allowed,
             risk=risk,
             show_plot=show_plot,
         )
@@ -88,6 +90,7 @@ def research(
     currency: str = typer.Option("DOGE", help="Crypto currency to backtest"),
     days: int = typer.Option(365, help="Number of days to backtest"),
     initial_cash: float = typer.Option(3_000.0, help="Initial cash in USDT"),
+    operation_in_weekend_allowed: bool = typer.Option(False, help="Operation in weekend allowed"),
     risk: float = typer.Option(DEFAULT_RISK_MANAGEMENT_PERCENTAGE, help="Risk management percentage"),
     apply_paralellism: bool = typer.Option(True, help="Apply parallelism"),
 ):
@@ -102,6 +105,7 @@ def research(
             end_date=end_date,
             crypto_currency=currency,
             initial_cash=initial_cash,
+            operation_in_weekend_allowed=operation_in_weekend_allowed,
             risk=risk,
             apply_paralellism=apply_paralellism,
         )

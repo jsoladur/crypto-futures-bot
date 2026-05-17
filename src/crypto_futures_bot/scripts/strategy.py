@@ -15,6 +15,7 @@ class BotStrategy(Strategy):
     symbol_market_config: SymbolMarketConfig | None = None
     signal_parametrization: SignalParametrizationItem | None = None
     risk: float | None = None
+    operation_in_weekend_allowed: bool = False
 
     def init(self):
         # Indicators are already computed in the dataframe passed to Backtest
@@ -34,7 +35,10 @@ class BotStrategy(Strategy):
 
         current_price = self.data.Close[-1]
 
-        # 2. Check Signals
+        # 2.1 Check if we are in weekend days
+        current_index = self.data.df.index[-1]
+        is_weekend = current_index.weekday() in (5, 6)  # 5 = Saturday, 6 = Sunday
+        # 2.2 Check Signals
         is_long_entry = self.signals_task_service._is_long_entry(
             prev_candle, last_candle, signal_parametrization_item=self.signal_parametrization
         )
@@ -45,7 +49,11 @@ class BotStrategy(Strategy):
         # -----------------------------------------------------------
         # ENTRY LOGIC
         # -----------------------------------------------------------
-        if not self.position and (is_long_entry or is_short_entry):
+        if (
+            not self.position
+            and (not is_weekend or self.operation_in_weekend_allowed)
+            and (is_long_entry or is_short_entry)
+        ):
             sl_pct = self.orders_analytics_service.get_stop_loss_percent_value(
                 entry_price=current_price,
                 last_candlestick_indicators=last_candle,

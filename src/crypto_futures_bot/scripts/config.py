@@ -32,9 +32,7 @@ class Container(containers.DeclarativeContainer):
     mexc_remote_service_mock = providers.Object(SimpleNamespace())
     # Services
     futures_exchange_service = providers.Singleton(
-        BitgetFuturesExchangeService,
-        configuration_properties=configuration_properties,
-        mexc_remote_service=mexc_remote_service_mock,
+        BitgetFuturesExchangeService, configuration_properties=configuration_properties
     )
 
     crypto_technical_analysis_service = providers.Singleton(

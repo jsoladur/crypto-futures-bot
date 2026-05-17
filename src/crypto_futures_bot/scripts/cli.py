@@ -29,6 +29,9 @@ os.environ["TELEGRAM_BOT_TOKEN"] = f"{faker.pyint()}:{faker.uuid4().replace('-',
 os.environ["MEXC_API_KEY"] = ""  # nosec: B105
 os.environ["MEXC_API_SECRET"] = ""  # nosec: B105
 os.environ["MEXC_WEB_AUTH_TOKEN"] = ""  # nosec: B105
+os.environ["BITGET_API_KEY"] = ""  # nosec: B105
+os.environ["BITGET_API_SECRET"] = ""  # nosec: B105
+os.environ["BITGET_API_PASSPHRASE"] = ""  # nosec: B105
 os.environ["ROOT_USER"] = faker.user_name()
 os.environ["ROOT_PASSWORD"] = faker.password()
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite://:memory:"
@@ -43,7 +46,7 @@ app = typer.Typer()
 
 @app.command()
 def backtest(
-    currency: str = typer.Option("DOGE", help="Crypto currency to backtest"),
+    currency: str = typer.Option("XRP", help="Crypto currency to backtest"),
     days: int = typer.Option(365, help="Number of days to backtest"),
     initial_cash: float = typer.Option(3_000.0, help="Initial cash in USDT"),
     long_entry_oversold_threshold: float = typer.Option(

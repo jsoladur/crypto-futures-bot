@@ -248,5 +248,8 @@ GEMINI.local.md
 !.gemini/commands/
 !.gemini/config.yaml
 
+### opencode ###
+.opencode/*
+!.opencode/opencode.json
 
 # End of https://www.toptal.com/developers/gitignore/api/dotenv,python,macos,visualstudiocode

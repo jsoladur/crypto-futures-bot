@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Python-based cryptocurrency futures trading bot that automates trading on **MEXC** and **Bitget** exchanges. Integrates with **Telegram** for real-time monitoring and manual control. Architecture is modular with dependency injection, async programming, and clean separation of concerns.
+Python-based cryptocurrency futures trading bot that automates trading on **MEXC**, **Bitget**, and **BloFin** exchanges. Integrates with **Telegram** for real-time monitoring and manual control. Architecture is modular with dependency injection, async programming, and clean separation of concerns.
 
 ## Key Technologies
 
@@ -39,7 +39,7 @@ Python-based cryptocurrency futures trading bot that automates trading on **MEXC
 
 - Source code lives in `src/crypto_futures_bot/` with a layered structure:
   - **`domain/`** — Core business logic, value objects, enums.
-  - **`infrastructure/`** — Database access, external API adapters (MEXC, Bitget), background services.
+  - **`infrastructure/`** — Database access, external API adapters (MEXC, Bitget, BloFin), background services.
   - **`interfaces/`** — Entry points for interaction, primarily Telegram bot handlers. Dynamically loads commands from `interfaces/telegram/commands` and `interfaces/telegram/callbacks` using a module loader.
   - **`config/`** — Application configuration (`configuration_properties.py` Pydantic model) and DI container setup.
 - Background tasks use `apscheduler` and a `pyee` event emitter for trading signals.
@@ -53,9 +53,10 @@ Create from `.env.example`. Key variables:
 | `ROOT_USER` / `ROOT_PASSWORD` | Admin credentials |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_BOT_ENABLED` | Telegram bot config |
 | `DATABASE_URL` | e.g. `sqlite+aiosqlite:///db.sqlite3` |
-| `FUTURES_EXCHANGE` | `MEXC` or `BITGET` |
+| `FUTURES_EXCHANGE` | `MEXC`, `BITGET` or `BLOFIN` |
 | `MEXC_API_KEY` / `MEXC_API_SECRET` / `MEXC_WEB_AUTH_TOKEN` | MEXC credentials |
 | `BITGET_API_KEY` / `BITGET_API_SECRET` / `BITGET_API_PASSPHRASE` | Bitget credentials |
+| `BLOFIN_API_KEY` / `BLOFIN_API_SECRET` / `BLOFIN_API_PASSPHRASE` | BloFin credentials |
 | `JOB_INTERVAL_SECONDS` | Scheduler interval |
 | `NOTIFY_ENTRY_SIGNALS` | Enable signal notifications |
 | `BACKGROUND_TASKS_ENABLED` | Enable/disable background tasks |

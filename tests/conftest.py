@@ -35,6 +35,9 @@ def defaults_env(faker: Faker) -> Generator[None]:
         environ["BITGET_API_KEY"] = faker.uuid4()
         environ["BITGET_API_SECRET"] = faker.uuid4()
         environ["BITGET_API_PASSPHRASE"] = faker.uuid4()
+        environ["BLOFIN_API_KEY"] = faker.uuid4()
+        environ["BLOFIN_API_SECRET"] = faker.uuid4()
+        environ["BLOFIN_API_PASSPHRASE"] = faker.uuid4()
         environ["TELEGRAM_BOT_ENABLED"] = "false"
         environ["TELEGRAM_BOT_TOKEN"] = f"{faker.pyint()}:{faker.uuid4().replace('-', '_')}"
         environ["LOGIN_ENABLED"] = "false"
@@ -49,6 +52,8 @@ async def test_environment() -> AsyncGenerator[tuple[Container, ...]]:
     with (
         patch.object(ccxt.bitget, "fetch_currencies", return_value=_load_bitget_resource_file("fetch_currencies.json")),
         patch.object(ccxt.bitget, "load_markets", return_value=_load_bitget_resource_file("fetch_swap_markets.json")),
+        patch.object(ccxt.blofin, "fetch_currencies", return_value=_load_blofin_resource_file("fetch_currencies.json")),
+        patch.object(ccxt.blofin, "load_markets", return_value=_load_blofin_resource_file("fetch_swap_markets.json")),
     ):
         await main()
         application_container = get_application_container()
@@ -67,5 +72,12 @@ def _load_mexc_resource_file(filename: str) -> dict[str, Any] | list[dict[str, A
 def _load_bitget_resource_file(filename: str) -> dict[str, Any] | list[dict[str, Any]]:
     bitget_resources_folder = path.realpath(path.join(path.dirname(__file__), "helpers", "resources", "bitget"))
     with open(path.join(bitget_resources_folder, filename)) as fd:
+        ret = json.loads(fd.read())
+    return ret
+
+
+def _load_blofin_resource_file(filename: str) -> dict[str, Any] | list[dict[str, Any]]:
+    blofin_resources_folder = path.realpath(path.join(path.dirname(__file__), "helpers", "resources", "blofin"))
+    with open(path.join(blofin_resources_folder, filename)) as fd:
         ret = json.loads(fd.read())
     return ret

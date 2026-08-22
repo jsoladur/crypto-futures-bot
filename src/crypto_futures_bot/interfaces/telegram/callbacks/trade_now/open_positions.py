@@ -50,9 +50,9 @@ async def open_position_callback_handler(callback_query: CallbackQuery, state: F
             answer_text = messages_formatter.format_open_position_result(open_position_result)
             await callback_query.message.answer(answer_text, reply_markup=keyboards_builder.get_go_back_home_keyboard())
         except Exception as e:
-            logger.error(f"Error removing the selected crypto currency: {str(e)}", exc_info=True)
+            logger.error(f"Error opening position: {str(e)}", exc_info=True)
             await callback_query.message.answer(
-                f"⚠️ An error occurred while removing the selected crypto currency. Please try again later:\n\n{html.code(format_exception(e))}"  # noqa: E501
+                f"⚠️ An error occurred while opening a position. Please try again later:\n\n{html.code(format_exception(e))}"  # noqa: E501
             )
     else:
         await callback_query.message.answer(

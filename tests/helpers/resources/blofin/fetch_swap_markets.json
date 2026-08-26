@@ -1,0 +1,277 @@
+[
+  {
+    "active": true,
+    "base": "BTC",
+    "baseId": "BTC",
+    "contract": true,
+    "contractSize": 0.001,
+    "future": false,
+    "id": "BTC-USDT",
+    "info": {
+      "baseCurrency": "BTC",
+      "contractValue": "0.001",
+      "instId": "BTC-USDT",
+      "instType": "SWAP",
+      "lotSize": "0.001",
+      "maxLeverage": "125",
+      "minSize": "0.001",
+      "quoteCurrency": "USDT",
+      "state": "live",
+      "tickSize": "0.1"
+    },
+    "inverse": false,
+    "limits": {
+      "amount": {
+        "max": null,
+        "min": 0.001
+      },
+      "cost": {
+        "max": null,
+        "min": null
+      },
+      "leverage": {
+        "max": 125,
+        "min": 1
+      },
+      "price": {
+        "max": null,
+        "min": null
+      }
+    },
+    "linear": true,
+    "margin": false,
+    "option": false,
+    "precision": {
+      "amount": 0.001,
+      "price": 0.1
+    },
+    "quote": "USDT",
+    "quoteId": "USDT",
+    "settle": "USDT",
+    "settleId": "USDT",
+    "spot": false,
+    "swap": true,
+    "symbol": "BTC/USDT:USDT",
+    "type": "swap"
+  },
+  {
+    "active": true,
+    "base": "ETH",
+    "baseId": "ETH",
+    "contract": true,
+    "contractSize": 0.01,
+    "future": false,
+    "id": "ETH-USDT",
+    "info": {
+      "baseCurrency": "ETH",
+      "contractValue": "0.01",
+      "instId": "ETH-USDT",
+      "instType": "SWAP",
+      "lotSize": "0.01",
+      "maxLeverage": "100",
+      "minSize": "0.01",
+      "quoteCurrency": "USDT",
+      "state": "live",
+      "tickSize": "0.01"
+    },
+    "inverse": false,
+    "limits": {
+      "amount": {
+        "max": null,
+        "min": 0.01
+      },
+      "cost": {
+        "max": null,
+        "min": null
+      },
+      "leverage": {
+        "max": 100,
+        "min": 1
+      },
+      "price": {
+        "max": null,
+        "min": null
+      }
+    },
+    "linear": true,
+    "margin": false,
+    "option": false,
+    "precision": {
+      "amount": 0.01,
+      "price": 0.01
+    },
+    "quote": "USDT",
+    "quoteId": "USDT",
+    "settle": "USDT",
+    "settleId": "USDT",
+    "spot": false,
+    "swap": true,
+    "symbol": "ETH/USDT:USDT",
+    "type": "swap"
+  },
+  {
+    "active": true,
+    "base": "SOL",
+    "baseId": "SOL",
+    "contract": true,
+    "contractSize": 0.1,
+    "future": false,
+    "id": "SOL-USDT",
+    "info": {
+      "baseCurrency": "SOL",
+      "contractValue": "0.1",
+      "instId": "SOL-USDT",
+      "instType": "SWAP",
+      "lotSize": "0.1",
+      "maxLeverage": "100",
+      "minSize": "0.1",
+      "quoteCurrency": "USDT",
+      "state": "live",
+      "tickSize": "0.001"
+    },
+    "inverse": false,
+    "limits": {
+      "amount": {
+        "max": null,
+        "min": 0.1
+      },
+      "cost": {
+        "max": null,
+        "min": null
+      },
+      "leverage": {
+        "max": 100,
+        "min": 1
+      },
+      "price": {
+        "max": null,
+        "min": null
+      }
+    },
+    "linear": true,
+    "margin": false,
+    "option": false,
+    "precision": {
+      "amount": 0.1,
+      "price": 0.001
+    },
+    "quote": "USDT",
+    "quoteId": "USDT",
+    "settle": "USDT",
+    "settleId": "USDT",
+    "spot": false,
+    "swap": true,
+    "symbol": "SOL/USDT:USDT",
+    "type": "swap"
+  },
+  {
+    "active": true,
+    "base": "SUI",
+    "baseId": "SUI",
+    "contract": true,
+    "contractSize": 1.0,
+    "future": false,
+    "id": "SUI-USDT",
+    "info": {
+      "baseCurrency": "SUI",
+      "contractValue": "1.0",
+      "instId": "SUI-USDT",
+      "instType": "SWAP",
+      "lotSize": "1.0",
+      "maxLeverage": "50",
+      "minSize": "1.0",
+      "quoteCurrency": "USDT",
+      "state": "live",
+      "tickSize": "0.0001"
+    },
+    "inverse": false,
+    "limits": {
+      "amount": {
+        "max": null,
+        "min": 1.0
+      },
+      "cost": {
+        "max": null,
+        "min": null
+      },
+      "leverage": {
+        "max": 50,
+        "min": 1
+      },
+      "price": {
+        "max": null,
+        "min": null
+      }
+    },
+    "linear": true,
+    "margin": false,
+    "option": false,
+    "precision": {
+      "amount": 1.0,
+      "price": 0.0001
+    },
+    "quote": "USDT",
+    "quoteId": "USDT",
+    "settle": "USDT",
+    "settleId": "USDT",
+    "spot": false,
+    "swap": true,
+    "symbol": "SUI/USDT:USDT",
+    "type": "swap"
+  },
+  {
+    "active": true,
+    "base": "XRP",
+    "baseId": "XRP",
+    "contract": true,
+    "contractSize": 1.0,
+    "future": false,
+    "id": "XRP-USDT",
+    "info": {
+      "baseCurrency": "XRP",
+      "contractValue": "1.0",
+      "instId": "XRP-USDT",
+      "instType": "SWAP",
+      "lotSize": "1.0",
+      "maxLeverage": "50",
+      "minSize": "1.0",
+      "quoteCurrency": "USDT",
+      "state": "live",
+      "tickSize": "0.0001"
+    },
+    "inverse": false,
+    "limits": {
+      "amount": {
+        "max": null,
+        "min": 1.0
+      },
+      "cost": {
+        "max": null,
+        "min": null
+      },
+      "leverage": {
+        "max": 50,
+        "min": 1
+      },
+      "price": {
+        "max": null,
+        "min": null
+      }
+    },
+    "linear": true,
+    "margin": false,
+    "option": false,
+    "precision": {
+      "amount": 1.0,
+      "price": 0.0001
+    },
+    "quote": "USDT",
+    "quoteId": "USDT",
+    "settle": "USDT",
+    "settleId": "USDT",
+    "spot": false,
+    "swap": true,
+    "symbol": "XRP/USDT:USDT",
+    "type": "swap"
+  }
+]

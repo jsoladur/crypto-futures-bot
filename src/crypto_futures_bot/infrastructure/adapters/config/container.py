@@ -4,6 +4,9 @@ from crypto_futures_bot.infrastructure.adapters.futures_exchange.enums.futures_e
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.impl.bitget_futures_exchange import (
     BitgetFuturesExchangeService,
 )
+from crypto_futures_bot.infrastructure.adapters.futures_exchange.impl.blofin_futures_exchange import (
+    BloFinFuturesExchangeService,
+)
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.impl.mexc_futures_exchange import (
     MEXCFuturesExchangeService,
 )
@@ -24,10 +27,14 @@ class AdaptersContainer(containers.DeclarativeContainer):
     _bitget_futures_exchange_service = providers.Singleton(
         BitgetFuturesExchangeService, configuration_properties=configuration_properties
     )
+    _blofin_futures_exchange_service = providers.Singleton(
+        BloFinFuturesExchangeService, configuration_properties=configuration_properties
+    )
     futures_exchange_service = providers.Selector(
         configuration_properties.provided.futures_exchange,
         **{
             FuturesExchangeEnum.MEXC: _mexc_futures_exchange_service,
             FuturesExchangeEnum.BITGET: _bitget_futures_exchange_service,
+            FuturesExchangeEnum.BLOFIN: _blofin_futures_exchange_service,
         },
     )

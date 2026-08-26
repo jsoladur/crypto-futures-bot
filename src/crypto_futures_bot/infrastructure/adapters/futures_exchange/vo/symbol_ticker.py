@@ -37,3 +37,9 @@ class SymbolTicker:
         if self.bid is None and self.close is None:  # pragma: no cover
             raise ValueError(f"{self.symbol} :: Both 'bid' and 'close' prices are None.")
         return self.bid if self.bid is not None else self.close
+
+    @property
+    def mark_price_or_close(self) -> float | int:
+        if self.mark_price is None and self.close is None:  # pragma: no cover
+            raise ValueError(f"{self.symbol} :: Both 'mark_price' and 'close' prices are None.")
+        return self.mark_price if self.mark_price is not None else self.close

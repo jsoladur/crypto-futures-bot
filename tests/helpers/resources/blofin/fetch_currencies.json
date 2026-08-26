@@ -1,0 +1,164 @@
+[
+  {
+    "active": true,
+    "code": "USDT",
+    "deposit": true,
+    "fee": 0.0,
+    "id": "blofin_usdt",
+    "info": {
+      "currency": "USDT"
+    },
+    "limits": {
+      "amount": {
+        "max": null,
+        "min": null
+      },
+      "deposit": {
+        "max": null,
+        "min": null
+      },
+      "withdraw": {
+        "max": null,
+        "min": null
+      }
+    },
+    "name": "USDT",
+    "precision": 1e-08,
+    "withdraw": true
+  },
+  {
+    "active": true,
+    "code": "BTC",
+    "deposit": true,
+    "fee": 0.0,
+    "id": "blofin_btc",
+    "info": {
+      "currency": "BTC"
+    },
+    "limits": {
+      "amount": {
+        "max": null,
+        "min": null
+      },
+      "deposit": {
+        "max": null,
+        "min": null
+      },
+      "withdraw": {
+        "max": null,
+        "min": null
+      }
+    },
+    "name": "BTC",
+    "precision": 1e-08,
+    "withdraw": true
+  },
+  {
+    "active": true,
+    "code": "ETH",
+    "deposit": true,
+    "fee": 0.0,
+    "id": "blofin_eth",
+    "info": {
+      "currency": "ETH"
+    },
+    "limits": {
+      "amount": {
+        "max": null,
+        "min": null
+      },
+      "deposit": {
+        "max": null,
+        "min": null
+      },
+      "withdraw": {
+        "max": null,
+        "min": null
+      }
+    },
+    "name": "ETH",
+    "precision": 1e-08,
+    "withdraw": true
+  },
+  {
+    "active": true,
+    "code": "SOL",
+    "deposit": true,
+    "fee": 0.0,
+    "id": "blofin_sol",
+    "info": {
+      "currency": "SOL"
+    },
+    "limits": {
+      "amount": {
+        "max": null,
+        "min": null
+      },
+      "deposit": {
+        "max": null,
+        "min": null
+      },
+      "withdraw": {
+        "max": null,
+        "min": null
+      }
+    },
+    "name": "SOL",
+    "precision": 1e-08,
+    "withdraw": true
+  },
+  {
+    "active": true,
+    "code": "SUI",
+    "deposit": true,
+    "fee": 0.0,
+    "id": "blofin_sui",
+    "info": {
+      "currency": "SUI"
+    },
+    "limits": {
+      "amount": {
+        "max": null,
+        "min": null
+      },
+      "deposit": {
+        "max": null,
+        "min": null
+      },
+      "withdraw": {
+        "max": null,
+        "min": null
+      }
+    },
+    "name": "SUI",
+    "precision": 1e-08,
+    "withdraw": true
+  },
+  {
+    "active": true,
+    "code": "XRP",
+    "deposit": true,
+    "fee": 0.0,
+    "id": "blofin_xrp",
+    "info": {
+      "currency": "XRP"
+    },
+    "limits": {
+      "amount": {
+        "max": null,
+        "min": null
+      },
+      "deposit": {
+        "max": null,
+        "min": null
+      },
+      "withdraw": {
+        "max": null,
+        "min": null
+      }
+    },
+    "name": "XRP",
+    "precision": 1e-08,
+    "withdraw": true
+  }
+]

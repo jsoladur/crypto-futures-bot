@@ -39,6 +39,10 @@ class ConfigurationProperties(BaseSettings):
     bitget_api_secret: str | None = None
     bitget_api_passphrase: str | None = None
 
+    blofin_api_key: str | None = None
+    blofin_api_secret: str | None = None
+    blofin_api_passphrase: str | None = None
+
     currency_code: str = DEFAULT_CURRENCY_CODE
 
     login_enabled: bool = True

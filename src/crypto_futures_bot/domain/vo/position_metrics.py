@@ -32,7 +32,7 @@ class PositionMetrics:
         direction = 1 if self.position.position_type is PositionTypeEnum.LONG else -1
         return round(
             direction
-            * (self.ticker.mark_price - self.position.entry_price)
+            * (self.ticker.mark_price_or_close - self.position.entry_price)
             * self.position.contracts
             * self.position.contract_size,
             ndigits=self.symbol_market_config.price_precision,
@@ -40,7 +40,10 @@ class PositionMetrics:
 
     @property
     def unrealised_pnl_ratio(self) -> float:
-        return round(self.unrealised_pnl / self.initial_margin, ndigits=2)
+        margin = self.position.initial_margin
+        if margin == 0:
+            return 0.0
+        return round(self.unrealised_pnl / margin, ndigits=2)
 
     @property
     def unrealised_net_revenue(self) -> float:

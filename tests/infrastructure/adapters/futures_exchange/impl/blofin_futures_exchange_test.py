@@ -110,11 +110,41 @@ async def should_return_symbol_ticker_using_fetch_mark_price_fallback() -> None:
             "close": 100.0,
             "bid": 99.0,
             "ask": 101.0,
-            "info": {"markPrice": "100.5"},
+            "markPrice": 100.5,
+            "info": {"instId": "BTC-USDT", "markPrice": "100.5"},
         }
     )
     ticker = await service.get_symbol_ticker("BTC/USDT:USDT")
     assert ticker.mark_price == 100.5
+    service._futures_client.fetch_mark_price.assert_called_once_with("BTC/USDT:USDT", params={"instId": "BTC-USDT"})
+
+
+async def should_ignore_mark_price_from_a_different_symbol() -> None:
+    service = BloFinFuturesExchangeService(_build_config())
+    service._futures_client.fetch_ticker = AsyncMock(
+        return_value={
+            "timestamp": 1,
+            "symbol": "XRP/USDT:USDT",
+            "close": 1.446,
+            "last": 1.446,
+            "bid": 1.445,
+            "ask": 1.446,
+            "info": {"instId": "XRP-USDT"},
+        }
+    )
+    service._futures_client.fetch_mark_price = AsyncMock(
+        return_value={
+            "timestamp": 1,
+            "symbol": "BTC/USDT:USDT",
+            "close": 80354.5,
+            "last": 80354.5,
+            "markPrice": 80354.5,
+            "info": {"instId": "BTC-USDT", "markPrice": "80354.5"},
+        }
+    )
+    ticker = await service.get_symbol_ticker("XRP/USDT:USDT")
+    assert ticker.mark_price == 1.446
+    service._futures_client.fetch_mark_price.assert_called_once_with("XRP/USDT:USDT", params={"instId": "XRP-USDT"})
 
 
 async def should_return_symbol_tickers() -> None:

@@ -112,10 +112,9 @@ class BloFinFuturesExchangeService(AbstractFuturesExchangeService):
     )
     async def get_symbol_ticker(self, symbol: str) -> SymbolTicker:
         raw_ticker = await self._futures_client.fetch_ticker(symbol)
-        mark_price = raw_ticker.get("info", {}).get("markPrice")
+        mark_price = self._extract_mark_price(raw_ticker, expected_symbol=symbol)
         if mark_price is None:
-            mark_ticker = await self._futures_client.fetch_mark_price(symbol)
-            mark_price = mark_ticker.get("info", {}).get("markPrice") or mark_ticker.get("last")
+            mark_price = await self._fetch_validated_mark_price(symbol)
         return self._convert_raw_ticker_to_symbol_ticker(raw_ticker, mark_price=mark_price)
 
     @override
@@ -134,7 +133,7 @@ class BloFinFuturesExchangeService(AbstractFuturesExchangeService):
         raw_tickers = await self._futures_client.fetch_tickers(symbols=symbols)
         ret = [
             self._convert_raw_ticker_to_symbol_ticker(
-                raw_ticker, mark_price=raw_ticker.get("info", {}).get("markPrice")
+                raw_ticker, mark_price=self._extract_mark_price(raw_ticker, expected_symbol=raw_ticker.get("symbol"))
             )
             for raw_ticker in raw_tickers.values()
         ]
@@ -406,6 +405,32 @@ class BloFinFuturesExchangeService(AbstractFuturesExchangeService):
             "unrealizedPnl": unrealized_pl,
         }
 
+    async def _fetch_validated_mark_price(self, symbol: str) -> float | None:
+        # CCXT BloFin sends `symbol` but the API filters on `instId`. Without instId the
+        # endpoint returns every mark price and CCXT takes data[0] (usually BTC).
+        inst_id = self._to_blofin_inst_id(symbol)
+        mark_ticker = await self._futures_client.fetch_mark_price(symbol, params={"instId": inst_id})
+        return self._extract_mark_price(mark_ticker, expected_symbol=symbol)
+
+    def _extract_mark_price(self, raw_ticker: dict[str, Any], *, expected_symbol: str | None) -> float | None:
+        if expected_symbol is None:
+            return None
+        info = raw_ticker.get("info") or {}
+        inst_id = info.get("instId")
+        ticker_symbol = raw_ticker.get("symbol")
+        expected_inst_id = self._to_blofin_inst_id(expected_symbol)
+        if inst_id is not None and inst_id != expected_inst_id:
+            return None
+        if inst_id is None and ticker_symbol not in (None, expected_symbol):
+            return None
+        for candidate in (raw_ticker.get("markPrice"), info.get("markPrice")):
+            if candidate not in (None, ""):
+                return float(candidate)
+        return None
+
+    def _to_blofin_inst_id(self, symbol: str) -> str:
+        return symbol.split(":")[0].replace("/", "-")
+
     def _convert_raw_ticker_to_symbol_ticker(
         self, raw_ticker: dict[str, Any], *, mark_price: float | None = None
     ) -> SymbolTicker:
@@ -413,7 +438,7 @@ class BloFinFuturesExchangeService(AbstractFuturesExchangeService):
             (
                 value
                 for value in (mark_price, raw_ticker.get("markPrice"), raw_ticker.get("last"), raw_ticker.get("close"))
-                if value is not None
+                if value not in (None, "")
             ),
             None,
         )

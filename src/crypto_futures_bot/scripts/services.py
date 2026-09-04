@@ -19,9 +19,7 @@ from crypto_futures_bot.constants import (
 )
 from crypto_futures_bot.domain.types import Timeframe
 from crypto_futures_bot.domain.vo import SignalParametrizationItem
-from crypto_futures_bot.infrastructure.adapters.futures_exchange.impl.mexc_futures_exchange import (
-    MEXCFuturesExchangeService,
-)
+from crypto_futures_bot.infrastructure.adapters.futures_exchange.base import AbstractFuturesExchangeService
 from crypto_futures_bot.infrastructure.adapters.futures_exchange.vo import SymbolMarketConfig
 from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_service import CryptoTechnicalAnalysisService
 from crypto_futures_bot.infrastructure.services.orders_analytics_service import OrdersAnalyticsService
@@ -37,7 +35,7 @@ class BacktestingService:
     def __init__(
         self,
         configuration_properties: ConfigurationProperties,
-        futures_exchange_service: MEXCFuturesExchangeService,
+        futures_exchange_service: AbstractFuturesExchangeService,
         crypto_technical_analysis_service: CryptoTechnicalAnalysisService,
         orders_analytics_service: OrdersAnalyticsService,
         signals_task_service: SignalsTaskService,

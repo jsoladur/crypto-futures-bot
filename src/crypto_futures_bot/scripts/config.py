@@ -3,8 +3,8 @@ from types import SimpleNamespace
 from dependency_injector import containers, providers
 
 from crypto_futures_bot.config.configuration_properties import ConfigurationProperties
-from crypto_futures_bot.infrastructure.adapters.futures_exchange.impl.bitget_futures_exchange import (
-    BitgetFuturesExchangeService,
+from crypto_futures_bot.infrastructure.adapters.futures_exchange.impl.blofin_futures_exchange import (
+    BloFinFuturesExchangeService,
 )
 from crypto_futures_bot.infrastructure.services.crypto_technical_analysis_service import CryptoTechnicalAnalysisService
 from crypto_futures_bot.infrastructure.services.market_signal_service import MarketSignalService
@@ -32,7 +32,7 @@ class Container(containers.DeclarativeContainer):
     mexc_remote_service_mock = providers.Object(SimpleNamespace())
     # Services
     futures_exchange_service = providers.Singleton(
-        BitgetFuturesExchangeService, configuration_properties=configuration_properties
+        BloFinFuturesExchangeService, configuration_properties=configuration_properties
     )
 
     crypto_technical_analysis_service = providers.Singleton(

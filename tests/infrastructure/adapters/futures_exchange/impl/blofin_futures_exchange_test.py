@@ -198,6 +198,24 @@ async def should_fetch_ohlcv() -> None:
     service._futures_client.fetch_ohlcv = AsyncMock(return_value=expected)
     ohlcv = await service.fetch_ohlcv("BTC/USDT:USDT")
     assert ohlcv == expected
+    service._futures_client.fetch_ohlcv.assert_awaited_once_with(
+        symbol="BTC/USDT:USDT", timeframe="15m", limit=251, since=None, params={}
+    )
+
+
+async def should_map_ohlcv_since_to_until() -> None:
+    service = BloFinFuturesExchangeService(_build_config())
+    service._futures_client.fetch_ohlcv = AsyncMock(return_value=[])
+    since = 1_700_000_000_000
+    await service.fetch_ohlcv("BTC/USDT:USDT", timeframe="15m", limit=1000, since=since)
+    fifteen_minutes_ms = 15 * 60 * 1000
+    service._futures_client.fetch_ohlcv.assert_awaited_once_with(
+        symbol="BTC/USDT:USDT",
+        timeframe="15m",
+        limit=1000,
+        since=since,
+        params={"until": since + 1000 * fifteen_minutes_ms},
+    )
 
 
 async def should_return_symbol_market_config() -> None:

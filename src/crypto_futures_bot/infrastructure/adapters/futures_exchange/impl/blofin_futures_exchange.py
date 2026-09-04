@@ -170,7 +170,16 @@ class BloFinFuturesExchangeService(AbstractFuturesExchangeService):
     async def fetch_ohlcv(
         self, symbol: str, *, timeframe: Timeframe = "15m", limit: int = 251, since: int | None = None
     ) -> list[list[Any]]:
-        ohlcv = await self._futures_client.fetch_ohlcv(symbol=symbol, timeframe=timeframe, limit=limit, since=since)
+        # BloFin candles have no start-time: `since` is ignored and the API returns
+        # the most recent `limit` bars. CCXT maps `until` -> `after` (candles older
+        # than that ts), which is what year-long backtest pagination needs.
+        params: dict[str, Any] = {}
+        if since is not None:
+            timeframe_ms = int(self._futures_client.parse_timeframe(timeframe) * 1000)
+            params["until"] = since + (limit * timeframe_ms)
+        ohlcv = await self._futures_client.fetch_ohlcv(
+            symbol=symbol, timeframe=timeframe, limit=limit, since=since, params=params
+        )
         return ohlcv
 
     @override
